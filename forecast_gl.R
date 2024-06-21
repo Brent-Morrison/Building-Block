@@ -3,7 +3,19 @@
 # ---------------------------------------------------------------------------------------------------------
 
 library(readxl)
-chart <- read.csv("./data/chart.csv", fileEncoding="UTF-8-BOM")
+
+dat_src <- "remote"   # "local" / "remote"
+
+
+if (dat_src == "local") {
+  chart_src <- "./data/chart.csv"
+} else {
+  chart_src <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
+}
+
+chart <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
+
+sew <- read_xlsx("./data/SEW.xlsx", range = "sew!A1:D43", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
 
 
 # Matrix dimensions
@@ -24,7 +36,7 @@ txn <- c("opn","age","inc","csh","wof","exp","cpx","dpn","inta","intp","bor","cl
 # cls - closing balance
 
 act <- c(100,200,250,260,270,300,3051,3052,3053,375,376,400,410,455,500,510)                       # GL accounts
-act <- chart$account_no
+#act <- chart$account_no
 # 100 - income
 # 200 - operating expenses
 # 250 - depreciation
