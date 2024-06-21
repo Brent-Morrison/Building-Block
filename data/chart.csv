@@ -1,0 +1,43 @@
+﻿account_no,account_desc
+1000,Water-Service
+1001,Sewerage-Service
+1002,Trade waste-Service
+1003,Recycled water-Service
+1100,Water-Usage
+1101,Sewerage-Usage
+1102,Trade waste-Usage
+1103,Recycled water-Usage
+1200,Developer contributed assets
+1300,New customer contributions
+1400,Other revenue
+1500,Other income
+2000,Operating expenses 
+2100,Employee benefits
+2200,Depreciation and amortisation
+2300,Finance costs
+2400,Environmental contribution
+2500,Income tax expense
+2501,Dividends paid
+2502,Cash
+2503,Receivables
+2504,Contract assets
+2505,Other assets
+2506,"Infrastructure, property, plant and equipment "
+2507,Intangible assets
+2508,Right-of-use assets
+2509,Other financial assets
+2510,Defined benefit superannuation asset
+2511,Payables
+2512,Interest bearing liabilities
+2513,Employee benefits provision
+2514,Income tax payable
+2515,Contract liabilities
+2516,Deposits and advances
+2517,Other provisions  
+2518,Interest bearing liabilities
+2519,Deferred tax liabilities
+2520,Employee benefits provision
+2521,Other financial liabilities
+2522,Contributed equity
+2523,Reserves
+2524,Retained profits
