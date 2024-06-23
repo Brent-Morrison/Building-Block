@@ -4,7 +4,7 @@
 
 library(readxl)
 
-dat_src <- "remote"   # "local" / "remote"
+dat_src <- "local"   # "local" / "remote"
 
 
 if (dat_src == "local") {
@@ -15,7 +15,7 @@ if (dat_src == "local") {
 
 chart <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
 
-sew <- read_xlsx("./data/SEW.xlsx", range = "sew!A1:D43", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
+sew <- read_xlsx("./data/SEW.xlsx", range = "sew!A1:F50", col_names = TRUE, col_types = c("numeric","numeric","numeric","text","numeric","numeric"))
 
 
 # Matrix dimensions
@@ -36,7 +36,6 @@ txn <- c("opn","age","inc","csh","wof","exp","cpx","dpn","inta","intp","bor","cl
 # cls - closing balance
 
 act <- c(100,200,250,260,270,300,3051,3052,3053,375,376,400,410,455,500,510)                       # GL accounts
-#act <- chart$account_no
 # 100 - income
 # 200 - operating expenses
 # 250 - depreciation
@@ -74,13 +73,25 @@ rcpt2_rate <- c(0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
 
 # Create matrix and assign names and opening balances
 mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
-dimnames(mat)[[1]] <- act
+dimnames(mat)[[1]] <- chart$account_no
 dimnames(mat)[[2]] <- txn
 dimnames(mat)[[3]] <- mon
 mat[,,1][,"opn"] <- opn_bal
-mat[,,1]
-round(colSums(mat[,,1]), 3)
 
+# Insert opening balance and rollover
+mat[,"opn",1] <- sew$sew_23
+mat[,,1]
+# Update retained earning
+mat["5200","opn",1] <- mat["5200","opn",1] + sum(mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "opn" ,1]) + sum(mat[c("5201","5202"),"opn",1])
+mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "opn" ,1] <- 0
+mat[c("5201","5202"), "opn" ,1] <- 0
+# Update ARR
+mat["5100","opn",1] <- mat["5100","opn",1] + sum(mat[c("5101","5102"),"opn",1])
+mat["5121","opn",1] <- mat["5121","opn",1] + sum(mat[c("5122","5123"),"opn",1])
+mat[c("5101","5102","5122","5123"), "opn" ,1] <- 0
+# Check
+round(colSums(mat[,,1]), 3)
+mat[,,1]
 
 # Transaction loop
 for (i in 1:length(mon)) {
@@ -100,8 +111,8 @@ for (i in 1:length(mon)) {
   }
   
   # Post income
-  mat[,,i]["100", "inc"] <- -income[i]
-  mat[,,i]["3051", "inc"] <- income[i]
+  mat["1000","inc",i] <- -income[i]
+  mat["3100","inc",i] <- income[i]
   
   # Post cash receipt from aged debtors (TO DO - THIS RESULTS IN NEGATIVE AGED BALANCES)
   rcpt1 <- round(sum(mat[,,i]["3051", c("opn","age")]) * rcpt1_rate[i], 2)
@@ -184,3 +195,14 @@ mult_one <- function(var1, var2, var3)
   var1*var2*var3
 }
 mapply(mult_one, vars1, vars2, vars3)
+
+
+v1 <- c(1:9)
+v2 <- c(1,1,1,1,2,2,2,2,2)
+v1[v2 == 1]
+v1[v2 == 2]
+chart[chart$account_grp == 100, ]$account_no
+as.character(chart[chart$account_grp == 100, ]$account_no)
+mat[,,1]["3000",]
+mat[,,1][as.character(chart[chart$account_grp == 100, ]$account_no),]
+sum(mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "opn" ,1])
