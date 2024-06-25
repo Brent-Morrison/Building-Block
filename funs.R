@@ -50,26 +50,26 @@ xl_to_df <- function(file, sheet=NULL, table=NULL, date_range, cols_range, cols_
 # Depreciation
 # --------------------------------------------------------------------------------------------------------------------------
 
-path <- "SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm"
-capex <- read_xlsx("./test/SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm", range = "Capex_FO input!Q5:Z14", col_names = FALSE)
-c <- as.matrix(capex)
-c1 <- c[1,]
-c4 <- c[4,]
-c7 <- c[7,]
-c6 <- c(5,5,5,0,0,0,0,0,0,0)
-yr_op1 <- 7
-yr_op4 <- 5
-yr_op7 <- 1
-yr_op6 <- 3
-l1 <- 50
-l4 <- 50
-l7 <- 3
-l6 <- 3
+# path <- "SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm"
+# capex <- read_xlsx("./test/SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm", range = "Capex_FO input!Q5:Z14", col_names = FALSE)
+# c <- as.matrix(capex)
+# c1 <- c[1,]
+# c4 <- c[4,]
+# c7 <- c[7,]
+# c6 <- c(5,5,5,0,0,0,0,0,0,0)
+# yr_op1 <- 7
+# yr_op4 <- 5
+# yr_op7 <- 1
+# yr_op6 <- 3
+# l1 <- 50
+# l4 <- 50
+# l7 <- 3
+# l6 <- 3
 
 # Test function
-capex <- c[10,]
-yr_op <- 4
-life <- 3
+# capex <- c[10,]
+# yr_op <- 4
+# life <- 3
 
 reg_depn <- function(capex, yr_op, life) {
   
@@ -107,10 +107,41 @@ reg_depn <- function(capex, yr_op, life) {
   return(round(dpn, 4))
 }
 
-reg_depn(capex, yr_op, life)
+# reg_depn(capex, yr_op, life)
+# 
+# dpn_mtrix <- t(mapply(FUN = reg_depn, split(c, row(c)), yr_op = c(6,3,7,4,4,5,1,5,9,4), life = c(30,50,50,80,50,50,3,50,50,3)))
+# dpn_mtrix
+# 
+# colSums(dpn_mtrix)
 
-dpn_mtrix <- t(mapply(FUN = reg_depn, split(c, row(c)), yr_op = c(6,3,7,4,4,5,1,5,9,4), life = c(30,50,50,80,50,50,3,50,50,3)))
-dpn_mtrix
 
-colSums(dpn_mtrix)
 
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Optimisation / price goal seek
+# --------------------------------------------------------------------------------------------------------------------------
+
+npv_optim_func <- function(theta, pdyr, rev_req, p0, q) {
+  
+  # https://r-pkgs.org/man.html
+  # theta   - a numeric vector of length 3, regulatory rate of return, price delta 1, price delta 2
+  # pdyr    - an integer between 1 and 5 representing the year in which price delta 2 comes into effect
+  # rev_req - vector of revenue requirement
+  
+  pdpar        <- theta[-1]
+  rrr          <- theta[1]
+  
+  pdvec        <- c(rep(pdpar[1], pdyr - 1), rep(pdpar[2], 5 - pdyr + 1))
+  pd           <- exp(cumsum( log(1 + pdvec) )) - 1
+  pnew         <- p0 %*% (1 + pd)
+  r            <- pnew * q
+  
+  tot_r        <- colSums(r) / 1e6
+  npv_tot_r    <- sum(tot_r / (1 + rrr) ^ (1:length(tot_r)))* (1 + rrr) ^ 0.5
+  npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req)))* (1 + rrr) ^ 0.5
+  obj          <- (npv_rev_req - npv_tot_r) ^ 2
+  
+  return(obj)
+  
+}
