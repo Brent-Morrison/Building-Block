@@ -22,8 +22,7 @@ names(capex2) <- t(cols_date)
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Test function reading table
-# https://www.esc.vic.gov.au/sites/default/files/documents/SEW_2023%20Price%20Review%20Model%20-%202022-09-09%20-%20SUBMISSION%20FINAL.xlsm
+# Test "npv_optim_func" function
 # --------------------------------------------------------------------------------------------------------------------------
 
 library(dplyr)
@@ -71,3 +70,21 @@ q <- matrix(rep(10,10*5), ncol = 5)
 pdpar <- c(-0.057, 0)
 theta <- c(0.0255, pdpar)
 npv_optim_func(theta, pdyr=1, rev_req=c(944.25,923.41,921.62,917.46,926.28), p0, q)
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Test "reg-depn" function
+# --------------------------------------------------------------------------------------------------------------------------
+
+path <- "SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm"
+capex <- read_xlsx("./test/SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm", range = "Capex_FO input!Q5:Z14", col_names = FALSE)
+c <- as.matrix(capex)
+
+reg_depn(c, yr_op, life)
+
+dpn_mtrix <- t(mapply(FUN = reg_depn, split(c, row(c)), yr_op = c(6,3,7,4,4,5,1,5,9,4), life = c(30,50,50,80,50,50,3,50,50,3)))
+dpn_mtrix
+
+colSums(dpn_mtrix)
