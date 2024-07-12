@@ -3,48 +3,54 @@
 10,100,1001,Sewerage-Service
 10,100,1002,Trade waste-Service
 10,100,1003,Recycled water-Service
-10,100,1100,Water-Usage
-10,100,1101,Sewerage-Usage
-10,100,1102,Trade waste-Usage
-10,100,1103,Recycled water-Usage
-10,100,1200,Developer contributed assets
-10,100,1300,New customer contributions
-10,100,1400,Other revenue
-10,100,1500,Other income
+10,110,1100,Water-Usage
+10,110,1101,Sewerage-Usage
+10,110,1102,Trade waste-Usage
+10,110,1103,Recycled water-Usage
+10,120,1200,Developer contributed assets
+10,130,1300,New customer contributions
+10,150,1400,Other revenue
+10,150,1500,Other income
 10,200,2000,Operating expenses 
-10,200,2100,Employee benefits
-10,200,2200,Depreciation and amortisation
-10,200,2300,Finance costs
-10,200,2400,Environmental contribution
-10,200,2450,Income tax expense
+10,210,2100,Employee benefits
+10,220,2200,Depreciation and amortisation
+10,230,2300,Finance costs
+10,240,2400,Environmental contribution
+10,245,2450,Income tax expense
 25,250,2500,Dividends paid
 30,300,3000,Cash
-99,300,3100,Receivables
-99,300,3200,Contract assets
-99,300,3300,Other assets
-99,300,3500,"Infrastructure, property, plant and equipment "
-99,300,3600,Intangible assets
-99,300,3700,Right-of-use assets
-99,300,3800,Other financial assets
-99,300,3900,Defined benefit superannuation asset
-99,400,4000,Payables
-99,400,4100,Interest bearing liabilities
-99,400,4200,Employee benefits provision
-99,400,4300,Income tax payable
-99,400,4350,Contract liabilities
-99,400,4400,Deposits and advances
-99,400,4450,Other provisions  
-99,450,4500,Interest bearing liabilities
-99,450,4600,Deferred tax liabilities
-99,450,4700,Employee benefits provision
-99,450,4800,Other financial liabilities
-99,500,5000,Contributed equity
-99,510,5100,ARR - Land and buildings open
-99,510,5101,ARR - Land and buildings change
-99,510,5102,ARR - Land and buildings change tax
-99,510,5121,ARR - Infrastructure open
-99,510,5122,ARR - Infrastructure change
-99,510,5123,ARR - Infrastructure change tax
-99,520,5200,RE open
-99,520,5201,RE change re DBF
-99,520,5202,RE change re DBF
+30,310,3050,Accrued income
+30,310,3100,Receivables
+30,320,3200,Contract assets
+30,300,3300,Other assets
+35,300,3500,"Infrastructure, property, plant and equipment "
+35,300,3505,Infrastructure & PPE- acc depn
+35,300,3600,Intangible assets
+35,390,3645,WIP
+35,300,3700,Right-of-use assets
+35,300,3800,Other financial assets
+35,300,3900,Defined benefit superannuation asset
+40,400,4000,Payables
+40,400,4005,Accrued expenses - opex
+40,400,4010,Accrued expenses - capex
+40,400,4020,Accrued interest
+40,400,4100,Interest bearing liabilities
+40,400,4200,Employee benefits provision
+40,400,4300,Income tax payable
+40,400,4350,Contract liabilities
+40,400,4400,Deposits and advances
+40,400,4450,Other provisions  
+45,450,4500,Interest bearing liabilities
+45,450,4600,Deferred tax liabilities
+45,450,4700,Employee benefits provision
+45,450,4800,Other financial liabilities
+50,500,5000,Contributed equity
+50,510,5100,ARR - Land and buildings open
+50,510,5101,ARR - Land and buildings change
+50,510,5102,ARR - Land and buildings change tax
+50,510,5121,ARR - Infrastructure open
+50,510,5122,ARR - Infrastructure change
+50,510,5123,ARR - Infrastructure change tax
+50,520,5200,RE open
+50,520,5201,RE change re DBF
+50,520,5202,RE change re DBF

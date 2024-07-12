@@ -9,86 +9,53 @@ dat_src <- "local"   # "local" / "remote"
 
 if (dat_src == "local") {
   chart_src <- "./data/chart.csv"
+  txn_src   <- "./data/txn_type.csv"
 } else {
   chart_src <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
+  txn_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
 }
 
 chart <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
+txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
 
-sew <- read_xlsx("./data/SEW.xlsx", range = "sew!A1:F50", col_names = TRUE, col_types = c("numeric","numeric","numeric","text","numeric","numeric"))
+sew_bals <- read_xlsx("./data/SEW.xlsx", range = "bals!A1:D52", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
+sew_txns <- read_xlsx("./data/SEW.xlsx", range = "txns!A1:P25", col_names = TRUE, col_types = c("date",rep("numeric", 15)))
 
 
 # Matrix dimensions
-
-mon <- 1:6                                                                                     # Number of months
-txn <- c("opn","age","inc","csh","wof","exp","cpx","dpn","inta","intp","bor","cls")                          # Transaction types
-# opn - opening balances
-# age - re-allocate debtors ageing at month start
-# inc - posting income
-# csh - cash receipts from debtors
-# wof - debtors write-off
-# exp - posting expenses 
-# cpx - capex
-# dpn - depreciation
-# inta - interest (accrue)
-# intp - interest (pay)
-# bor - borrow if cash balance is negative
-# cls - closing balance
-
-act <- c(100,200,250,260,270,300,3051,3052,3053,375,376,400,410,455,500,510)                       # GL accounts
-# 100 - income
-# 200 - operating expenses
-# 250 - depreciation
-# 260 - interest
-# 270 - bad debts
-# 300 - cash
-# 305 - debtors
-# 375 - assets / ppe
-# 376 - acc depn
-# 400 - trade debtors
-# 410 - accrued interest
-# 455 - debt
-# 500 - equity
-# 510 - retained earnings
-opn_bal <- c(0, 0, 0, 0, 0, 18, 10, 5, 3.7, 1895.8, -58.8, -43.7, 0, -450.9, -307.8, -1071.3)     # Opening balances
-
-
-
-#dat1 <- read_xlsx("model_data.xlsx", range = "act-opn_bal!A1:B15", col_names = TRUE)
-#act <- unlist(dat1[,"act"], use.names = FALSE)
-#opn_bal <- unlist(dat1[,"opn_bal"], use.names = FALSE)
-#dat2 <- read_xlsx("model_data.xlsx", range = "txn!B2:G5", col_names = FALSE)
+mon <- 1:6   # Number of months
+txn <- unlist(txn_type[,"txn_code"], use.names = FALSE)  # Transaction types
+act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 
 
 # Transaction balances
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
-income <- c(10.5, 10.5, 10.5, 11, 11, 11)
-expenses <- c(9, 9, 9.5, 17, 17, 11)
-capex <- c(5, 3, 4, 5, 3, 4)
-depn <- c(2, 2, 1.9, 1.9, 1.8, 1.8)
-rcpt1_rate <- c(0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
-rcpt2_rate <- c(0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
-rcpt2_rate <- c(0.8, 0.8, 0.8, 0.8, 0.8, 0.8)
+incm <- unlist(sew_txns[,"incm"], use.names = FALSE)
+exp1 <- unlist(sew_txns[,"exp1"], use.names = FALSE)
+cpx1 <- unlist(sew_txns[,"cpx1"], use.names = FALSE)
+dpn1 <- unlist(sew_txns[,"dpn1"], use.names = FALSE)
 
+# Opening balances
+opn_bal <- merge(x = chart, y = sew_bals, by = "account_no", all.x = TRUE)
+opn_bal[is.na(opn_bal)] <- 0
+opn_bal <- unlist(opn_bal[,"sew_23"], use.names = FALSE)
 
 # Create matrix and assign names and opening balances
 mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
 dimnames(mat)[[1]] <- chart$account_no
 dimnames(mat)[[2]] <- txn
 dimnames(mat)[[3]] <- mon
-mat[,,1][,"opn"] <- opn_bal
+mat[,,1][,"open"] <- opn_bal
 
-# Insert opening balance and rollover
-mat[,"opn",1] <- sew$sew_23
-mat[,,1]
-# Update retained earning
-mat["5200","opn",1] <- mat["5200","opn",1] + sum(mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "opn" ,1]) + sum(mat[c("5201","5202"),"opn",1])
-mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "opn" ,1] <- 0
-mat[c("5201","5202"), "opn" ,1] <- 0
+
+# Rollover and update retained earning
+mat["5200","open",1] <- mat["5200","open",1] + sum(mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "open" ,1]) + sum(mat[c("5201","5202"),"open",1])
+mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "open" ,1] <- 0
+mat[c("5201","5202"), "open" ,1] <- 0
 # Update ARR
-mat["5100","opn",1] <- mat["5100","opn",1] + sum(mat[c("5101","5102"),"opn",1])
-mat["5121","opn",1] <- mat["5121","opn",1] + sum(mat[c("5122","5123"),"opn",1])
-mat[c("5101","5102","5122","5123"), "opn" ,1] <- 0
+mat["5100","open",1] <- mat["5100","open",1] + sum(mat[c("5101","5102"),"open",1])
+mat["5121","open",1] <- mat["5121","open",1] + sum(mat[c("5122","5123"),"open",1])
+mat[c("5101","5102","5122","5123"), "open" ,1] <- 0
 # Check
 round(colSums(mat[,,1]), 3)
 mat[,,1]
@@ -96,36 +63,46 @@ mat[,,1]
 # Transaction loop
 for (i in 1:length(mon)) {
   
-  # Opening balances & debtors ageing post loop / month 1
-  if (i > 1) {
-    
-    # Opening balances
-    mat[,,i][, "opn"] <- mat[,,i-1][, "cls"]
-    
-    # Apply debtors aging update
-    mat[,,i]["3051", "age"] <- -m12 #mat[,,i]["3051", "opn"] - m12
-    mat[,,i]["3052", "age"] <- m12  #mat[,,i]["3052", "opn"] + m12
-    
-    mat[,,i]["3052", "age"] <- -m23 #mat[,,i]["3052", "opn"] - m22
-    mat[,,i]["3053", "age"] <- m23  #mat[,,i]["3053", "opn"] + m22
-  }
+  # # Opening balances & debtors ageing post loop / month 1
+  
+  # if (i > 1) {
+  #   
+  #   # Opening balances
+  #   mat[,,i][, "opn"] <- mat[,,i-1][, "cls"]
+  #   
+  #   # Apply debtors aging update
+  #   mat[,,i]["3051", "age"] <- -m12 #mat[,,i]["3051", "opn"] - m12
+  #   mat[,,i]["3052", "age"] <- m12  #mat[,,i]["3052", "opn"] + m12
+  #   
+  #   mat[,,i]["3052", "age"] <- -m23 #mat[,,i]["3052", "opn"] - m22
+  #   mat[,,i]["3053", "age"] <- m23  #mat[,,i]["3053", "opn"] + m22
+  # }
   
   # Post income
-  mat["1000","inc",i] <- -income[i]
-  mat["3100","inc",i] <- income[i]
+  mat["1000","incm",i] <- -income[i]
+  mat["3100","incm",i] <- income[i]
   
   # Post cash receipt from aged debtors (TO DO - THIS RESULTS IN NEGATIVE AGED BALANCES)
-  rcpt1 <- round(sum(mat[,,i]["3051", c("opn","age")]) * rcpt1_rate[i], 2)
-  mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt1
-  mat[,,i]["3051", "csh"] <- -rcpt1
   
-  rcpt2 <- round(sum(mat[,,i]["3052", c("opn","age")]) * rcpt1_rate[i], 2)
-  mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt2
-  mat[,,i]["3052", "csh"] <- -rcpt2
+  # rcpt1 <- round(sum(mat[,,i]["3051", c("opn","age")]) * rcpt1_rate[i], 2)
+  # mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt1
+  # mat[,,i]["3051", "csh"] <- -rcpt1
+  # 
+  # rcpt2 <- round(sum(mat[,,i]["3052", c("opn","age")]) * rcpt1_rate[i], 2)
+  # mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt2
+  # mat[,,i]["3052", "csh"] <- -rcpt2
+  # 
+  # rcpt3 <- round(sum(mat[,,i]["3053", c("opn","age")]) * rcpt1_rate[i], 2)
+  # mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt3
+  # mat[,,i]["3053", "csh"] <- -rcpt3
   
-  rcpt3 <- round(sum(mat[,,i]["3053", c("opn","age")]) * rcpt1_rate[i], 2)
-  mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt3
-  mat[,,i]["3053", "csh"] <- -rcpt3
+  trail <- 3
+  days <- as.numeric(format(as.Date(sew_txns$month), "%d"))
+  if (i < trail) s <- 1 else s <- i - (trail - 1)
+  trail_inc <- -mean(mat["1000", "incm", s:i]) * trail
+  sum_days <- mean(days[s:i]) * trail
+  prior_bals <- mean(mat["3100", "open", s:i]) * (trail - 1)
+  rcpt <- 40 * trail_inc / sum_days * 3 - prior_bals - mat["3100", "open", i] + mat["1000", "incm", i]
   
   # Bad debts WO
   wo <- mat[,,i]["3053", "opn"] + mat[,,i]["3053", "csh"]

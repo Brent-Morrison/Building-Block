@@ -1,0 +1,14 @@
+txn_code,txn_desc,dr,cr
+open,opening balances,9999,9999
+aged,re-allocate debtors ageing at month start,9999,9999
+incm,posting income,3050,1000
+cshd,cash receipts from debtors,3000,9999
+dwof,debtors write-off,9999,9999
+exp1,posting expenses,2000,4000
+cpx1,capex,3645,4010
+cmsn,asset commission,3500,3645
+dpn1,depreciation,3505,2200
+inta,interest (accrue),2300,4020
+intp,interest (pay),4020,3000
+borr,borrow if cash balance is negative,9999,9999
+clos,closing balance,9999,9999
