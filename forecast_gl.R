@@ -8,18 +8,25 @@ dat_src <- "local"   # "local" / "remote"
 
 
 if (dat_src == "local") {
-  chart_src <- "./data/chart.csv"
-  txn_src   <- "./data/txn_type.csv"
+  chart_src   <- "./data/chart.csv"
+  txn_src     <- "./data/txn_type.csv"
+  bals_src    <- "./data/sew_bals.csv"
+  txn_dat_src <- "./data/sew_txns.csv"
 } else {
-  chart_src <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
-  txn_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
+  chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
+  txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
+  bals_src    <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/sew_bals.csv"
+  txn_dat_src <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/sew_txns.csv"
 }
 
-chart <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
+chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
 txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
+sew_bals <- read.csv(bals_src, fileEncoding="UTF-8-BOM")
+sew_txns <- read.csv(txn_dat_src, fileEncoding="UTF-8-BOM")
+sew_txns$month <- as.Date(sew_txns$month)
 
-sew_bals <- read_xlsx("./data/SEW.xlsx", range = "bals!A1:D52", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
-sew_txns <- read_xlsx("./data/SEW.xlsx", range = "txns!A1:P25", col_names = TRUE, col_types = c("date",rep("numeric", 15)))
+#sew_bals <- read_xlsx("./data/SEW.xlsx", range = "bals!A1:D52", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
+#sew_txns <- read_xlsx("./data/SEW.xlsx", range = "txns!A1:P25", col_names = TRUE, col_types = c("date",rep("numeric", 15)))
 
 
 # Matrix dimensions
@@ -45,7 +52,7 @@ mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act),
 dimnames(mat)[[1]] <- chart$account_no
 dimnames(mat)[[2]] <- txn
 dimnames(mat)[[3]] <- mon
-mat[,,1][,"open"] <- opn_bal
+mat[ , "open", 1] <- opn_bal
 
 
 # Rollover and update retained earning
@@ -63,38 +70,16 @@ mat[,,1]
 # Transaction loop
 for (i in 1:length(mon)) {
   
-  # # Opening balances & debtors ageing post loop / month 1
-  
+  # Opening balances & debtors ageing post loop / month 1
   if (i > 1) {
    
     # Opening balances
     mat[, "open", i] <- mat[, "clos", i-1]
-     
-  #   # Apply debtors aging update
-  #   mat[,,i]["3051", "age"] <- -m12 #mat[,,i]["3051", "opn"] - m12
-  #   mat[,,i]["3052", "age"] <- m12  #mat[,,i]["3052", "opn"] + m12
-  #   
-  #   mat[,,i]["3052", "age"] <- -m23 #mat[,,i]["3052", "opn"] - m22
-  #   mat[,,i]["3053", "age"] <- m23  #mat[,,i]["3053", "opn"] + m22
+
   }
   
   # Post income
-  mat["1000", "incm", i] <- -incm[i]
-  mat["3100", "incm", i] <- incm[i]
-  
-  # Post cash receipt from aged debtors (TO DO - THIS RESULTS IN NEGATIVE AGED BALANCES)
-  
-  # rcpt1 <- round(sum(mat[,,i]["3051", c("opn","age")]) * rcpt1_rate[i], 2)
-  # mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt1
-  # mat[,,i]["3051", "csh"] <- -rcpt1
-  # 
-  # rcpt2 <- round(sum(mat[,,i]["3052", c("opn","age")]) * rcpt1_rate[i], 2)
-  # mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt2
-  # mat[,,i]["3052", "csh"] <- -rcpt2
-  # 
-  # rcpt3 <- round(sum(mat[,,i]["3053", c("opn","age")]) * rcpt1_rate[i], 2)
-  # mat[,,i]["300", "csh"] <- mat[,,i]["300", "csh"] + rcpt3
-  # mat[,,i]["3053", "csh"] <- -rcpt3
+  mat[c("3100", "1000"), "incm", i] <- c(incm[i], -incm[i])
   
   # Cash receipt to specify desired closing balance for debtors days parameter 
   trail <- 3
@@ -105,47 +90,36 @@ for (i in 1:length(mon)) {
   prior_bals <- mean(mat["3100", "open", (s+1):i]) * (trail - 1)
   rcpt <- abs(40 * trail_inc / sum_days * 3 - prior_bals - mat["3100", "open", i] + mat["1000", "incm", i])
   
-  mat["3000", "cshd", i] <- rcpt
-  mat["3100", "cshd", i] <- -rcpt
+  mat[c("3000", "3100"), "cshd", i] <- c(rcpt, -rcpt)
   
-  
-  # # Bad debts WO
+  # Bad debts WO
   # wo <- mat[,,i]["3053", "opn"] + mat[,,i]["3053", "csh"]
   # mat[,,i]["3053", "wof"] <- -wo
   # mat[,,i]["270", "wof"] <- wo
   
   # Expenses
-  mat["2000", "exp1", i] <- exp1[i]
-  mat["3000", "exp1", i] <- -exp1[i]
+  mat[c("2000", "3000"), "exp1", i] <- c(exp1[i], -exp1[i])
   
   # Capex
-  mat["3500", "cpx1", i] <- cpx1[i] 
-  mat["3000", "cpx1", i] <- -cpx1[i]
+  mat[c("3500", "3000"), "cpx1", i] <- c(cpx1[i], -cpx1[i])
   
   # Interest (accrue)
-  mat["2300", "inta", i] <- -mat["4500", "open", i] * 0.05 / 12
-  mat["4020", "inta", i] <- mat["4500", "open", i] * 0.05 / 12
+  int <- mat["4500", "open", i] * 0.05 / 12
+  mat[c("2300", "4020"), "inta", i] <- c(-int, int)
   
   # Interest (pay quarterly)
   if (i %in% c(3,6,9,12)) {
     mat["4020", "intp", i] <- -mat["4020", "open", i]
     mat["3000", "intp", i] <- mat["4020", "open", i]
-    #print(mat[,,i]["410", "opn"])
   }
   
   # Depn
-  mat["2200", "dpn1", i] <- dpn1[i]
-  mat["3505", "dpn1", i] <- -dpn1[i] 
-  
-  # # Collect data for updating debtors aging (applied after rollover to following period)
-  # m12 <- sum(mat[,,i]["3051", c("opn","age","csh")])   # DR 3052 / CR 3051
-  # m23 <- sum(mat[,,i]["3052", c("opn","age","csh")])   # DR 3053 / CR 3052
+  mat[c("2200", "3505"), "dpn1", i] <- c(dpn1[i], -dpn1[i])
   
   # Determine if borrowings required
   cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])
   if (cash_bal < 0) {
-    mat["3000", "borr", i] <- 10000
-    mat["4100", "borr", i] <- -10000
+    mat[c("3000", "4100"), "borr", i] <- c(10000,-10000)
   }
   
   # Update closing balance
