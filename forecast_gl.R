@@ -4,7 +4,7 @@
 
 library(readxl)
 
-dat_src <- "local"   # "local" / "remote"
+dat_src <- "remote"   # "local" / "remote"
 
 
 if (dat_src == "local") {
