@@ -1,14 +1,22 @@
 txn_code,txn_desc,dr,cr
 open,opening balances,9999,9999
 aged,re-allocate debtors ageing at month start,9999,9999
-incm,posting income,3050,1000
-cshd,cash receipts from debtors,3000,9999
-dwof,debtors write-off,9999,9999
+aidb,accrued income,3050,1000
+incm,accrued income to debtors,3100,3050
+cshd,cash receipts from debtors,3000,3100
+prdd,provision for doubtful debts,2350,3110
+dwof,debtors write-off,3110,3000
 exp1,posting expenses,2000,4000
-cpx1,capex,3645,4010
+crd1,cash payment re trade creditors,4000,3000
+cpx1,capex / wip,3645,4010
 cmsn,asset commission,3500,3645
-dpn1,depreciation,3505,2200
+wipc,cash payment re capex creditors,4010,3000
+gift,receipt of gifted assets,3645,1200
+dpn1,depreciation,2200,3505
 inta,interest (accrue),2300,4020
 intp,interest (pay),4020,3000
-borr,borrow if cash balance is negative,9999,9999
+borr,borrow if cash balance is negative,3000,4100
+saas,asset sale - asset,1500,3500
+sade,asset sale - depn,3505,1500
+saca,asset sale - cash,3000,1500
 clos,closing balance,9999,9999

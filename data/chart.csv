@@ -15,12 +15,14 @@
 10,210,2100,Employee benefits
 10,220,2200,Depreciation and amortisation
 10,230,2300,Finance costs
+10,235,2350,Doubtful debts expense
 10,240,2400,Environmental contribution
 10,245,2450,Income tax expense
 25,250,2500,Dividends paid
 30,300,3000,Cash
 30,310,3050,Accrued income
-30,310,3100,Receivables
+30,310,3100,Trade debtors
+30,310,3110,Provision for doubtful debts
 30,320,3200,Contract assets
 30,300,3300,Other assets
 35,300,3500,"Infrastructure, property, plant and equipment "
@@ -30,7 +32,7 @@
 35,300,3700,Right-of-use assets
 35,300,3800,Other financial assets
 35,300,3900,Defined benefit superannuation asset
-40,400,4000,Payables
+40,400,4000,Trade creditors
 40,400,4005,Accrued expenses - opex
 40,400,4010,Accrued expenses - capex
 40,400,4020,Accrued interest

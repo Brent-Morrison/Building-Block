@@ -4,7 +4,7 @@
 
 library(readxl)
 
-dat_src <- "remote"   # "local" / "remote"
+dat_src <- "local"   # "local" / "remote"
 
 
 if (dat_src == "local") {
@@ -21,6 +21,7 @@ if (dat_src == "local") {
 
 chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
 txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
+rownames(txn_type) <- txn_type$txn_code
 sew_bals <- read.csv(bals_src, fileEncoding="UTF-8-BOM")
 sew_txns <- read.csv(txn_dat_src, fileEncoding="UTF-8-BOM")
 sew_txns$month <- as.Date(sew_txns$month)
@@ -79,6 +80,7 @@ for (i in 1:length(mon)) {
   }
   
   # Post income
+  # as.character(unname(unlist(txn_type["incm", c("dr", "cr")])))
   mat[c("3100", "1000"), "incm", i] <- c(incm[i], -incm[i])
   
   # Cash receipt to specify desired closing balance for debtors days parameter 
