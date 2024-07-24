@@ -50,7 +50,7 @@ opn_bal <- unlist(opn_bal[,"sew_23"], use.names = FALSE)
 
 # Create matrix and assign names and opening balances
 mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
-dimnames(mat)[[1]] <- chart$account_no
+dimnames(mat)[[1]] <- act  #chart$account_no
 dimnames(mat)[[2]] <- txn
 dimnames(mat)[[3]] <- mon
 mat[ , "open", 1] <- opn_bal
@@ -134,6 +134,35 @@ t(mat["3100",,])
 
 # Check balances
 round(colSums(mat[,,6]), 3)
+
+
+
+# ------------------------------------------------------------
+# Stack 3 dim array and unpivot
+
+
+mat1 <- mat
+dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
+mat1
+
+df <- expand.grid(act = act, txn = txn, mon = mon)
+df$mtd <- mat1[,1]
+
+# Cumulative sum
+df1 <- df[df$txn %in% txn[-c(1, length(txn))], ]
+df1$yr <- round(df1$mon / 12, 0) + 1
+df1$ltd <- ave(df1$mtd, df1$act, df1$txn, FUN=cumsum)
+df1$ytd <- ave(df1$mtd, df1$act, df1$txn, df1$yr, FUN=cumsum)
+
+
+
+
+
+
+
+
+
+
 
 # Create YTD matrix
 new_mat <- rowSums(mat, dims = 2)
