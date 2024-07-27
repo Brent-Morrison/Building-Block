@@ -75,13 +75,11 @@ npv_optim_func(theta, pdyr=1, rev_req=c(944.25,923.41,921.62,917.46,926.28), p0,
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Test "reg-depn" function
+# Test "depn_fun" function
 # --------------------------------------------------------------------------------------------------------------------------
 
 source("funs.R")
 library(readxl)
-
-path <- "SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm"
 
 # Extract capex data
 capex <- read_xlsx("./test/SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm", range = "Capex_FO input!Q5:Z14", col_names = FALSE)
@@ -95,14 +93,14 @@ result <- read_xlsx("./test/SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm
 
 
 # Single line calculation
-dpn_line <- reg_depn(c[1,], yr_op = life_yr_op$yr_op[1], life = life_yr_op$`Asset life (Regulatory)`[1])
+dpn_line <- depn_fun(c[1,], yr_op = life_yr_op$yr_op[1], life = life_yr_op$`Asset life (Regulatory)`[1])
 dpn_line
 
 # Test equality
 all.equal(round(dpn_line, 4), round(unlist(result[1,], use.names = FALSE), 4))
 
 # Matrix calculation
-dpn_mtrix <- t(mapply(FUN = reg_depn, split(c, row(c)), yr_op = life_yr_op$yr_op, life = life_yr_op$`Asset life (Regulatory)`))
+dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = life_yr_op$yr_op, life = life_yr_op$`Asset life (Regulatory)`))
 dpn_mtrix
 
 # Test equality

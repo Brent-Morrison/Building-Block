@@ -50,54 +50,48 @@ xl_to_df <- function(file, sheet=NULL, table=NULL, date_range, cols_range, cols_
 # Depreciation
 # --------------------------------------------------------------------------------------------------------------------------
 
-# path <- "SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm"
-# capex <- read_xlsx("./test/SEW_2023 Price Review Model - 2022-09-09 - DEPN.xlsm", range = "Capex_FO input!Q5:Z14", col_names = FALSE)
-# c <- as.matrix(capex)
-# c1 <- c[1,]
-# c4 <- c[4,]
-# c7 <- c[7,]
-# c6 <- c(5,5,5,0,0,0,0,0,0,0)
-# yr_op1 <- 7
-# yr_op4 <- 5
-# yr_op7 <- 1
-# yr_op6 <- 3
-# l1 <- 50
-# l4 <- 50
-# l7 <- 3
-# l6 <- 3
-
-# Test function
-# capex <- c[10,]
-# yr_op <- 4
-# life <- 3
-
-reg_depn <- function(capex, yr_op, life) {
+depn_fun <- function(capex, yr_op, life) {
   
+  # capex - a numeric vector representing the time series of capital expenditure to be depreciated
+  # yr_op - year operational, an integer representing the first period in which the capex is depreciated
+  # life  - an integer representing the asset expected life
+  
+  # Initialise an object (ac) to hold capex up to and post the year in which the asset is operational and indices
   ac <- rep(0,length(capex))
   ind <- 1:length(capex)
   
+  # Create vector of capex up to and post the year in which the asset is operational
   if (yr_op == 1) {
     ac <- capex
   } else {
     ac[ind <  yr_op] <- 0
     ac[ind == yr_op] <- sum(capex[ind <= yr_op])
     ac[ind >  yr_op] <- capex[ind >  yr_op]
-    
   }
   
+  # Matrix containing the amended capex times series (ac) on the diagonal
+  # Near zero added to avoid divide by nil error
   cpx.m <- diag(as.vector(ac)) + diag(rep(1e-9, length(ac)))
+  
+  # Initial year depn
   yr1.dpn <- cpx.m / life * 0.5
+  
+  # Subsequent years depn - inserted both sides of diagonal
   yr2p.dpn <- cpx.m
   for (i in 1:ncol(yr2p.dpn)) {
     yr2p.dpn[i,][yr2p.dpn[i,] == 0] <- rep(diag(yr2p.dpn)[i] / life, ncol(cpx.m) - 1)
   }
+  
+  # Columns represents time period so remove diagonal (capex) and left thereof (prior period depn)
   yr2p.dpn[lower.tri(yr2p.dpn, diag = TRUE)] <- 0
+  
+  # Add year 1 depn
   dpn <- yr1.dpn + yr2p.dpn
   
-  # Filter out later years here
+  # Remove depn that exceeds expected life,add final year depn (sameas initial year)
   for (i in 1:ncol(dpn)) {
     if (i + life <= ncol(dpn)) {
-      dpn[i,][i + life]         <- dpn[i,][i + life] * 0.5
+      dpn[i,][i + life] <- dpn[i,][i + life] * 0.5
       dpn[i,][ind > (i + life)] <- 0
     }
   }
@@ -107,12 +101,6 @@ reg_depn <- function(capex, yr_op, life) {
   return(round(dpn, 4))
 }
 
-# reg_depn(capex, yr_op, life)
-# 
-# dpn_mtrix <- t(mapply(FUN = reg_depn, split(c, row(c)), yr_op = c(6,3,7,4,4,5,1,5,9,4), life = c(30,50,50,80,50,50,3,50,50,3)))
-# dpn_mtrix
-# 
-# colSums(dpn_mtrix)
 
 
 
