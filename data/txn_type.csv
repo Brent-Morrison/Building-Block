@@ -9,6 +9,7 @@ dwof,debtors write-off,3110,3000
 exp1,posting expenses,2000,4000
 crd1,cash payment re trade creditors,4000,3000
 cpx1,capex / wip,3645,4010
+ohed,ohead allocation,2000,3645
 cmsn,asset commission,3500,3645
 wipc,cash payment re capex creditors,4010,3000
 gift,receipt of gifted assets,3645,1200

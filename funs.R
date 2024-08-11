@@ -52,9 +52,10 @@ xl_to_df <- function(file, sheet=NULL, table=NULL, date_range, cols_range, cols_
 
 depn_fun <- function(capex, yr_op, life) {
   
-  # capex - a numeric vector representing the time series of capital expenditure to be depreciated
-  # yr_op - year operational, an integer representing the first period in which the capex is depreciated
-  # life  - an integer representing the asset expected life
+  # capex   - a numeric vector representing the time series of capital expenditure to be depreciated
+  # yr_op   - year operational, an integer representing the first period in which the capex is depreciated
+  # life    - an integer representing the asset expected life
+  # returns - vector of yearly depreciation (straight line basis)
   
   # Initialise an object (ac) to hold capex up to and post the year in which the asset is operational and indices
   ac <- rep(0,length(capex))
@@ -113,16 +114,18 @@ depn_fun <- function(capex, yr_op, life) {
 npv_optim_func <- function(theta, pdyr, rev_req, p0, q) {
   
   # https://r-pkgs.org/man.html
-  # theta   - a numeric vector of length 3, regulatory rate of return, price delta 1, price delta 2
+  # theta   - a numeric vector of length 4 being regulatory rate of return, price delta 1, 2 and 3
   # pdyr    - an integer between 1 and 5 representing the year in which price delta 2 comes into effect
-  # rev_req - vector of revenue requirement
+  # rev_req - vector of revenue requirement (length 5)
+  # p0      - matrix of initial prices, dimension n * 1 
+  # retuns  - error, the difference between two net present values
   
   pdpar        <- theta[-1]
   rrr          <- theta[1]
   
-  pdvec        <- c(rep(pdpar[1], pdyr - 1), rep(pdpar[2], 5 - pdyr + 1))
-  pd           <- exp(cumsum( log(1 + pdvec) )) - 1
-  pnew         <- p0 %*% (1 + pd)
+  pdvec        <- c(rep(pdpar[1], if (pdyr == 1) 1 else pdyr - 1), pdpar[2], rep(pdpar[3], (if (pdyr == 1) 4 else 5) - pdyr))
+  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1
+  pnew         <- p0 %*% (1 + pdcum)
   r            <- pnew * q
   
   tot_r        <- colSums(r) / 1e6

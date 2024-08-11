@@ -25,51 +25,82 @@ names(capex2) <- t(cols_date)
 # Test "npv_optim_func" function
 # --------------------------------------------------------------------------------------------------------------------------
 
+source("funs.R")
+library(readxl)
 library(dplyr)
+path <- "./test/optim_eg.xlsx"
 
-# Data
-pqr <- read_xlsx(path, range = paste0("RevenuePriceCap_FO","!","E68:AL443"), col_names = TRUE)
+# Price, quantity, revenue data
+pqr <- read_xlsx(path, range = "Sheet1!A13:L94", col_names = TRUE)
+
+# Quantities
 q <- as.matrix(pqr %>% filter(PQR == 'Qty') %>% select(`2023-24`:`2027-28`)) #select(c(PQR:Unit,`2023-24`:`2027-28`))
 q[is.na(q)] <- 0
 
+# Prices
 p <- as.matrix(pqr %>% filter(PQR == 'Price') %>% select(`2023-24`:`2027-28`)) #select(c(PQR:Unit,`2023-24`:`2027-28`))
 p[is.na(p)] <- 0
 
-r <- p* q
+# Revenue
+r <- p * q
 
 tariff_revenue <- colSums(r) / 1e6
 tariff_revenue
-sum(tariff_revenue)  # should sum to 4,571.47
+sum(tariff_revenue)  # should sum to 4,377.645
 
 
 # Get period zero prices
-p0 <- as.matrix(pqr %>% filter(PQR == 'Price') %>% select(`2022-23`)) #select(c(PQR:Unit,`2023-24`:`2027-28`))
+p0 <- as.matrix(pqr %>% filter(PQR == 'Price') %>% select(`2022-23`)) 
 p0[is.na(p0)] <- 0
 
 
-# Define price delta (pd) & convert to cumulative change for matrix multiplication
-pd1 <- c(rep(0, 2), rep(0.0483, 3))            # option 1, zero in first two years
-pd2 <- c(rep(0.009, 2), rep(0.025, 3))         # option 2, 0.9% in first year
-
-pdyr <- 2                                                 # Price delta year
-pdpar <- c(0.009, 0.025)                                  # Price delta to optimise (parameter)
-pdvec <- c(rep(pdpar[1], pdyr - 1), rep(pdpar[2], 5 - pdyr + 1))  # Vector of price changes
-pd <- exp(cumsum( log(1 + pdvec) )) - 1
-pnew <- p0 %*% (1 + pd)
+pdyr <- 1                                                                                       # Price delta year
+pdpar <- c(0.059, 0, 0)                                                                             # Price delta to optimise (parameter)
+# Vector of price changes
+pdvec <- c(rep(pdpar[1], if (pdyr == 1) 1 else pdyr - 1), pdpar[2], rep(pdpar[3], (if (pdyr == 1) 4 else 5) - pdyr))
+pdcum <- exp( cumsum( log( 1 + pdvec ) ) ) - 1                                                  # Convert to cumulative change for matrix multiplication
+pnew <- p0 %*% (1 + pdcum)
 
 r <- pnew * q
 tariff_revenue <- colSums(r) / 1e6
 tariff_revenue
 sum(tariff_revenue)
 
-p0 <- matrix(rep(10,10), ncol = 1)
-q <- matrix(rep(10,10*5), ncol = 5)
+#p0 <- matrix(rep(10,10), ncol = 1)
+#q <- matrix(rep(10,10*5), ncol = 5)
 
 
-# Test function
-pdpar <- c(-0.057, 0)
+# Test function ---------------------------------
+pdpar <- c(0.059, 0, 0)     # 6.231086e-02 / 0.029
 theta <- c(0.0255, pdpar)
-npv_optim_func(theta, pdyr=1, rev_req=c(944.25,923.41,921.62,917.46,926.28), p0, q)
+npv_optim_func(theta, pdyr=1, rev_req=c(944.2496,923.408,921.6224,917.4634,926.2756), p0, q)
+
+
+# Perform optimisation --------------------------
+optim(
+  
+  # Initial values for the parameters to be optimized over
+  par = c(0.0255, 0, 0, 0),
+  
+  # Function to be minimized, first argument being vector of parameters over which minimization is applied
+  fn  = npv_optim_func,
+  
+  method = "L-BFGS-B",
+  
+  # Upper & lower constraints for parameters
+  lower = c(0.0255 - .Machine$double.eps, -0.1, 0-.Machine$double.eps, 0-.Machine$double.eps),
+  upper = c(0.0255 + .Machine$double.eps,  0.1, 0+.Machine$double.eps, 0+.Machine$double.eps),
+  
+  # ... Further arguments to be passed to fn
+  pdyr    = 1,
+  rev_req = c(944.2496,923.408,921.6224,917.4634,926.2756),
+  p0      = p0,
+  q       = q
+  
+)
+
+
+
 
 
 
