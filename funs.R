@@ -129,10 +129,37 @@ npv_optim_func <- function(theta, pdyr, rev_req, p0, q) {
   r            <- pnew * q
   
   tot_r        <- colSums(r) / 1e6
-  npv_tot_r    <- sum(tot_r / (1 + rrr) ^ (1:length(tot_r)))* (1 + rrr) ^ 0.5
-  npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req)))* (1 + rrr) ^ 0.5
+  npv_tot_r    <- sum(tot_r / (1 + rrr) ^ (1:length(tot_r))) * (1 + rrr) ^ 0.5
+  npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
   obj          <- (npv_rev_req - npv_tot_r) ^ 2
   
   return(obj)
   
+}
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# ROU / lease schedule
+# --------------------------------------------------------------------------------------------------------------------------
+
+lease_pay <- 10000
+periods <- 12
+rate <- 0.07
+mat <- matrix(rep(0, periods * 7), nrow = periods)
+dimnames(mat)[[1]] <- 1:periods
+dimnames(mat)[[2]] <- c("open_liab","payment","interest","clos_liab","open_depn","depn_exp","clos_depn")
+pays <- rep(lease_pay, periods)
+for (i in 1:length(pays)) {
+  pays_ <- pays[i:length(pays)]
+  oll <- sum(pays_ / (1 + rate / 12) ^ (1:length(pays_)))
+  mat[i,"open_liab"] <- -round(oll,2)
+  mat[i,"payment"]   <- round(lease_pay,2)
+  mat[i,"interest"]  <- round(mat[i,"open_liab"] * rate / 12 , 2)
+  mat[i,"clos_liab"] <- sum(mat[i,1:3])
+  mat[i,"open_depn"] <- if(i == 1) 0 else mat[i - 1, "clos_depn"]
+  mat[i,"depn_exp"]  <- round(mat[1, "open_liab"] / periods, 2)
+  mat[i,"clos_depn"] <- sum(mat[i,5:6])
 }

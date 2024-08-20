@@ -31,7 +31,7 @@ sew_txns$month <- as.Date(sew_txns$month)
 
 
 # Matrix dimensions
-mon <- 1:12   # Number of months
+mon <- 1:24   # Number of months
 txn <- unlist(txn_type[,"txn_code"], use.names = FALSE)  # Transaction types
 act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 
@@ -140,22 +140,23 @@ round(colSums(mat[,,6]), 3)
 # ------------------------------------------------------------
 # Stack 3 dim array and unpivot
 
-
 mat1 <- mat
 dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
-mat1
 
 df <- expand.grid(act = act, txn = txn, mon = mon)
 df$mtd <- mat1[,1]
 
+# Filter zeros and remove opening and closing balances
+df1 <- df[df$mtd != 0, ]
+df1 <- df1[df1$txn %in% txn[-c(1, length(txn))], ]
+
 # Cumulative sum
-df1 <- df[df$txn %in% txn[-c(1, length(txn))], ]
-df1$yr <- round(df1$mon / 12, 0) + 1
+df1$yr <- ceiling(df1$mon / 12)
 df1$ltd <- ave(df1$mtd, df1$act, df1$txn, FUN=cumsum)
 df1$ytd <- ave(df1$mtd, df1$act, df1$txn, df1$yr, FUN=cumsum)
+df1 <- df1[with(df1, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]
 
-
-
+df1[df1$yr == 2 & df$mon < 17 & df1$act == "4100", ] # 
 
 
 
