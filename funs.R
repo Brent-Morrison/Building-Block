@@ -113,12 +113,14 @@ depn_fun <- function(capex, yr_op, life) {
 
 npv_optim_func <- function(theta, pdyr, rev_req, p0, q) {
   
-  # https://r-pkgs.org/man.html
-  # theta   - a numeric vector of length 4 being regulatory rate of return, price delta 1, 2 and 3
-  # pdyr    - an integer between 1 and 5 representing the year in which price delta 2 comes into effect
-  # rev_req - vector of revenue requirement (length 5)
-  # p0      - matrix of initial prices, dimension n * 1 
-  # retuns  - error, the difference between two net present values
+  # Args:
+  #   theta   - a numeric vector of length 4 being regulatory rate of return, price delta 1, 2 and 3
+  #   pdyr    - an integer between 1 and 5 representing the year in which price delta 2 comes into effect
+  #   rev_req - vector of revenue requirement (length 5)
+  #   p0      - matrix of initial prices, dimension n * 1 
+  #
+  # Returns:
+  #   error, the difference between two net present values
   
   pdpar        <- theta[-1]
   rrr          <- theta[1]
@@ -147,6 +149,16 @@ npv_optim_func <- function(theta, pdyr, rev_req, p0, q) {
 
 rou_func <- function(lease_pay, periods, rate) {
   
+  # Create a leease schedule detailing repayment, interest component & depreciation
+  #
+  # Args:
+  #   lease_pay - the lease payment
+  #   periods   - number of periods in the lease contract
+  #   rate      - discount rate to be used in calculating the right of use asset / lease liability
+  #
+  # Returns:
+  #   matrix being
+  
   mat <- matrix(rep(0, periods * 7), nrow = periods)
   dimnames(mat)[[1]] <- 1:periods
   dimnames(mat)[[2]] <- c("open_liab","payment","interest","clos_liab","open_depn","depn_exp","clos_depn")
@@ -167,3 +179,29 @@ rou_func <- function(lease_pay, periods, rate) {
   return(mat)
 }
 
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Depreciation on opening RAB
+# --------------------------------------------------------------------------------------------------------------------------
+
+depn_fun_opn <- function(open_rab_val, open_rab_rem) {
+  
+  # Create a series of depreciation charges for an opening asset base
+  #
+  # Args:
+  #   open_rab_val - value of the opening Regulatory Asset Base
+  #   open_rab_rem -  the remaining life of the opening Regulatory Asset Base
+  # 
+  # Returns
+  #   a series of depreciation charges
+  
+  open_rab_depn <- open_rab_val / open_rab_rem
+  depn1 <- rep(round(open_rab_depn, 2), floor(open_rab_rem))
+  depn2 <- open_rab_val - sum(depn1)
+  depn <- c(depn1, depn2)
+  
+  return(depn)
+}

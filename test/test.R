@@ -31,7 +31,7 @@ library(dplyr)
 path <- "./test/optim_eg.xlsx"
 
 # Price, quantity, revenue data
-pqr <- read_xlsx(path, range = "Sheet1!A13:L94", col_names = TRUE)
+pqr <- read_xlsx(path, range = "optim!A13:L94", col_names = TRUE)
 
 # Quantities
 q <- as.matrix(pqr %>% filter(PQR == 'Qty') %>% select(`2023-24`:`2027-28`)) #select(c(PQR:Unit,`2023-24`:`2027-28`))
