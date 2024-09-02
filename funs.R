@@ -111,21 +111,23 @@ depn_fun <- function(capex, yr_op, life) {
 # Optimisation / price goal seek
 # --------------------------------------------------------------------------------------------------------------------------
 
-npv_optim_func <- function(theta, pdyr, rev_req, p0, q) {
+npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn="objective") {
   
   # Args:
-  #   theta   - a numeric vector of length 4 being regulatory rate of return, price delta 1, 2 and 3
-  #   pdyr    - an integer between 1 and 5 representing the year in which price delta 2 comes into effect
+  #   theta   - a numeric vector of length 2 being regulatory rate of return and price delta
+  #   pdyr    - an integer between 0 and 5 representing the year in which price delta 2 comes into effect
+  #             , a value of zero returns an even price delta for each year 
   #   rev_req - vector of revenue requirement (length 5)
   #   p0      - matrix of initial prices, dimension n * 1 
   #
   # Returns:
   #   error, the difference between two net present values
   
-  pdpar        <- theta[-1]
-  rrr          <- theta[1]
+  pdpar        <- theta[-1]  # price delta
+  rrr          <- theta[1]   # regulatory rate of return
   
-  pdvec        <- c(rep(pdpar[1], if (pdyr == 1) 1 else pdyr - 1), pdpar[2], rep(pdpar[3], (if (pdyr == 1) 4 else 5) - pdyr))
+  pdvec        <- rep(pdpar, 5)
+  pdvec[(1:5)[-pdyr]] <- 0
   pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1
   pnew         <- p0 %*% (1 + pdcum)
   r            <- pnew * q
@@ -135,7 +137,7 @@ npv_optim_func <- function(theta, pdyr, rev_req, p0, q) {
   npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
   obj          <- (npv_rev_req - npv_tot_r) ^ 2
   
-  return(obj)
+  ifelse(rtn == "objective", return(obj), return(pnew))
   
 }
 

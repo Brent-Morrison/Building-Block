@@ -69,10 +69,10 @@ rev_req <- roa + opex + dpn
 
 
 # Perform optimisation ---------------------------------------------------
-optim(
+res <- optim(
   
   # Initial values for the parameters to be optimized over
-  par = c(0.0255, 0, 0, 0),
+  par = c(0.0255, 0),
   
   # Function to be minimized, first argument being vector of parameters over which minimization is applied
   fn  = npv_optim_func,
@@ -80,8 +80,8 @@ optim(
   method = "L-BFGS-B",
   
   # Upper & lower constraints for parameters
-  lower = c(0.0255 - .Machine$double.eps, -0.1, 0-.Machine$double.eps, 0-.Machine$double.eps),
-  upper = c(0.0255 + .Machine$double.eps,  0.1, 0+.Machine$double.eps, 0+.Machine$double.eps),
+  lower = c(0.0255 - .Machine$double.eps, -0.5),
+  upper = c(0.0255 + .Machine$double.eps,  0.5),
   
   # ... Further arguments to be passed to fn
   pdyr    = 1,
@@ -90,3 +90,6 @@ optim(
   q       = c(100,102,104,106,108)
   
 )
+res
+
+npv_optim_func(theta=res$par, pdyr=0, rev_req=rev_req, p0=as.matrix(10), q=c(100,102,104,106,108), rtn="xxx")
