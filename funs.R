@@ -111,7 +111,7 @@ depn_fun <- function(capex, yr_op, life) {
 # Optimisation / price goal seek
 # --------------------------------------------------------------------------------------------------------------------------
 
-npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn="objective") {
+npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn_mode="obj") {
   
   # Args:
   #   theta   - a numeric vector of length 2 being regulatory rate of return and price delta
@@ -137,7 +137,10 @@ npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn="objective") {
   npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
   obj          <- (npv_rev_req - npv_tot_r) ^ 2
   
-  ifelse(rtn == "objective", return(obj), return(pnew))
+  rtn_list <- list(price_delta = pdvec, prices = pnew)
+  #names(rtn_list) <- c("price_delta","prices")
+  
+  ifelse(rtn_mode == "obj", return(obj), return(rtn_list))
   
 }
 

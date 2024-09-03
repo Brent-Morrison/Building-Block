@@ -55,7 +55,7 @@ p0[is.na(p0)] <- 0
 
 
 pdyr <- 1                                                                                       # Price delta year
-pdpar <- c(0.059, 0, 0)                                                                             # Price delta to optimise (parameter)
+pdpar <- c(0.059, 0, 0)                                                                         # Price delta to optimise (parameter)
 # Vector of price changes
 #pdvec <- c(rep(pdpar[1], if (pdyr == 1) 1 else pdyr - 1), pdpar[2], rep(pdpar[3], (if (pdyr == 1) 4 else 5) - pdyr))
 pdvec <- rep(pdpar, 5)
@@ -73,12 +73,12 @@ sum(tariff_revenue)
 
 
 # Test function ---------------------------------
-theta <- c(0.0255, 0.01940774)
+theta <- c(0.0255, 0)
 npv_optim_func(theta, pdyr=0, rev_req=c(944.2496,923.408,921.6224,917.4634,926.2756), p0, q)
 
 
 # Perform optimisation --------------------------
-optim(
+res <-optim(
   
   # Initial values for the parameters to be optimized over
   par = c(0, 0),
@@ -100,9 +100,13 @@ optim(
   
 )
 
+res
 
+res_list <- npv_optim_func(theta=res$par, pdyr=0, rev_req=c(944.2496,923.408,921.6224,917.4634,926.2756), p0=p0, q=q, rtn="xxx")
+res_list$price_delta
+res_list$prices
 
-
+sum(res_list$prices * q) / 1e6
 
 
 
