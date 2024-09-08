@@ -1,0 +1,603 @@
+"","entity","service","cost_driver","asset_category","year_operational","regulatory_life","tax_life","amount","balance_type","year"
+"1","sew","Recycled Water","Growth","Corporate","Ongoing",0,0,7.093511,"gross_capex",2024
+"2","sew","Recycled Water","Growth","Corporate","Ongoing",0,0,7.093511,"gross_capex",2025
+"3","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.033458,"gross_capex",2024
+"4","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.033458,"gross_capex",2025
+"5","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.033458,"gross_capex",2026
+"6","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.032814,"gross_capex",2027
+"7","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.032492,"gross_capex",2028
+"8","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.057768,"gross_capex",2029
+"9","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.057768,"gross_capex",2030
+"10","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.057768,"gross_capex",2031
+"11","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.057768,"gross_capex",2032
+"12","sew","Recycled Water","Growth","Corporate","Ongoing",5,5,0.057768,"gross_capex",2033
+"13","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,1.802696,"gross_capex",2024
+"14","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,1.800692,"gross_capex",2025
+"15","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,1.822048,"gross_capex",2026
+"16","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,1.778161,"gross_capex",2027
+"17","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,1.733351,"gross_capex",2028
+"18","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,1.788988,"gross_capex",2029
+"19","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,3.115627,"gross_capex",2030
+"20","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,3.115627,"gross_capex",2031
+"21","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,2.432555,"gross_capex",2032
+"22","sew","Recycled Water","Growth","Corporate","Ongoing",10,10,1.531966,"gross_capex",2033
+"23","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,0.210178,"gross_capex",2024
+"24","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,3.340781,"gross_capex",2025
+"25","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,6.503962,"gross_capex",2026
+"26","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,9.458015,"gross_capex",2027
+"27","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,9.458015,"gross_capex",2028
+"28","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,6.05313,"gross_capex",2029
+"29","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,6.05313,"gross_capex",2030
+"30","sew","Recycled Water","Growth","Pipelines/network","2025-26",50,50,12.529,"gov_cont",2024
+"31","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,19.89867,"gross_capex",2024
+"32","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,9.482901,"gross_capex",2025
+"33","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,9.997838,"gross_capex",2026
+"34","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,9.262214,"gross_capex",2027
+"35","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,9.514428,"gross_capex",2028
+"36","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,18.212041,"gross_capex",2029
+"37","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,18.926647,"gross_capex",2030
+"38","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,19.935501,"gross_capex",2031
+"39","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,17.83372,"gross_capex",2032
+"40","sew","Recycled Water","Growth","Pipelines/network","Ongoing",50,50,17.83372,"gross_capex",2033
+"41","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,12.42149608,"cust_cont",2024
+"42","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,13.14372347,"cust_cont",2025
+"43","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,14.57322038,"cust_cont",2026
+"44","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,15.41335515,"cust_cont",2027
+"45","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,16.30107436,"cust_cont",2028
+"46","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,22.28671924,"cust_cont",2029
+"47","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,22.38217316,"cust_cont",2030
+"48","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,22.47762708,"cust_cont",2031
+"49","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,22.573081,"cust_cont",2032
+"50","sew","Recycled Water","Growth","Pipelines/network","Ongoing",80,80,22.66853491,"cust_cont",2033
+"51","sew","Recycled Water","Growth","Treatment","2029-30",50,50,0.735623,"gross_capex",2024
+"52","sew","Recycled Water","Growth","Treatment","2029-30",50,50,4.119491,"gross_capex",2025
+"53","sew","Recycled Water","Growth","Treatment","2029-30",50,50,4.119491,"gross_capex",2026
+"54","sew","Recycled Water","Growth","Treatment","2029-30",50,50,12.925954,"gross_capex",2027
+"55","sew","Recycled Water","Growth","Treatment","2029-30",50,50,17.234606,"gross_capex",2028
+"56","sew","Recycled Water","Growth","Treatment","2029-30",50,50,13.960031,"gross_capex",2029
+"57","sew","Recycled Water","Growth","Treatment","2029-30",50,50,11.429486,"gross_capex",2030
+"58","sew","Recycled Water","Growth","Treatment","2029-30",50,50,4.203562,"gross_capex",2031
+"59","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.052553,"gross_capex",2024
+"60","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.052553,"gross_capex",2025
+"61","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.052553,"gross_capex",2026
+"62","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.051909,"gross_capex",2027
+"63","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.051588,"gross_capex",2028
+"64","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.069302,"gross_capex",2029
+"65","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.069302,"gross_capex",2030
+"66","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.069302,"gross_capex",2031
+"67","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.069302,"gross_capex",2032
+"68","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.069302,"gross_capex",2033
+"69","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,0.265974,"gross_capex",2024
+"70","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,0.26576,"gross_capex",2025
+"71","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,0.268044,"gross_capex",2026
+"72","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,0.263349,"gross_capex",2027
+"73","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,0.258555,"gross_capex",2028
+"74","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,0.797482,"gross_capex",2029
+"75","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,1.323624,"gross_capex",2030
+"76","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,1.323624,"gross_capex",2031
+"77","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,1.052719,"gross_capex",2032
+"78","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",10,10,0.695547,"gross_capex",2033
+"79","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.030617,"gross_capex",2024
+"80","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.030617,"gross_capex",2025
+"81","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.030617,"gross_capex",2026
+"82","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.030617,"gross_capex",2027
+"83","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.030617,"gross_capex",2028
+"84","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.036842,"gross_capex",2029
+"85","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.036842,"gross_capex",2030
+"86","sew","Recycled Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.009851,"gross_capex",2031
+"87","sew","Recycled Water","Improvements / Compliance","Pipelines/network","Ongoing",50,50,0.735623,"gross_capex",2024
+"88","sew","Recycled Water","Improvements / Compliance","Treatment","2026-27",50,50,9.058677,"gross_capex",2024
+"89","sew","Recycled Water","Improvements / Compliance","Treatment","2026-27",50,50,18.175153,"gross_capex",2025
+"90","sew","Recycled Water","Improvements / Compliance","Treatment","2026-27",50,50,7.356234,"gross_capex",2026
+"91","sew","Recycled Water","Improvements / Compliance","Treatment","2026-27",50,50,7.356234,"gross_capex",2027
+"92","sew","Recycled Water","Improvements / Compliance","Treatment","2026-27",50,50,10.508906,"gross_capex",2028
+"93","sew","Recycled Water","Improvements / Compliance","Treatment","Ongoing",50,50,0.231196,"gross_capex",2024
+"94","sew","Recycled Water","Improvements / Compliance","Treatment","Ongoing",50,50,3.131654,"gross_capex",2025
+"95","sew","Recycled Water","Improvements / Compliance","Treatment","Ongoing",50,50,3.641336,"gross_capex",2026
+"96","sew","Recycled Water","Improvements / Compliance","Treatment","Ongoing",50,50,7.881679,"gross_capex",2031
+"97","sew","Recycled Water","Improvements / Compliance","Treatment","Ongoing",50,50,18.390585,"gross_capex",2032
+"98","sew","Recycled Water","Improvements / Compliance","Treatment","Ongoing",50,50,10.508906,"gross_capex",2033
+"99","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.015424,"gross_capex",2024
+"100","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.015424,"gross_capex",2025
+"101","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.015424,"gross_capex",2026
+"102","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.014781,"gross_capex",2027
+"103","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.014459,"gross_capex",2028
+"104","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.017399,"gross_capex",2029
+"105","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.017399,"gross_capex",2030
+"106","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.017399,"gross_capex",2031
+"107","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.017399,"gross_capex",2032
+"108","sew","Recycled Water","Renewals","Corporate","Ongoing",5,5,0.017399,"gross_capex",2033
+"109","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.324924,"gross_capex",2024
+"110","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.324924,"gross_capex",2025
+"111","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.324924,"gross_capex",2026
+"112","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.324924,"gross_capex",2027
+"113","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.324924,"gross_capex",2028
+"114","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.390985,"gross_capex",2029
+"115","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.390985,"gross_capex",2030
+"116","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.390985,"gross_capex",2031
+"117","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.390985,"gross_capex",2032
+"118","sew","Recycled Water","Renewals","Corporate","Ongoing",8,8,0.390985,"gross_capex",2033
+"119","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.226617,"gross_capex",2024
+"120","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.226365,"gross_capex",2025
+"121","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.22905,"gross_capex",2026
+"122","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.223533,"gross_capex",2027
+"123","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.2179,"gross_capex",2028
+"124","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.061507,"gross_capex",2029
+"125","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.107118,"gross_capex",2030
+"126","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.107118,"gross_capex",2031
+"127","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.083634,"gross_capex",2032
+"128","sew","Recycled Water","Renewals","Corporate","Ongoing",10,10,0.052671,"gross_capex",2033
+"129","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.042788,"gross_capex",2024
+"130","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.040006,"gross_capex",2025
+"131","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.046911,"gross_capex",2026
+"132","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.046423,"gross_capex",2027
+"133","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.049673,"gross_capex",2028
+"134","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.059625,"gross_capex",2029
+"135","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.059625,"gross_capex",2030
+"136","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.059625,"gross_capex",2031
+"137","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.059625,"gross_capex",2032
+"138","sew","Recycled Water","Renewals","Corporate","Ongoing",20,20,0.059625,"gross_capex",2033
+"139","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,1.087016,"gross_capex",2024
+"140","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,1.034471,"gross_capex",2025
+"141","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,1.034471,"gross_capex",2026
+"142","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,1.034471,"gross_capex",2027
+"143","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,1.012378,"gross_capex",2028
+"144","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,0.56395,"gross_capex",2029
+"145","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,0.541867,"gross_capex",2030
+"146","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,0.541867,"gross_capex",2031
+"147","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,0.541867,"gross_capex",2032
+"148","sew","Recycled Water","Renewals","Pipelines/network","Ongoing",50,50,0.541867,"gross_capex",2033
+"149","sew","Recycled Water","Renewals","Treatment","Ongoing",50,50,1.984081,"gross_capex",2024
+"150","sew","Recycled Water","Renewals","Treatment","Ongoing",50,50,0.073562,"gross_capex",2025
+"151","sew","Recycled Water","Renewals","Treatment","Ongoing",50,50,0.588499,"gross_capex",2027
+"152","sew","Recycled Water","Renewals","Treatment","Ongoing",50,50,1.245305,"gross_capex",2028
+"153","sew","Recycled Water","Renewals","Treatment","Ongoing",50,50,0.225941,"gross_capex",2030
+"154","sew","Recycled Water","Renewals","Treatment","Ongoing",50,50,0.231196,"gross_capex",2031
+"155","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.267848,"gross_capex",2024
+"156","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.267848,"gross_capex",2025
+"157","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.267848,"gross_capex",2026
+"158","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.262696,"gross_capex",2027
+"159","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.26012,"gross_capex",2028
+"160","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.362186,"gross_capex",2029
+"161","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.362186,"gross_capex",2030
+"162","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.362186,"gross_capex",2031
+"163","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.362186,"gross_capex",2032
+"164","sew","Sewerage","Growth","Corporate","Ongoing",5,5,0.362186,"gross_capex",2033
+"165","sew","Sewerage","Growth","Corporate","Ongoing",10,10,5.840987,"gross_capex",2024
+"166","sew","Sewerage","Growth","Corporate","Ongoing",10,10,5.834496,"gross_capex",2025
+"167","sew","Sewerage","Growth","Corporate","Ongoing",10,10,5.903692,"gross_capex",2026
+"168","sew","Sewerage","Growth","Corporate","Ongoing",10,10,5.761491,"gross_capex",2027
+"169","sew","Sewerage","Growth","Corporate","Ongoing",10,10,5.616301,"gross_capex",2028
+"170","sew","Sewerage","Growth","Corporate","Ongoing",10,10,7.550996,"gross_capex",2029
+"171","sew","Sewerage","Growth","Corporate","Ongoing",10,10,13.150499,"gross_capex",2030
+"172","sew","Sewerage","Growth","Corporate","Ongoing",10,10,13.150499,"gross_capex",2031
+"173","sew","Sewerage","Growth","Corporate","Ongoing",10,10,10.267376,"gross_capex",2032
+"174","sew","Sewerage","Growth","Corporate","Ongoing",10,10,6.466152,"gross_capex",2033
+"175","sew","Sewerage","Growth","Pipelines/network","2026-27",80,80,5.254453,"gross_capex",2024
+"176","sew","Sewerage","Growth","Pipelines/network","2026-27",80,80,26.272265,"gross_capex",2025
+"177","sew","Sewerage","Growth","Pipelines/network","2026-27",80,80,31.526718,"gross_capex",2026
+"178","sew","Sewerage","Growth","Pipelines/network","2026-27",80,80,3.614249,"gross_capex",2027
+"179","sew","Sewerage","Growth","Pipelines/network","2026-27",80,80,3.614249,"gross_capex",2028
+"180","sew","Sewerage","Growth","Pipelines/network","2028-29",30,30,0.525445,"gross_capex",2026
+"181","sew","Sewerage","Growth","Pipelines/network","2028-29",30,30,9.983461,"gross_capex",2027
+"182","sew","Sewerage","Growth","Pipelines/network","2028-29",30,30,21.017812,"gross_capex",2028
+"183","sew","Sewerage","Growth","Pipelines/network","2028-29",30,30,35.730276,"gross_capex",2029
+"184","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,2.361542,"gross_capex",2024
+"185","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,2.101782,"gross_capex",2025
+"186","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,1.576336,"gross_capex",2026
+"187","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,0.525445,"gross_capex",2027
+"188","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,0.525445,"gross_capex",2028
+"189","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,0.525445,"gross_capex",2029
+"190","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,0.525445,"gross_capex",2030
+"191","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,0.525445,"gross_capex",2031
+"192","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,0.525445,"gross_capex",2032
+"193","sew","Sewerage","Growth","Pipelines/network","Ongoing",20,20,1.62888,"gross_capex",2033
+"194","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,5.281976,"gross_capex",2025
+"195","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,3.152672,"gross_capex",2026
+"196","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,2.627226,"gross_capex",2027
+"197","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,2.332977,"gross_capex",2028
+"198","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,11.250311,"gross_capex",2029
+"199","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,1.732409,"gross_capex",2031
+"200","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,3.868791,"gross_capex",2032
+"201","sew","Sewerage","Growth","Pipelines/network","Ongoing",30,30,10.508906,"gross_capex",2033
+"202","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,47.542425,"gross_capex",2024
+"203","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,27.91896,"gross_capex",2025
+"204","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,31.188982,"gross_capex",2026
+"205","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,41.761419,"gross_capex",2027
+"206","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,37.166769,"gross_capex",2028
+"207","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,44.557682,"gross_capex",2029
+"208","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,93.372366,"gross_capex",2030
+"209","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,65.194965,"gross_capex",2031
+"210","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,56.987753,"gross_capex",2032
+"211","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,64.730122,"gross_capex",2033
+"212","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,13.90342801,"cust_cont",2024
+"213","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,14.33211359,"cust_cont",2025
+"214","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,14.55846343,"cust_cont",2026
+"215","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,18.97594803,"cust_cont",2027
+"216","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,19.65287641,"cust_cont",2028
+"217","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,20.47569152,"cust_cont",2029
+"218","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,20.44387355,"cust_cont",2030
+"219","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,20.41205558,"cust_cont",2031
+"220","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,20.01164274,"cust_cont",2032
+"221","sew","Sewerage","Growth","Pipelines/network","Ongoing",80,80,19.97982476,"cust_cont",2033
+"222","sew","Sewerage","Growth","Treatment","2026-27",50,50,4.203562,"gross_capex",2024
+"223","sew","Sewerage","Growth","Treatment","2026-27",50,50,4.51883,"gross_capex",2025
+"224","sew","Sewerage","Growth","Treatment","2026-27",50,50,8.722392,"gross_capex",2026
+"225","sew","Sewerage","Growth","Treatment","2026-27",50,50,8.722392,"gross_capex",2027
+"226","sew","Sewerage","Growth","Treatment","2027-28",50,50,9.884677,"gross_capex",2024
+"227","sew","Sewerage","Growth","Treatment","2027-28",50,50,21.22799,"gross_capex",2025
+"228","sew","Sewerage","Growth","Treatment","2027-28",50,50,26.459323,"gross_capex",2026
+"229","sew","Sewerage","Growth","Treatment","2027-28",50,50,28.851146,"gross_capex",2027
+"230","sew","Sewerage","Growth","Treatment","2027-28",50,50,16.593567,"gross_capex",2028
+"231","sew","Sewerage","Growth","Treatment","2031-32",50,50,1.050891,"gross_capex",2024
+"232","sew","Sewerage","Growth","Treatment","2031-32",50,50,1.050891,"gross_capex",2025
+"233","sew","Sewerage","Growth","Treatment","2031-32",50,50,2.101781,"gross_capex",2026
+"234","sew","Sewerage","Growth","Treatment","2031-32",50,50,7.356234,"gross_capex",2027
+"235","sew","Sewerage","Growth","Treatment","2031-32",50,50,18.600763,"gross_capex",2028
+"236","sew","Sewerage","Growth","Treatment","2031-32",50,50,22.173791,"gross_capex",2029
+"237","sew","Sewerage","Growth","Treatment","2031-32",50,50,43.191603,"gross_capex",2030
+"238","sew","Sewerage","Growth","Treatment","2031-32",50,50,64.209415,"gross_capex",2031
+"239","sew","Sewerage","Growth","Treatment","2031-32",50,50,73.562341,"gross_capex",2032
+"240","sew","Sewerage","Growth","Treatment","2031-32",50,50,56.012468,"gross_capex",2033
+"241","sew","Sewerage","Growth","Treatment","Ongoing",30,30,6.305344,"gross_capex",2024
+"242","sew","Sewerage","Growth","Treatment","Ongoing",30,30,9.458015,"gross_capex",2025
+"243","sew","Sewerage","Growth","Treatment","Ongoing",30,30,8.226372,"gross_capex",2026
+"244","sew","Sewerage","Growth","Treatment","Ongoing",50,50,0.105089,"gross_capex",2024
+"245","sew","Sewerage","Growth","Treatment","Ongoing",50,50,0.105089,"gross_capex",2025
+"246","sew","Sewerage","Growth","Treatment","Ongoing",50,50,0.039408,"gross_capex",2026
+"247","sew","Sewerage","Growth","Treatment","Ongoing",50,50,4.098473,"gross_capex",2028
+"248","sew","Sewerage","Growth","Treatment","Ongoing",50,50,7.325758,"gross_capex",2031
+"249","sew","Sewerage","Growth","Treatment","Ongoing",50,50,7.325758,"gross_capex",2032
+"250","sew","Sewerage","Growth","Treatment","Ongoing",50,50,20.860178,"gross_capex",2033
+"251","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.420717,"gross_capex",2024
+"252","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.420717,"gross_capex",2025
+"253","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.420717,"gross_capex",2026
+"254","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.415565,"gross_capex",2027
+"255","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.412989,"gross_capex",2028
+"256","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.4345,"gross_capex",2029
+"257","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.4345,"gross_capex",2030
+"258","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.4345,"gross_capex",2031
+"259","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.4345,"gross_capex",2032
+"260","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",5,5,0.4345,"gross_capex",2033
+"261","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,7.491363,"gross_capex",2024
+"262","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,7.483689,"gross_capex",2025
+"263","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,7.565502,"gross_capex",2026
+"264","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,7.397371,"gross_capex",2027
+"265","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,7.225705,"gross_capex",2028
+"266","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,5.390398,"gross_capex",2029
+"267","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,8.978683,"gross_capex",2030
+"268","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,8.978683,"gross_capex",2031
+"269","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,7.131114,"gross_capex",2032
+"270","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",10,10,4.695206,"gross_capex",2033
+"271","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.245106,"gross_capex",2024
+"272","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.245106,"gross_capex",2025
+"273","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.245106,"gross_capex",2026
+"274","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.245106,"gross_capex",2027
+"275","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.245106,"gross_capex",2028
+"276","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.230985,"gross_capex",2029
+"277","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.230985,"gross_capex",2030
+"278","sew","Sewerage","Improvements / Compliance","Corporate","Ongoing",20,20,0.061762,"gross_capex",2031
+"279","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,0.92058,"gross_capex",2024
+"280","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,1.245305,"gross_capex",2025
+"281","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,1.245305,"gross_capex",2026
+"282","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,1.245305,"gross_capex",2027
+"283","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,1.245305,"gross_capex",2028
+"284","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,3.498415,"gross_capex",2029
+"285","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,3.498415,"gross_capex",2030
+"286","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,3.498415,"gross_capex",2031
+"287","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,3.498415,"gross_capex",2032
+"288","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",10,10,3.498415,"gross_capex",2033
+"289","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.775557,"gross_capex",2024
+"290","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,1.03828,"gross_capex",2025
+"291","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.775557,"gross_capex",2026
+"292","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.688333,"gross_capex",2027
+"293","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.688333,"gross_capex",2028
+"294","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.998346,"gross_capex",2029
+"295","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.998346,"gross_capex",2030
+"296","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.998346,"gross_capex",2031
+"297","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.998346,"gross_capex",2032
+"298","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",20,20,0.998346,"gross_capex",2033
+"299","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,3.320814,"gross_capex",2024
+"300","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,2.732315,"gross_capex",2025
+"301","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,6.173982,"gross_capex",2026
+"302","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,3.709644,"gross_capex",2027
+"303","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,2.658753,"gross_capex",2028
+"304","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,4.655445,"gross_capex",2029
+"305","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,2.101781,"gross_capex",2030
+"306","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,6.305343,"gross_capex",2031
+"307","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,6.766684,"gross_capex",2032
+"308","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",30,30,2.101781,"gross_capex",2033
+"309","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,30.780323,"gross_capex",2024
+"310","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,38.533257,"gross_capex",2025
+"311","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,32.489585,"gross_capex",2026
+"312","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,35.643308,"gross_capex",2027
+"313","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,37.954216,"gross_capex",2028
+"314","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,33.904112,"gross_capex",2029
+"315","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,36.058438,"gross_capex",2030
+"316","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,36.005893,"gross_capex",2031
+"317","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,36.216071,"gross_capex",2032
+"318","sew","Sewerage","Improvements / Compliance","Pipelines/network","Ongoing",80,80,37.897496,"gross_capex",2033
+"319","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2024
+"320","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2025
+"321","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2026
+"322","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2027
+"323","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2028
+"324","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2029
+"325","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2030
+"326","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2031
+"327","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2032
+"328","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",10,10,3.103737,"gross_capex",2033
+"329","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,7.018163,"gross_capex",2024
+"330","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,4.95001,"gross_capex",2025
+"331","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,15.27501,"gross_capex",2026
+"332","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,23.530806,"gross_capex",2027
+"333","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,6.988212,"gross_capex",2028
+"334","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,3.968163,"gross_capex",2029
+"335","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,3.856768,"gross_capex",2030
+"336","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,0.872239,"gross_capex",2031
+"337","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,0.779761,"gross_capex",2032
+"338","sew","Sewerage","Improvements / Compliance","Treatment","Ongoing",50,50,1.354598,"gross_capex",2033
+"339","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.123481,"gross_capex",2024
+"340","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.123481,"gross_capex",2025
+"341","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.123481,"gross_capex",2026
+"342","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.118329,"gross_capex",2027
+"343","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.115754,"gross_capex",2028
+"344","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.109085,"gross_capex",2029
+"345","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.109085,"gross_capex",2030
+"346","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.109085,"gross_capex",2031
+"347","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.109085,"gross_capex",2032
+"348","sew","Sewerage","Renewals","Corporate","Ongoing",5,5,0.109085,"gross_capex",2033
+"349","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.601204,"gross_capex",2024
+"350","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.601204,"gross_capex",2025
+"351","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.601204,"gross_capex",2026
+"352","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.601204,"gross_capex",2027
+"353","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.601204,"gross_capex",2028
+"354","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.451342,"gross_capex",2029
+"355","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.451342,"gross_capex",2030
+"356","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.451342,"gross_capex",2031
+"357","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.451342,"gross_capex",2032
+"358","sew","Sewerage","Renewals","Corporate","Ongoing",8,8,2.451342,"gross_capex",2033
+"359","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,5.042763,"gross_capex",2024
+"360","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,5.037159,"gross_capex",2025
+"361","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,5.096898,"gross_capex",2026
+"362","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,4.97413,"gross_capex",2027
+"363","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,4.848781,"gross_capex",2028
+"364","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,3.660531,"gross_capex",2029
+"365","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,6.375028,"gross_capex",2030
+"366","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,6.375028,"gross_capex",2031
+"367","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,4.977363,"gross_capex",2032
+"368","sew","Sewerage","Renewals","Corporate","Ongoing",10,10,3.134626,"gross_capex",2033
+"369","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.342546,"gross_capex",2024
+"370","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.320273,"gross_capex",2025
+"371","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.375549,"gross_capex",2026
+"372","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.371647,"gross_capex",2027
+"373","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.397659,"gross_capex",2028
+"374","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.37383,"gross_capex",2029
+"375","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.37383,"gross_capex",2030
+"376","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.37383,"gross_capex",2031
+"377","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.37383,"gross_capex",2032
+"378","sew","Sewerage","Renewals","Corporate","Ongoing",20,20,0.37383,"gross_capex",2033
+"379","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,3.890821,"gross_capex",2024
+"380","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,3.470461,"gross_capex",2025
+"381","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,3.470461,"gross_capex",2026
+"382","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,3.073225,"gross_capex",2027
+"383","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,3.073225,"gross_capex",2028
+"384","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,2.843698,"gross_capex",2029
+"385","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,2.843698,"gross_capex",2030
+"386","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,2.843698,"gross_capex",2031
+"387","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,2.843698,"gross_capex",2032
+"388","sew","Sewerage","Renewals","Pipelines/network","Ongoing",10,10,2.843698,"gross_capex",2033
+"389","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,24.588795,"gross_capex",2024
+"390","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,25.166723,"gross_capex",2025
+"391","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,27.097209,"gross_capex",2026
+"392","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,27.732998,"gross_capex",2027
+"393","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,28.420807,"gross_capex",2028
+"394","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,24.776278,"gross_capex",2029
+"395","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,24.970693,"gross_capex",2030
+"396","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,25.169311,"gross_capex",2031
+"397","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,23.745354,"gross_capex",2032
+"398","sew","Sewerage","Renewals","Pipelines/network","Ongoing",80,80,24.135444,"gross_capex",2033
+"399","sew","Sewerage","Renewals","Treatment","Ongoing",20,20,0.788168,"gross_capex",2026
+"400","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,11.651347,"gross_capex",2024
+"401","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,9.955612,"gross_capex",2025
+"402","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,9.690262,"gross_capex",2026
+"403","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,9.331383,"gross_capex",2027
+"404","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,10.967094,"gross_capex",2028
+"405","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,9.160613,"gross_capex",2029
+"406","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,8.437601,"gross_capex",2030
+"407","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,10.115873,"gross_capex",2031
+"408","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,13.614287,"gross_capex",2032
+"409","sew","Sewerage","Renewals","Treatment","Ongoing",50,50,11.418977,"gross_capex",2033
+"410","sew","Water","Growth","Corporate","Ongoing",5,5,0.131539,"gross_capex",2024
+"411","sew","Water","Growth","Corporate","Ongoing",5,5,0.131539,"gross_capex",2025
+"412","sew","Water","Growth","Corporate","Ongoing",5,5,0.131539,"gross_capex",2026
+"413","sew","Water","Growth","Corporate","Ongoing",5,5,0.129009,"gross_capex",2027
+"414","sew","Water","Growth","Corporate","Ongoing",5,5,0.127743,"gross_capex",2028
+"415","sew","Water","Growth","Corporate","Ongoing",5,5,0.201123,"gross_capex",2029
+"416","sew","Water","Growth","Corporate","Ongoing",5,5,0.201123,"gross_capex",2030
+"417","sew","Water","Growth","Corporate","Ongoing",5,5,0.201123,"gross_capex",2031
+"418","sew","Water","Growth","Corporate","Ongoing",5,5,0.201123,"gross_capex",2032
+"419","sew","Water","Growth","Corporate","Ongoing",5,5,0.201123,"gross_capex",2033
+"420","sew","Water","Growth","Corporate","Ongoing",10,10,1.898309,"gross_capex",2024
+"421","sew","Water","Growth","Corporate","Ongoing",10,10,1.896199,"gross_capex",2025
+"422","sew","Water","Growth","Corporate","Ongoing",10,10,1.918688,"gross_capex",2026
+"423","sew","Water","Growth","Corporate","Ongoing",10,10,1.872473,"gross_capex",2027
+"424","sew","Water","Growth","Corporate","Ongoing",10,10,1.825286,"gross_capex",2028
+"425","sew","Water","Growth","Corporate","Ongoing",10,10,2.312397,"gross_capex",2029
+"426","sew","Water","Growth","Corporate","Ongoing",10,10,4.027173,"gross_capex",2030
+"427","sew","Water","Growth","Corporate","Ongoing",10,10,4.027173,"gross_capex",2031
+"428","sew","Water","Growth","Corporate","Ongoing",10,10,3.144253,"gross_capex",2032
+"429","sew","Water","Growth","Corporate","Ongoing",10,10,1.980177,"gross_capex",2033
+"430","sew","Water","Growth","Pipelines/network","Ongoing",80,80,17.136219,"gross_capex",2024
+"431","sew","Water","Growth","Pipelines/network","Ongoing",80,80,15.223598,"gross_capex",2025
+"432","sew","Water","Growth","Pipelines/network","Ongoing",80,80,14.144018,"gross_capex",2026
+"433","sew","Water","Growth","Pipelines/network","Ongoing",80,80,14.277797,"gross_capex",2027
+"434","sew","Water","Growth","Pipelines/network","Ongoing",80,80,15.398446,"gross_capex",2028
+"435","sew","Water","Growth","Pipelines/network","Ongoing",80,80,23.975052,"gross_capex",2029
+"436","sew","Water","Growth","Pipelines/network","Ongoing",80,80,23.975052,"gross_capex",2030
+"437","sew","Water","Growth","Pipelines/network","Ongoing",80,80,23.975052,"gross_capex",2031
+"438","sew","Water","Growth","Pipelines/network","Ongoing",80,80,23.975052,"gross_capex",2032
+"439","sew","Water","Growth","Pipelines/network","Ongoing",80,80,23.975052,"gross_capex",2033
+"440","sew","Water","Growth","Pipelines/network","Ongoing",80,80,6.922744471,"cust_cont",2024
+"441","sew","Water","Growth","Pipelines/network","Ongoing",80,80,7.235164166,"cust_cont",2025
+"442","sew","Water","Growth","Pipelines/network","Ongoing",80,80,7.339455449,"cust_cont",2026
+"443","sew","Water","Growth","Pipelines/network","Ongoing",80,80,11.55060431,"cust_cont",2027
+"444","sew","Water","Growth","Pipelines/network","Ongoing",80,80,12.08901702,"cust_cont",2028
+"445","sew","Water","Growth","Pipelines/network","Ongoing",80,80,12.04998542,"cust_cont",2029
+"446","sew","Water","Growth","Pipelines/network","Ongoing",80,80,12.01816745,"cust_cont",2030
+"447","sew","Water","Growth","Pipelines/network","Ongoing",80,80,11.98634948,"cust_cont",2031
+"448","sew","Water","Growth","Pipelines/network","Ongoing",80,80,11.58593663,"cust_cont",2032
+"449","sew","Water","Growth","Pipelines/network","Ongoing",80,80,11.55411866,"cust_cont",2033
+"450","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.206612,"gross_capex",2024
+"451","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.206612,"gross_capex",2025
+"452","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.206612,"gross_capex",2026
+"453","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.204081,"gross_capex",2027
+"454","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.202816,"gross_capex",2028
+"455","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.241279,"gross_capex",2029
+"456","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.241279,"gross_capex",2030
+"457","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.241279,"gross_capex",2031
+"458","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.241279,"gross_capex",2032
+"459","sew","Water","Improvements / Compliance","Corporate","Ongoing",5,5,0.241279,"gross_capex",2033
+"460","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,3.542014,"gross_capex",2024
+"461","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,3.538397,"gross_capex",2025
+"462","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,3.576953,"gross_capex",2026
+"463","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,3.497718,"gross_capex",2027
+"464","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,3.416818,"gross_capex",2028
+"465","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,4.126853,"gross_capex",2029
+"466","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,6.960032,"gross_capex",2030
+"467","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,6.960032,"gross_capex",2031
+"468","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,5.501259,"gross_capex",2032
+"469","sew","Water","Improvements / Compliance","Corporate","Ongoing",10,10,3.577955,"gross_capex",2033
+"470","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.12037,"gross_capex",2024
+"471","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.12037,"gross_capex",2025
+"472","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.12037,"gross_capex",2026
+"473","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.12037,"gross_capex",2027
+"474","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.12037,"gross_capex",2028
+"475","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.128266,"gross_capex",2029
+"476","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.128266,"gross_capex",2030
+"477","sew","Water","Improvements / Compliance","Corporate","Ongoing",20,20,0.034297,"gross_capex",2031
+"478","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",30,30,0.105089,"gross_capex",2029
+"479","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",30,30,0.105089,"gross_capex",2030
+"480","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",30,30,0.105089,"gross_capex",2031
+"481","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",30,30,0.105089,"gross_capex",2032
+"482","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",30,30,0.105089,"gross_capex",2033
+"483","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,10.630667,"gross_capex",2024
+"484","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,10.698975,"gross_capex",2025
+"485","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,14.810052,"gross_capex",2026
+"486","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,17.85968,"gross_capex",2027
+"487","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,19.290011,"gross_capex",2028
+"488","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,25.889563,"gross_capex",2029
+"489","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,25.889563,"gross_capex",2030
+"490","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,25.889563,"gross_capex",2031
+"491","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,25.889563,"gross_capex",2032
+"492","sew","Water","Improvements / Compliance","Pipelines/network","Ongoing",80,80,25.889563,"gross_capex",2033
+"493","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,12.500827,"gross_capex",2024
+"494","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,11.767179,"gross_capex",2025
+"495","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,11.404996,"gross_capex",2026
+"496","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,10.841057,"gross_capex",2027
+"497","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,10.804906,"gross_capex",2028
+"498","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,13.617278,"gross_capex",2029
+"499","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,13.617278,"gross_capex",2030
+"500","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,13.617278,"gross_capex",2031
+"501","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,13.617278,"gross_capex",2032
+"502","sew","Water","Improvements / Compliance","Treatment","Ongoing",50,50,13.617278,"gross_capex",2033
+"503","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060641,"gross_capex",2024
+"504","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060641,"gross_capex",2025
+"505","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060641,"gross_capex",2026
+"506","sew","Water","Renewals","Corporate","Ongoing",5,5,0.058111,"gross_capex",2027
+"507","sew","Water","Renewals","Corporate","Ongoing",5,5,0.056846,"gross_capex",2028
+"508","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060575,"gross_capex",2029
+"509","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060575,"gross_capex",2030
+"510","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060575,"gross_capex",2031
+"511","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060575,"gross_capex",2032
+"512","sew","Water","Renewals","Corporate","Ongoing",5,5,0.060575,"gross_capex",2033
+"513","sew","Water","Renewals","Corporate","Ongoing",8,8,1.277435,"gross_capex",2024
+"514","sew","Water","Renewals","Corporate","Ongoing",8,8,1.277435,"gross_capex",2025
+"515","sew","Water","Renewals","Corporate","Ongoing",8,8,1.277435,"gross_capex",2026
+"516","sew","Water","Renewals","Corporate","Ongoing",8,8,1.277435,"gross_capex",2027
+"517","sew","Water","Renewals","Corporate","Ongoing",8,8,1.277435,"gross_capex",2028
+"518","sew","Water","Renewals","Corporate","Ongoing",8,8,1.361235,"gross_capex",2029
+"519","sew","Water","Renewals","Corporate","Ongoing",8,8,1.361235,"gross_capex",2030
+"520","sew","Water","Renewals","Corporate","Ongoing",8,8,1.361235,"gross_capex",2031
+"521","sew","Water","Renewals","Corporate","Ongoing",8,8,1.361235,"gross_capex",2032
+"522","sew","Water","Renewals","Corporate","Ongoing",8,8,1.361235,"gross_capex",2033
+"523","sew","Water","Renewals","Corporate","Ongoing",10,10,3.583581,"gross_capex",2024
+"524","sew","Water","Renewals","Corporate","Ongoing",10,10,3.579599,"gross_capex",2025
+"525","sew","Water","Renewals","Corporate","Ongoing",10,10,3.622052,"gross_capex",2026
+"526","sew","Water","Renewals","Corporate","Ongoing",10,10,3.534809,"gross_capex",2027
+"527","sew","Water","Renewals","Corporate","Ongoing",10,10,3.445731,"gross_capex",2028
+"528","sew","Water","Renewals","Corporate","Ongoing",10,10,2.779832,"gross_capex",2029
+"529","sew","Water","Renewals","Corporate","Ongoing",10,10,4.841238,"gross_capex",2030
+"530","sew","Water","Renewals","Corporate","Ongoing",10,10,4.841238,"gross_capex",2031
+"531","sew","Water","Renewals","Corporate","Ongoing",10,10,3.779843,"gross_capex",2032
+"532","sew","Water","Renewals","Corporate","Ongoing",10,10,2.380456,"gross_capex",2033
+"533","sew","Water","Renewals","Corporate","Ongoing",20,20,0.168222,"gross_capex",2024
+"534","sew","Water","Renewals","Corporate","Ongoing",20,20,0.157284,"gross_capex",2025
+"535","sew","Water","Renewals","Corporate","Ongoing",20,20,0.18443,"gross_capex",2026
+"536","sew","Water","Renewals","Corporate","Ongoing",20,20,0.182514,"gross_capex",2027
+"537","sew","Water","Renewals","Corporate","Ongoing",20,20,0.195288,"gross_capex",2028
+"538","sew","Water","Renewals","Corporate","Ongoing",20,20,0.207588,"gross_capex",2029
+"539","sew","Water","Renewals","Corporate","Ongoing",20,20,0.207588,"gross_capex",2030
+"540","sew","Water","Renewals","Corporate","Ongoing",20,20,0.207588,"gross_capex",2031
+"541","sew","Water","Renewals","Corporate","Ongoing",20,20,0.207588,"gross_capex",2032
+"542","sew","Water","Renewals","Corporate","Ongoing",20,20,0.207588,"gross_capex",2033
+"543","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,1.788569,"gross_capex",2024
+"544","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,1.296145,"gross_capex",2025
+"545","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,1.239851,"gross_capex",2026
+"546","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,1.540872,"gross_capex",2027
+"547","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,1.02221,"gross_capex",2028
+"548","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,0.200694,"gross_capex",2029
+"549","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,0.202246,"gross_capex",2030
+"550","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,0.203811,"gross_capex",2031
+"551","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,0.205388,"gross_capex",2032
+"552","sew","Water","Renewals","Pipelines/network","Ongoing",8,8,0.206977,"gross_capex",2033
+"553","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2024
+"554","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2025
+"555","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2026
+"556","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2027
+"557","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2028
+"558","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2029
+"559","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2030
+"560","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2031
+"561","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2032
+"562","sew","Water","Renewals","Pipelines/network","Ongoing",10,10,0.432967,"gross_capex",2033
+"563","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,43.431725,"gross_capex",2024
+"564","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,42.669596,"gross_capex",2025
+"565","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,41.144094,"gross_capex",2026
+"566","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,40.316598,"gross_capex",2027
+"567","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,40.062439,"gross_capex",2028
+"568","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,36.769417,"gross_capex",2029
+"569","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,5.139242,"gross_capex",2030
+"570","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,5.176177,"gross_capex",2031
+"571","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,5.148133,"gross_capex",2032
+"572","sew","Water","Renewals","Pipelines/network","Ongoing",15,15,5.257847,"gross_capex",2033
+"573","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.544357,"gross_capex",2024
+"574","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.338383,"gross_capex",2025
+"575","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.321568,"gross_capex",2026
+"576","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.531746,"gross_capex",2027
+"577","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.321568,"gross_capex",2028
+"578","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.321568,"gross_capex",2029
+"579","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.321568,"gross_capex",2030
+"580","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.321568,"gross_capex",2031
+"581","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.531746,"gross_capex",2032
+"582","sew","Water","Renewals","Pipelines/network","Ongoing",20,20,0.321568,"gross_capex",2033
+"583","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,0.975046,"gross_capex",2024
+"584","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,0.998234,"gross_capex",2025
+"585","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.010391,"gross_capex",2026
+"586","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.025537,"gross_capex",2027
+"587","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.039961,"gross_capex",2028
+"588","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.026554,"gross_capex",2029
+"589","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.001186,"gross_capex",2030
+"590","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.006818,"gross_capex",2031
+"591","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.030123,"gross_capex",2032
+"592","sew","Water","Renewals","Pipelines/network","Ongoing",30,30,1.049174,"gross_capex",2033
+"593","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,24.570851,"gross_capex",2024
+"594","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,26.103613,"gross_capex",2025
+"595","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,25.067179,"gross_capex",2026
+"596","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,25.130163,"gross_capex",2027
+"597","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,25.150958,"gross_capex",2028
+"598","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,27.402878,"gross_capex",2029
+"599","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,26.130253,"gross_capex",2030
+"600","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,26.1932,"gross_capex",2031
+"601","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,26.250792,"gross_capex",2032
+"602","sew","Water","Renewals","Pipelines/network","Ongoing",80,80,26.385384,"gross_capex",2033

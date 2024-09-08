@@ -13,7 +13,7 @@ flowchart TD
     C --> E
     B ----> H(Regulatory<br>depreciation)
     D ----> H
-    E --> F(Requlatory<br>rate of return)
+    E --> F(Regulatory<br>rate of return)
     F --> G(Return on RAB)
     H ----> J(Revenue requirement) 
     G ----> J

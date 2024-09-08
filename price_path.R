@@ -92,4 +92,9 @@ res <- optim(
 )
 res
 
-npv_optim_func(theta=res$par, pdyr=0, rev_req=rev_req, p0=as.matrix(10), q=c(100,102,104,106,108), rtn="xxx")
+res_list <- npv_optim_func(theta=res$par, pdyr=1, rev_req=rev_req, p0=as.matrix(10), q=c(100,102,104,106,108), rtn="data")
+price_delta <- res_list$price_delta
+prices <- res_list$prices
+
+sum(res_list$prices * c(100,102,104,106,108)) / 1e6
+
