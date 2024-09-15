@@ -1,33 +1,46 @@
 source("funs.R")
-
+library(dplyr)
+library(tidyr)
 
 # Depreciation on opening RAB --------------------------------------------
 dpn_open <- depn_fun_opn(571.85, 15.92)
 
 
 # Capex data -------------------------------------------------------------
-capex1 <- "
-13.07  22.94 	 16.69 	 0.00    0.00
-1.14 	 3.18 	 5.20 	 4.76 	 10.88
-0.67 	 3.66 	 6.34 	 4.25 	 11.38
-0.13 	 0.00    1.32 	 8.60 	 15.21
-0.00	 0.12 	 14.94 	 0.69 	 0.00
-0.00 	 2.22 	 6.19 	 6.19 	 0.00
-0.19 	 6.71 	 6.71 	 0.00 	 0.00
-0.00 	 0.00 	 0.43 	 5.50 	 5.50
-4.29 	 6.96 	 0.00 	 0.00		 0.00
-0.00 	 0.00	 	 1.34 	 3.02 	 4.56
-67.0   53.0    45.0    75.0    61.0
-"
+dat <- read.csv("./data/price_subm_2023.csv")
 
-capex1 <- as.numeric(unlist(strsplit(trimws(capex1), "\\s+")))
-capex <- matrix(capex1, ncol=5, byrow=TRUE)
-colSums(capex)
+cw <- dat %>%
+  mutate(net_capex = case_when(
+    balance_type %in% c("cust_cont","gov_cont") ~ -amount, 
+    TRUE ~ amount)
+  ) %>%
+  filter(entity == "CW", balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
+  select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
+  pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
+
+c <- as.matrix(cw[, 3:(ncol(cw))])
+colSums(c)
+
+yr_int <- as.integer(colnames(cw)[-c(1:3)])
+yr_int
+
+year_operational <- as.integer(sub(".*-", "", cw$year_operational))+2000
+year_operational[is.na(year_operational)] <- yr_int[1]
+year_operational
+
+yr_op <- match(year_operational, yr_int)
+yr_op
+
+#life <- ifelse(cw$regulatory_life == 0, 1, cw$regulatory_life)
+life <- cw$regulatory_life
+life
 
 
 # Depreciation on capex --------------------------------------------------
-dpn_matrix <- t(mapply(FUN = depn_fun, split(capex, row(capex)), yr_op = c(4,7,7,8,5,8,7,6,3,6,1), life = c(25,60,60,25,45,25,70,50,25,60,50)))
-dpn_cpx <- colSums(dpn_matrix)
+dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
+dpn_mtrix
+dpn_cpx <- colSums(dpn_mtrix)
+dpn_cpx
 
 
 # Total depreciation -----------------------------------------------------
@@ -44,7 +57,7 @@ exist_rab_detail <- matrix(rep(0, 8*5), ncol=5)
 rownames(exist_rab_detail) <- c("open","capex","cust_cont","gov_cont","reg_depn","disp","close","average")
 colnames(exist_rab_detail) <- c(1:5)
 exist_rab_detail["open", 1] <- open_rab_val
-exist_rab_detail["capex", ] <- colSums(capex)
+exist_rab_detail["capex", ] <- colSums(c)[1:5]
 exist_rab_detail["reg_depn", ] <- -dpn[1:5]
 exist_rab_detail["close", 1] <- sum(exist_rab_detail[1:6, 1])
 for(i in 2:5) {

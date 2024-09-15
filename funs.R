@@ -57,7 +57,7 @@ depn_fun <- function(capex, yr_op, life) {
   # life    - an integer representing the asset expected life
   # returns - vector of yearly depreciation (straight line basis)
   
-  # Initialise an object (ac) to hold capex up to and post the year in which the asset is operational and indices
+  # Initialise an object (ac) to hold capex up to and post the year in which the asset is operational, and indices
   ac <- rep(0,length(capex))
   ind <- 1:length(capex)
   
@@ -89,7 +89,7 @@ depn_fun <- function(capex, yr_op, life) {
   # Add year 1 depn
   dpn <- yr1.dpn + yr2p.dpn
   
-  # Remove depn that exceeds expected life,add final year depn (sameas initial year)
+  # Remove depn that exceeds expected life, add final year depn (same as initial year - 50%)
   for (i in 1:ncol(dpn)) {
     if (i + life <= ncol(dpn)) {
       dpn[i,][i + life] <- dpn[i,][i + life] * 0.5
@@ -98,6 +98,9 @@ depn_fun <- function(capex, yr_op, life) {
   }
   
   dpn <- colSums(dpn)
+  
+  # If values are NaN or Inf due to a zero depreciation rate, replace with nil
+  dpn[!is.finite(dpn)] <- 0
   
   return(round(dpn, 4))
 }
