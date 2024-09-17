@@ -9,7 +9,7 @@ dpn_open <- depn_fun_opn(571.85, 15.92)
 # Capex data -------------------------------------------------------------
 dat <- read.csv("./data/price_subm_2023.csv")
 
-cw <- dat %>%
+capex <- dat %>%
   mutate(net_capex = case_when(
     balance_type %in% c("cust_cont","gov_cont") ~ -amount, 
     TRUE ~ amount)
@@ -18,21 +18,21 @@ cw <- dat %>%
   select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
   pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
 
-c <- as.matrix(cw[, 3:(ncol(cw))])
+c <- as.matrix(capex[, 3:(ncol(capex))])
 colSums(c)
 
-yr_int <- as.integer(colnames(cw)[-c(1:3)])
+yr_int <- as.integer(colnames(capex)[-c(1:3)])
 yr_int
 
-year_operational <- as.integer(sub(".*-", "", cw$year_operational))+2000
+year_operational <- as.integer(sub(".*-", "", capex$year_operational))+2000
 year_operational[is.na(year_operational)] <- yr_int[1]
 year_operational
 
 yr_op <- match(year_operational, yr_int)
 yr_op
 
-#life <- ifelse(cw$regulatory_life == 0, 1, cw$regulatory_life)
-life <- cw$regulatory_life
+#life <- ifelse(capex$regulatory_life == 0, 1, capex$regulatory_life)
+life <- capex$regulatory_life
 life
 
 
@@ -49,6 +49,15 @@ dpn <- dpn_open[1:5] + dpn_cpx
 
 # Opex -------------------------------------------------------------------
 opex <- c(90,89,89,89,89)
+opex <- dat %>%
+  filter(
+    balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
+    "Customer Service and billing", "GSL Payments", "Corporate", "Other operating expenditure",
+    "Environment Contribution", "Licence Fees", "Treatment"),
+    entity == "CW"
+  ) %>% 
+  group_by(year) %>% 
+  summarise(amount = sum(amount))
 
 
 # RAB schedule -----------------------------------------------------------
@@ -78,7 +87,7 @@ roa <- rrr * exist_rab_detail["average", ]
 
 
 # Revenue requirement ----------------------------------------------------
-rev_req <- roa + opex + dpn
+rev_req <- roa + opex$amount + dpn
 
 
 # Perform optimisation ---------------------------------------------------
