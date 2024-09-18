@@ -2582,97 +2582,97 @@ GWM,2030,Environment Contribution,Environment Contribution,NA,NA,NA,,NA,NA,2.115
 GWM,2031,Environment Contribution,Environment Contribution,NA,NA,NA,,NA,NA,2.053458665
 GWM,2032,Environment Contribution,Environment Contribution,NA,NA,NA,,NA,NA,1.993649189
 GWM,2033,Environment Contribution,Environment Contribution,NA,NA,NA,,NA,NA,1.935581737
-CW,2024,Price,Recycled Water,Non-residential,Fixed,999,,999,999,942.0068831
-CW,2024,Price,Recycled Water,Non-residential,Variable,999,,999,999,1.7156
-CW,2024,Price,Recycled Water,Residential,Fixed,999,,999,999,146.2740602
-CW,2024,Price,Recycled Water,Residential,Variable,999,,999,999,1.7156
-CW,2024,Price,Recycled Water,Service fees,Fixed,999,,999,999,288.71
-CW,2024,Price,Rural Water,Rural,Fixed,999,,999,999,180.1000668
-CW,2024,Price,Rural Water,Rural,Variable,999,,999,999,0.2652518
-CW,2024,Price,Sewerage,Non-residential,Fixed,999,,999,999,696.46
-CW,2024,Price,Sewerage,Non-residential,Variable,999,,999,999,0.9926
-CW,2024,Price,Sewerage,Residential,Fixed,999,,999,999,696.46
-CW,2024,Price,Trade Waste,Non-residential,Fixed,999,,999,999,163.13
-CW,2024,Price,Trade Waste,Trade Waste,Variable,999,,999,999,0.656469417
-CW,2024,Price,Water,Miscellaneous,Fixed,999,,999,999,25.36552911
-CW,2024,Price,Water,Non-residential,Fixed,999,,999,999,414.4117324
-CW,2024,Price,Water,Non-residential,Variable,999,,999,999,2.28603136
-CW,2024,Price,Water,Residential,Fixed,999,,999,999,234.4714665
-CW,2024,Price,Water,Residential,Variable,999,,999,999,2.286097674
-CW,2024,Price,Water,Service fees,Fixed,999,,999,999,145.3009484
-CW,2024,Quantity,Recycled Water,Non-residential,Fixed,999,,999,999,77
-CW,2024,Quantity,Recycled Water,Non-residential,Variable,999,,999,999,315859
-CW,2024,Quantity,Recycled Water,Residential,Fixed,999,,999,999,1495
-CW,2024,Quantity,Recycled Water,Residential,Variable,999,,999,999,55650
-CW,2024,Quantity,Recycled Water,Service fees,Fixed,999,,999,999,112
-CW,2024,Quantity,Rural Water,Rural,Fixed,999,,999,999,14213
-CW,2024,Quantity,Rural Water,Rural,Variable,999,,999,999,4443791.185
-CW,2024,Quantity,Sewerage,Non-residential,Fixed,999,,999,999,6004
-CW,2024,Quantity,Sewerage,Non-residential,Variable,999,,999,999,1386924
-CW,2024,Quantity,Sewerage,Residential,Fixed,999,,999,999,68129
-CW,2024,Quantity,Trade Waste,Non-residential,Fixed,999,,999,999,1463
-CW,2024,Quantity,Trade Waste,Trade Waste,Variable,999,,999,999,3281204.83
-CW,2024,Quantity,Water,Miscellaneous,Fixed,999,,999,999,18446
-CW,2024,Quantity,Water,Non-residential,Fixed,999,,999,999,7712
-CW,2024,Quantity,Water,Non-residential,Variable,999,,999,999,6627518
-CW,2024,Quantity,Water,Residential,Fixed,999,,999,999,74383
-CW,2024,Quantity,Water,Residential,Variable,999,,999,999,14275036
-CW,2024,Quantity,Water,Service fees,Fixed,999,,999,999,4528.236
-GWM,2024,Price,Sewerage,All Services,Fixed,999,,999,999,516.1513215
-GWM,2024,Price,Trade Waste,All Services,Fixed,999,,999,999,283.4008097
-GWM,2024,Price,Urban Water,Potable Supply,Fixed,999,,999,999,449.5001947
-GWM,2024,Price,Urban Water,Potable Supply,Variable,999,,999,999,1.755877247
-GWM,2024,Price,Urban Water,Non Potable Pipeline Suppled Towns,Fixed,999,,999,999,385.026738
-GWM,2024,Price,Urban Water,Non Potable Pipeline Suppled Towns,Variable,999,,999,999,1.611679939
-GWM,2024,Price,Urban Water,Non Potable Groundwater Supplied Towns,Fixed,999,,999,999,378.6707883
-GWM,2024,Price,Urban Water,Non Potable Groundwater Supplied Towns,Variable,999,,999,999,0.979316029
-GWM,2024,Price,Urban Water,All Services,Fixed,999,,999,999,540.9153953
-GWM,2024,Price,Urban Water,All Services,Variable,999,,999,999,2.598989906
-GWM,2024,Price,Urban Water,non Potable Eastern Grampians ,Fixed,999,,999,999,357.1428571
-GWM,2024,Price,Urban Water,non Potable Eastern Grampians ,Variable,999,,999,999,1.307616868
-GWM,2024,Price,Domestic and stock,Pipeline Supply,Fixed,999,,999,999,1.216023387
-GWM,2024,Price,Domestic and stock,Pipeline Supply,Variable,999,,999,999,1.170718026
-GWM,2024,Price,Domestic and stock,Bore Supply,Fixed,999,,999,999,3.796747453
-GWM,2024,Price,Groundwater diversions,All,Fixed,999,,999,999,7.18617954
-GWM,2024,Price,Surface water diversions,Wimmera,Fixed,999,,999,999,28.03083392
-GWM,2024,Price,Bulk Water - Headworks,All,Fixed,999,,999,999,0.139151914
-GWM,2024,Price,Bulk Water - Headworks,All,Variable,999,,999,999,0.028842445
-GWM,2024,Price,Bulk Water - Headworks,Environment,Fixed,999,,999,999,8.928571429
-GWM,2024,Quantity,Sewerage,All Services,Fixed,999,,999,999,28945
-GWM,2024,Quantity,Trade Waste,All Services,Fixed,999,,999,999,494
-GWM,2024,Quantity,Urban Water,Potable Supply,Fixed,999,,999,999,30812
-GWM,2024,Quantity,Urban Water,Potable Supply,Variable,999,,999,999,7739721
-GWM,2024,Quantity,Urban Water,Non Potable Pipeline Suppled Towns,Fixed,999,,999,999,935
-GWM,2024,Quantity,Urban Water,Non Potable Pipeline Suppled Towns,Variable,999,,999,999,210960
-GWM,2024,Quantity,Urban Water,Non Potable Groundwater Supplied Towns,Fixed,999,,999,999,1294
-GWM,2024,Quantity,Urban Water,Non Potable Groundwater Supplied Towns,Variable,999,,999,999,490138
-GWM,2024,Quantity,Urban Water,All Services,Fixed,999,,999,999,721
-GWM,2024,Quantity,Urban Water,All Services,Variable,999,,999,999,142363
-GWM,2024,Quantity,Urban Water,non Potable Eastern Grampians ,Fixed,999,,999,999,308
-GWM,2024,Quantity,Urban Water,non Potable Eastern Grampians ,Variable,999,,999,999,61180
-GWM,2024,Quantity,Domestic and stock,Pipeline Supply,Fixed,999,,999,999,9785996
-GWM,2024,Quantity,Domestic and stock,Pipeline Supply,Variable,999,,999,999,6218406
-GWM,2024,Quantity,Domestic and stock,Bore Supply,Fixed,999,,999,999,47409
-GWM,2024,Quantity,Groundwater diversions,All,Fixed,999,,999,999,69578
-GWM,2024,Quantity,Surface water diversions,Wimmera,Fixed,999,,999,999,4281
-GWM,2024,Quantity,Bulk Water - Headworks,All,Fixed,999,,999,999,12145000
-GWM,2024,Quantity,Bulk Water - Headworks,All,Variable,999,,999,999,4160535
-GWM,2024,Quantity,Bulk Water - Headworks,Environment,Fixed,999,,999,999,28000
-GVW,2024,Price,Sewerage,Service Fee,Fixed,999,,999,999,419.9677487
-GVW,2024,Price,Sewerage,Volumetric,Variable,999,,999,999,1.548205489
-GVW,2024,Price,Trade Waste,Service Fee,Fixed,999,,999,999,219.2982456
-GVW,2024,Price,Water,Service Fee,Fixed,999,,999,999,185.9815431
-GVW,2024,Price,Water,Volumetric,Variable,999,,999,999,1.136999706
-GVW,2024,Price,Water,Raw Water,Variable,999,,999,999,0.579931071
-GVW,2024,Price,Water,Non-potable,Variable,999,,999,999,0.767734671
-GVW,2024,Price,Water,Information Statements,Fixed,999,,999,999,54.11405578
-GVW,2024,Price,Water,Temporary  Water Trading,Variable,999,,999,999,129
-GVW,2024,Quantity,Sewerage,Service Fee,Fixed,999,,999,999,57052
-GVW,2024,Quantity,Sewerage,Volumetric,Variable,999,,999,999,1421000
-GVW,2024,Quantity,Trade Waste,Service Fee,Fixed,999,,999,999,1140
-GVW,2024,Quantity,Water,Service Fee,Fixed,999,,999,999,63716
-GVW,2024,Quantity,Water,Volumetric,Variable,999,,999,999,24775732
-GVW,2024,Quantity,Water,Raw Water,Variable,999,,999,999,362112
-GVW,2024,Quantity,Water,Non-potable,Variable,999,,999,999,39076
-GVW,2024,Quantity,Water,Information Statements,Fixed,999,,999,999,7207
-GVW,2024,Quantity,Water,Temporary  Water Trading,Variable,999,,999,999,10000
+CW,2023,Price,Recycled Water,Non-residential,Fixed,999,,999,999,942.0068831
+CW,2023,Price,Recycled Water,Non-residential,Variable,999,,999,999,1.7156
+CW,2023,Price,Recycled Water,Residential,Fixed,999,,999,999,146.2740602
+CW,2023,Price,Recycled Water,Residential,Variable,999,,999,999,1.7156
+CW,2023,Price,Recycled Water,Service fees,Fixed,999,,999,999,288.71
+CW,2023,Price,Rural Water,Rural,Fixed,999,,999,999,180.1000668
+CW,2023,Price,Rural Water,Rural,Variable,999,,999,999,0.2652518
+CW,2023,Price,Sewerage,Non-residential,Fixed,999,,999,999,696.46
+CW,2023,Price,Sewerage,Non-residential,Variable,999,,999,999,0.9926
+CW,2023,Price,Sewerage,Residential,Fixed,999,,999,999,696.46
+CW,2023,Price,Trade Waste,Non-residential,Fixed,999,,999,999,163.13
+CW,2023,Price,Trade Waste,Trade Waste,Variable,999,,999,999,0.656469417
+CW,2023,Price,Water,Miscellaneous,Fixed,999,,999,999,25.36552911
+CW,2023,Price,Water,Non-residential,Fixed,999,,999,999,414.4117324
+CW,2023,Price,Water,Non-residential,Variable,999,,999,999,2.28603136
+CW,2023,Price,Water,Residential,Fixed,999,,999,999,234.4714665
+CW,2023,Price,Water,Residential,Variable,999,,999,999,2.286097674
+CW,2023,Price,Water,Service fees,Fixed,999,,999,999,145.3009484
+CW,2023,Quantity,Recycled Water,Non-residential,Fixed,999,,999,999,77
+CW,2023,Quantity,Recycled Water,Non-residential,Variable,999,,999,999,315859
+CW,2023,Quantity,Recycled Water,Residential,Fixed,999,,999,999,1495
+CW,2023,Quantity,Recycled Water,Residential,Variable,999,,999,999,55650
+CW,2023,Quantity,Recycled Water,Service fees,Fixed,999,,999,999,112
+CW,2023,Quantity,Rural Water,Rural,Fixed,999,,999,999,14213
+CW,2023,Quantity,Rural Water,Rural,Variable,999,,999,999,4443791.185
+CW,2023,Quantity,Sewerage,Non-residential,Fixed,999,,999,999,6004
+CW,2023,Quantity,Sewerage,Non-residential,Variable,999,,999,999,1386924
+CW,2023,Quantity,Sewerage,Residential,Fixed,999,,999,999,68129
+CW,2023,Quantity,Trade Waste,Non-residential,Fixed,999,,999,999,1463
+CW,2023,Quantity,Trade Waste,Trade Waste,Variable,999,,999,999,3281204.83
+CW,2023,Quantity,Water,Miscellaneous,Fixed,999,,999,999,18446
+CW,2023,Quantity,Water,Non-residential,Fixed,999,,999,999,7712
+CW,2023,Quantity,Water,Non-residential,Variable,999,,999,999,6627518
+CW,2023,Quantity,Water,Residential,Fixed,999,,999,999,74383
+CW,2023,Quantity,Water,Residential,Variable,999,,999,999,14275036
+CW,2023,Quantity,Water,Service fees,Fixed,999,,999,999,4528.236
+GWM,2023,Price,Sewerage,All Services,Fixed,999,,999,999,516.1513215
+GWM,2023,Price,Trade Waste,All Services,Fixed,999,,999,999,283.4008097
+GWM,2023,Price,Urban Water,Potable Supply,Fixed,999,,999,999,449.5001947
+GWM,2023,Price,Urban Water,Potable Supply,Variable,999,,999,999,1.755877247
+GWM,2023,Price,Urban Water,Non Potable Pipeline Suppled Towns,Fixed,999,,999,999,385.026738
+GWM,2023,Price,Urban Water,Non Potable Pipeline Suppled Towns,Variable,999,,999,999,1.611679939
+GWM,2023,Price,Urban Water,Non Potable Groundwater Supplied Towns,Fixed,999,,999,999,378.6707883
+GWM,2023,Price,Urban Water,Non Potable Groundwater Supplied Towns,Variable,999,,999,999,0.979316029
+GWM,2023,Price,Urban Water,All Services,Fixed,999,,999,999,540.9153953
+GWM,2023,Price,Urban Water,All Services,Variable,999,,999,999,2.598989906
+GWM,2023,Price,Urban Water,non Potable Eastern Grampians ,Fixed,999,,999,999,357.1428571
+GWM,2023,Price,Urban Water,non Potable Eastern Grampians ,Variable,999,,999,999,1.307616868
+GWM,2023,Price,Domestic and stock,Pipeline Supply,Fixed,999,,999,999,1.216023387
+GWM,2023,Price,Domestic and stock,Pipeline Supply,Variable,999,,999,999,1.170718026
+GWM,2023,Price,Domestic and stock,Bore Supply,Fixed,999,,999,999,3.796747453
+GWM,2023,Price,Groundwater diversions,All,Fixed,999,,999,999,7.18617954
+GWM,2023,Price,Surface water diversions,Wimmera,Fixed,999,,999,999,28.03083392
+GWM,2023,Price,Bulk Water - Headworks,All,Fixed,999,,999,999,0.139151914
+GWM,2023,Price,Bulk Water - Headworks,All,Variable,999,,999,999,0.028842445
+GWM,2023,Price,Bulk Water - Headworks,Environment,Fixed,999,,999,999,8.928571429
+GWM,2023,Quantity,Sewerage,All Services,Fixed,999,,999,999,28945
+GWM,2023,Quantity,Trade Waste,All Services,Fixed,999,,999,999,494
+GWM,2023,Quantity,Urban Water,Potable Supply,Fixed,999,,999,999,30812
+GWM,2023,Quantity,Urban Water,Potable Supply,Variable,999,,999,999,7739721
+GWM,2023,Quantity,Urban Water,Non Potable Pipeline Suppled Towns,Fixed,999,,999,999,935
+GWM,2023,Quantity,Urban Water,Non Potable Pipeline Suppled Towns,Variable,999,,999,999,210960
+GWM,2023,Quantity,Urban Water,Non Potable Groundwater Supplied Towns,Fixed,999,,999,999,1294
+GWM,2023,Quantity,Urban Water,Non Potable Groundwater Supplied Towns,Variable,999,,999,999,490138
+GWM,2023,Quantity,Urban Water,All Services,Fixed,999,,999,999,721
+GWM,2023,Quantity,Urban Water,All Services,Variable,999,,999,999,142363
+GWM,2023,Quantity,Urban Water,non Potable Eastern Grampians ,Fixed,999,,999,999,308
+GWM,2023,Quantity,Urban Water,non Potable Eastern Grampians ,Variable,999,,999,999,61180
+GWM,2023,Quantity,Domestic and stock,Pipeline Supply,Fixed,999,,999,999,9785996
+GWM,2023,Quantity,Domestic and stock,Pipeline Supply,Variable,999,,999,999,6218406
+GWM,2023,Quantity,Domestic and stock,Bore Supply,Fixed,999,,999,999,47409
+GWM,2023,Quantity,Groundwater diversions,All,Fixed,999,,999,999,69578
+GWM,2023,Quantity,Surface water diversions,Wimmera,Fixed,999,,999,999,4281
+GWM,2023,Quantity,Bulk Water - Headworks,All,Fixed,999,,999,999,12145000
+GWM,2023,Quantity,Bulk Water - Headworks,All,Variable,999,,999,999,4160535
+GWM,2023,Quantity,Bulk Water - Headworks,Environment,Fixed,999,,999,999,28000
+GVW,2023,Price,Sewerage,Service Fee,Fixed,999,,999,999,419.9677487
+GVW,2023,Price,Sewerage,Volumetric,Variable,999,,999,999,1.548205489
+GVW,2023,Price,Trade Waste,Service Fee,Fixed,999,,999,999,219.2982456
+GVW,2023,Price,Water,Service Fee,Fixed,999,,999,999,185.9815431
+GVW,2023,Price,Water,Volumetric,Variable,999,,999,999,1.136999706
+GVW,2023,Price,Water,Raw Water,Variable,999,,999,999,0.579931071
+GVW,2023,Price,Water,Non-potable,Variable,999,,999,999,0.767734671
+GVW,2023,Price,Water,Information Statements,Fixed,999,,999,999,54.11405578
+GVW,2023,Price,Water,Temporary  Water Trading,Variable,999,,999,999,129
+GVW,2023,Quantity,Sewerage,Service Fee,Fixed,999,,999,999,57052
+GVW,2023,Quantity,Sewerage,Volumetric,Variable,999,,999,999,1421000
+GVW,2023,Quantity,Trade Waste,Service Fee,Fixed,999,,999,999,1140
+GVW,2023,Quantity,Water,Service Fee,Fixed,999,,999,999,63716
+GVW,2023,Quantity,Water,Volumetric,Variable,999,,999,999,24775732
+GVW,2023,Quantity,Water,Raw Water,Variable,999,,999,999,362112
+GVW,2023,Quantity,Water,Non-potable,Variable,999,,999,999,39076
+GVW,2023,Quantity,Water,Information Statements,Fixed,999,,999,999,7207
+GVW,2023,Quantity,Water,Temporary  Water Trading,Variable,999,,999,999,10000

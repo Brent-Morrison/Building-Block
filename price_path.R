@@ -2,6 +2,8 @@ source("funs.R")
 library(dplyr)
 library(tidyr)
 
+ent_parm <- "CW"
+
 # Depreciation on opening RAB --------------------------------------------
 dpn_open <- depn_fun_opn(571.85, 15.92)
 
@@ -48,7 +50,6 @@ dpn <- dpn_open[1:5] + dpn_cpx
 
 
 # Opex -------------------------------------------------------------------
-opex <- c(90,89,89,89,89)
 opex <- dat %>%
   filter(
     balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
@@ -88,10 +89,31 @@ roa <- rrr * exist_rab_detail["average", ]
 
 # Revenue requirement ----------------------------------------------------
 rev_req <- roa + opex$amount + dpn
+rev_req <- rev_req[1:5]
+
+
+# Price & quantity data --------------------------------------------------
+pq <- dat %>%
+  filter(
+    balance_type %in% c("Price", "Quantity"),
+    entity == ent_parm
+  )
+
+# Quantities
+q.t1 <- pq %>% filter(year == 2023, balance_type == 'Quantity')  # Pivot wider here
+q <- as.matrix(q.t1[, "amount"])
+rownames(q) <- paste(q.t1[, "service"], q.t1[, "asset_category"], q.t1[, "cost_driver"], sep = ".")
+q <- q %*% exp( cumsum( log( 1 + rep(0.05, 5) ) ) )
+#q[grepl("Trade", rownames(q)), ]
+
+# Prices
+pq.t1 <- pq %>% filter(year == 2023, balance_type == 'Price')
+p0 <- as.matrix(pq.t1[, "amount"])
+rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "cost_driver"], sep = ".")
 
 
 # Perform optimisation ---------------------------------------------------
-res <- optim(
+optim_result <- optim(
   
   # Initial values for the parameters to be optimized over
   par = c(0.0255, 0),
@@ -108,15 +130,18 @@ res <- optim(
   # ... Further arguments to be passed to fn
   pdyr    = 1,
   rev_req = rev_req,
-  p0      = as.matrix(10),
-  q       = c(100,102,104,106,108)
+  p0      = p0,
+  q       = q
   
 )
-res
+optim_result
 
-res_list <- npv_optim_func(theta=res$par, pdyr=1, rev_req=rev_req, p0=as.matrix(10), q=c(100,102,104,106,108), rtn="data")
-price_delta <- res_list$price_delta
-prices <- res_list$prices
+optim_result_list <- npv_optim_func(theta=optim_result$par, pdyr=1, rev_req=rev_req, p0=p0, q=q, rtn="data")
+price_delta <- optim_result_list$price_delta
+prices <- optim_result_list$prices
 
-sum(res_list$prices * c(100,102,104,106,108)) / 1e6
+rev <- colSums(prices * q) / 1e6
 
+# Check results
+sum(rev_req / (1 + 0.0255) ^ (1:length(rev_req))) # NPV of revenue requirement
+sum(rev     / (1 + 0.0255) ^ (1:length(rev    ))) # NPV of revenue
