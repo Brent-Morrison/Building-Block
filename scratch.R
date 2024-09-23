@@ -50,6 +50,18 @@ write.csv(capex_opex, "./data/price_subm_2023.csv")
 
 # ----------------------------------------------------------------------------
 
+y <- 100
+s <- 0.1 # slope
+m <- rep(y/12, 12)
+m <- m + scale((1:12 * s), center = TRUE, scale = FALSE)
+m[,1]
+p <- 0  # phase shift
+
+# https://www.mathsisfun.com/algebra/amplitude-period-frequency-phase-shift.html
+x <- seq(from = 0, to = 2 * pi, length.out = 12)   #seq(0.8 * pi,length.out=12)
+y <- scale(sin(x + p), center = TRUE, scale = FALSE)
+plot(x, y ,type="l")
+plot(x, m[,1]+y ,type="l")
 
 #xc <- xtabs(amount ~ regulatory_life + year + year_operational, dat[dat$entity == "CW" & dat$balance_type == "gross_capex", ])
 #xc[1]

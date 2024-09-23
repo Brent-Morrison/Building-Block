@@ -62,12 +62,16 @@ opex <- dat %>%
 
 
 # RAB schedule -----------------------------------------------------------
+cc <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", ], FUN = sum)["amount"]  # Customer contributions
+gc <- aggregate(amount ~ year, data = dat[dat$entity == "SEW" & dat$balance_type == "gov_cont", ], FUN = sum)["amount"]  # Customer contributions
+
 open_rab_val <- 591.85
 exist_rab_detail <- matrix(rep(0, 8*5), ncol=5)
 rownames(exist_rab_detail) <- c("open","capex","cust_cont","gov_cont","reg_depn","disp","close","average")
 colnames(exist_rab_detail) <- c(1:5)
 exist_rab_detail["open", 1] <- open_rab_val
-exist_rab_detail["capex", ] <- colSums(c)[1:5]
+exist_rab_detail["capex", ] <- colSums(c)[1:5] + cc$amount[1:5]
+exist_rab_detail["cust_cont", ] <- -cc$amount[1:5]
 exist_rab_detail["reg_depn", ] <- -dpn[1:5]
 exist_rab_detail["close", 1] <- sum(exist_rab_detail[1:6, 1])
 for(i in 2:5) {
