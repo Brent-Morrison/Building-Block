@@ -2676,3 +2676,113 @@ GVW,2023,Quantity,Water,Raw Water,Variable,999,,999,999,362112
 GVW,2023,Quantity,Water,Non-potable,Variable,999,,999,999,39076
 GVW,2023,Quantity,Water,Information Statements,Fixed,999,,999,999,7207
 GVW,2023,Quantity,Water,Temporary  Water Trading,Variable,999,,999,999,10000
+SEW,2023,rab_book_value,,,,,Buildings,,,91.87331313
+SEW,2023,rab_book_value,,,,,Chlorination Plants,,,1.668296613
+SEW,2023,rab_book_value,,,,,Computer Hardware,,,1.296011806
+SEW,2023,rab_book_value,,,,,Computer Software,,,46.19044103
+SEW,2023,rab_book_value,,,,,Infrastructure Asset,,,588.8743265
+SEW,2023,rab_book_value,,,,,Furn. & Office Eqmt,,,1.898206457
+SEW,2023,rab_book_value,,,,,IP Assets,,,0.795374429
+SEW,2023,rab_book_value,,,,,Large Water Mains,,,57.67146803
+SEW,2023,rab_book_value,,,,,Leasehold Improvements,,,0.072468171
+SEW,2023,rab_book_value,,,,,Main Sewers,,,172.6627742
+SEW,2023,rab_book_value,,,,,Motor Vehicles,,,6.698686811
+SEW,2023,rab_book_value,,,,,Personal Computers,,,1.015361839
+SEW,2023,rab_book_value,,,,,Plant And Equipment,,,9.731438893
+SEW,2023,rab_book_value,,,,,Pressure Rdn Stn,,,9.825151685
+SEW,2023,rab_book_value,,,,,Prop. Branch Sewers,,,65.22723086
+SEW,2023,rab_book_value,,,,,Recycling Pipelines,,,174.7017692
+SEW,2023,rab_book_value,,,,,Retic Water Mains,,,722.5750301
+SEW,2023,rab_book_value,,,,,Reticulation Sewers,,,1418.396254
+SEW,2023,rab_book_value,,,,,Rising Sewer Mains,,,86.00966775
+SEW,2023,rab_book_value,,,,,Service Reservoirs,,,11.89018963
+SEW,2023,rab_book_value,,,,,Sewerage Pumping Stn,,,165.7005822
+SEW,2023,rab_book_value,,,,,Sewerage Trtmnt Plt,,,422.2604969
+SEW,2023,rab_book_value,,,,,Telemetry Equipment,,,8.151088971
+SEW,2023,rab_book_value,,,,,Water Meters,,,33.39282723
+SEW,2023,rab_book_value,,,,,Water Pumping Stn,,,35.72926858
+SEW,2023,rab_book_value,,,,,Zone Service Res,,,14.86494087
+SEW,2023,rab_remaining_life,,,,,Buildings,,,38.2843865
+SEW,2023,rab_remaining_life,,,,,Chlorination Plants,,,35.37373766
+SEW,2023,rab_remaining_life,,,,,Computer Hardware,,,1.425594406
+SEW,2023,rab_remaining_life,,,,,Computer Software,,,1.411297101
+SEW,2023,rab_remaining_life,,,,,Infrastructure Asset,,,46.84276269
+SEW,2023,rab_remaining_life,,,,,Furn. & Office Eqmt,,,2.799545132
+SEW,2023,rab_remaining_life,,,,,IP Assets,,,14.00793059
+SEW,2023,rab_remaining_life,,,,,Large Water Mains,,,50.05573457
+SEW,2023,rab_remaining_life,,,,,Leasehold Improvements,,,4.656305913
+SEW,2023,rab_remaining_life,,,,,Main Sewers,,,74.5850416
+SEW,2023,rab_remaining_life,,,,,Motor Vehicles,,,2.609804085
+SEW,2023,rab_remaining_life,,,,,Personal Computers,,,1.072799502
+SEW,2023,rab_remaining_life,,,,,Plant And Equipment,,,3.589182424
+SEW,2023,rab_remaining_life,,,,,Pressure Rdn Stn,,,40.51635386
+SEW,2023,rab_remaining_life,,,,,Prop. Branch Sewers,,,90.15428484
+SEW,2023,rab_remaining_life,,,,,Recycling Pipelines,,,79.13544826
+SEW,2023,rab_remaining_life,,,,,Retic Water Mains,,,73.64668463
+SEW,2023,rab_remaining_life,,,,,Reticulation Sewers,,,81.01196439
+SEW,2023,rab_remaining_life,,,,,Rising Sewer Mains,,,60.53290243
+SEW,2023,rab_remaining_life,,,,,Service Reservoirs,,,49.72369843
+SEW,2023,rab_remaining_life,,,,,Sewerage Pumping Stn,,,34.67464625
+SEW,2023,rab_remaining_life,,,,,Sewerage Trtmnt Plt,,,38.27447825
+SEW,2023,rab_remaining_life,,,,,Telemetry Equipment,,,2.948505776
+SEW,2023,rab_remaining_life,,,,,Water Meters,,,7.364371238
+SEW,2023,rab_remaining_life,,,,,Water Pumping Stn,,,30.71737517
+SEW,2023,rab_remaining_life,,,,,Zone Service Res,,,50.04107499
+CW,2023,rab_book_value,,,,,na,,,571.8494126
+CW,2023,rab_remaining_life,,,,,na,,,15.92262667
+SEW,2023,Price,Recycled Water,Usage charge,Variable,999,,999,999,2.1513
+SEW,2023,Price,Recycled Water,Miscellaenous charge,Fixed,999,,999,999,375.14
+SEW,2023,Price,Sewerage,Service charge,Fixed,999,,999,999,436.72
+SEW,2023,Price,Sewerage,Service charge ,Fixed,999,,999,999,367.76
+SEW,2023,Price,Sewerage,Disposal charge,Variable,999,,999,999,1.069067404
+SEW,2023,Price,Sewerage,Miscellaenous charge,Fixed,999,,999,999,62
+SEW,2023,Price,Trade Waste,Annual charge ,Fixed,999,,999,999,633.9436236
+SEW,2023,Price,Trade Waste,Usage charge,Variable,999,,999,999,0.970614089
+SEW,2023,Price,Trade Waste,Miscellaenous charge,Fixed,999,,999,999,57.53377359
+SEW,2023,Price,Water,Service charge,Fixed,999,,999,999,83.72
+SEW,2023,Price,Water,Service charge ,Fixed,999,,999,999,83.72
+SEW,2023,Price,Water,Bunyip Main Race,Fixed,999,,999,999,120.64
+SEW,2023,Price,Water,Fire Service Charge,Fixed,999,,999,999,128.32
+SEW,2023,Price,Water,Usage charge,Variable,999,,999,999,3.021658776
+SEW,2023,Price,Water,Miscellaenous charge,Fixed,999,,999,999,113.6737072
+SEW,2023,Quantity,Recycled Water,Usage charge,Variable,999,,999,999,2076349.941
+SEW,2023,Quantity,Recycled Water,Miscellaenous charge,Fixed,999,,999,999,4434.199199
+SEW,2023,Quantity,Sewerage,Service charge,Fixed,999,,999,999,50980.57754
+SEW,2023,Quantity,Sewerage,Service charge ,Fixed,999,,999,999,710748.3297
+SEW,2023,Quantity,Sewerage,Disposal charge,Variable,999,,999,999,98397233.09
+SEW,2023,Quantity,Sewerage,Miscellaenous charge,Fixed,999,,999,999,10089.42653
+SEW,2023,Quantity,Trade Waste,Annual charge ,Fixed,999,,999,999,9107.572784
+SEW,2023,Quantity,Trade Waste,Usage charge,Variable,999,,999,999,24753125.43
+SEW,2023,Quantity,Trade Waste,Miscellaenous charge,Fixed,999,,999,999,3022.466255
+SEW,2023,Quantity,Water,Service charge,Fixed,999,,999,999,731382.8286
+SEW,2023,Quantity,Water,Service charge ,Fixed,999,,999,999,55441.71295
+SEW,2023,Quantity,Water,Bunyip Main Race,Fixed,999,,999,999,308.7055749
+SEW,2023,Quantity,Water,Fire Service Charge,Fixed,999,,999,999,20078.13124
+SEW,2023,Quantity,Water,Usage charge,Variable,999,,999,999,142268510.4
+SEW,2023,Quantity,Water,Miscellaenous charge,Fixed,999,,999,999,49727.18615
+GVW,2023,rab_book_value,,,,,BUILDING,,,2.02
+GVW,2023,rab_book_value,,,,,CORPORATE,,,8.84
+GVW,2023,rab_book_value,,,,,INTANGIBLE,,,0.59
+GVW,2023,rab_book_value,,,,,LAND,,,22.48
+GVW,2023,rab_book_value,,,,,SEWER,,,168.18
+GVW,2023,rab_book_value,,,,,WATER,,,277.29
+GVW,2023,rab_remaining_life,,,,,BUILDING,,,29.03
+GVW,2023,rab_remaining_life,,,,,CORPORATE,,,14.19
+GVW,2023,rab_remaining_life,,,,,INTANGIBLE,,,4
+GVW,2023,rab_remaining_life,,,,,LAND,,,0
+GVW,2023,rab_remaining_life,,,,,SEWER,,,47.72
+GVW,2023,rab_remaining_life,,,,,WATER,,,46.82
+GWM,2023,rab_book_value,,,,,Urban Water,,,186.78
+GWM,2023,rab_book_value,,,,,Sewerage,,,62
+GWM,2023,rab_book_value,,,,,Domestic and stock,,,157.56
+GWM,2023,rab_book_value,,,,,Bulk water - headworks,,,64.42
+GWM,2023,rab_book_value,,,,,Corporate,,,6.61
+GWM,2023,rab_book_value,,,,,Groundwater diversions,,,2.21
+GWM,2023,rab_book_value,,,,,Decommisioning expenditure,,,1.18
+GWM,2023,rab_remaining_life,,,,,Urban Water,,,44.48
+GWM,2023,rab_remaining_life,,,,,Sewerage,,,46.26
+GWM,2023,rab_remaining_life,,,,,Domestic and stock,,,51.64
+GWM,2023,rab_remaining_life,,,,,Bulk water - headworks,,,67.99
+GWM,2023,rab_remaining_life,,,,,Corporate,,,4.16
+GWM,2023,rab_remaining_life,,,,,Groundwater diversions,,,10
+GWM,2023,rab_remaining_life,,,,,Decommisioning expenditure,,,5

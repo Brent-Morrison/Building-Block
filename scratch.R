@@ -48,27 +48,25 @@ capex_opex <- bind_rows(capex, opex)
 write.csv(capex_opex, "./data/price_subm_2023.csv")
 
 
-# ----------------------------------------------------------------------------
 
-y <- 100
-s <- 0.1 # slope
-m <- rep(y/12, 12)
-m <- m + scale((1:12 * s), center = TRUE, scale = FALSE)
-m[,1]
-p <- 0  # phase shift
+# --------------------------------------------------------------------------------------------------------------------------
+# Load from text
+# --------------------------------------------------------------------------------------------------------------------------
 
-# https://www.mathsisfun.com/algebra/amplitude-period-frequency-phase-shift.html
-x <- seq(from = 0, to = 2 * pi, length.out = 12)   #seq(0.8 * pi,length.out=12)
-y <- scale(sin(x + p), center = TRUE, scale = FALSE)
-plot(x, y ,type="l")
-plot(x, m[,1]+y ,type="l")
+capex1 <- "
+13.07  22.94 	 16.69 	 0.00    0.00
+1.14 	 3.18 	 5.20 	 4.76 	 10.88
+0.67 	 3.66 	 6.34 	 4.25 	 11.38
+0.13 	 0.00    1.32 	 8.60 	 15.21
+0.00	 0.12 	 14.94 	 0.69 	 0.00
+0.00 	 2.22 	 6.19 	 6.19 	 0.00
+0.19 	 6.71 	 6.71 	 0.00 	 0.00
+0.00 	 0.00 	 0.43 	 5.50 	 5.50
+4.29 	 6.96 	 0.00 	 0.00		 0.00
+0.00 	 0.00	 	 1.34 	 3.02 	 4.56
+67.0   53.0    45.0    75.0    61.0
+"
 
-#xc <- xtabs(amount ~ regulatory_life + year + year_operational, dat[dat$entity == "CW" & dat$balance_type == "gross_capex", ])
-#xc[1]
-#xc1 <- ftable(xc)
-#colnames(xc1)
-
-#xeg <- xtabs(amount ~ regulatory_life + year , dat[dat$entity == "CW" & dat$balance_type == "gross_capex", ])
-#as.integer(row.names(xeg))
-#yr_int <- colnames(xeg)
-#as.integer(row.names(xeg))
+capex1 <- as.numeric(unlist(strsplit(trimws(capex1), "\\s+")))
+capex <- matrix(capex1, ncol=5, byrow=TRUE)
+colSums(capex)

@@ -2,10 +2,7 @@ source("funs.R")
 library(dplyr)
 library(tidyr)
 
-ent_parm <- "CW"
-
-# Depreciation on opening RAB --------------------------------------------
-dpn_open <- depn_fun_opn(571.85, 15.92)
+ent_parm <- "SEW"
 
 
 # Capex data -------------------------------------------------------------
@@ -16,7 +13,7 @@ capex <- dat %>%
     balance_type %in% c("cust_cont","gov_cont") ~ -amount, 
     TRUE ~ amount)
   ) %>%
-  filter(entity == "CW", balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
+  filter(entity == ent_parm, balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
   select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
   pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
 
@@ -38,6 +35,22 @@ life <- capex$regulatory_life
 life
 
 
+# Depreciation on opening RAB --------------------------------------------
+
+bv <- dat[dat$entity == ent_parm & dat$year == 2023 & dat$balance_type == "rab_book_value", "amount"]
+rl <- dat[dat$entity == ent_parm & dat$year == 2023 & dat$balance_type == "rab_remaining_life", "amount"]
+  
+# Apply depreciation function over multiple instances
+dpn_open_dtl <- mapply(FUN = depn_fun_opn, open_rab_val = bv, open_rab_rem = rl, SIMPLIFY = FALSE)
+
+# Equalise individual lengths to 20 years
+dpn_open_dtl <- lapply(dpn_open_dtl, function(x) replace(x[1:20], is.na(x[1:20]), 0))
+
+# To matrix
+dpn_open_dtl <- do.call(rbind, dpn_open_dtl)
+dpn_open <- colSums(dpn_open_dtl)
+
+
 # Depreciation on capex --------------------------------------------------
 dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
 dpn_mtrix
@@ -55,7 +68,7 @@ opex <- dat %>%
     balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
     "Customer Service and billing", "GSL Payments", "Corporate", "Other operating expenditure",
     "Environment Contribution", "Licence Fees", "Treatment"),
-    entity == "CW"
+    entity == ent_parm
   ) %>% 
   group_by(year) %>% 
   summarise(amount = sum(amount))
@@ -63,7 +76,7 @@ opex <- dat %>%
 
 # RAB schedule -----------------------------------------------------------
 cc <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", ], FUN = sum)["amount"]  # Customer contributions
-gc <- aggregate(amount ~ year, data = dat[dat$entity == "SEW" & dat$balance_type == "gov_cont", ], FUN = sum)["amount"]  # Customer contributions
+gc <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", ], FUN = sum)["amount"]  # Customer contributions
 
 open_rab_val <- 591.85
 exist_rab_detail <- matrix(rep(0, 8*5), ncol=5)
@@ -104,14 +117,14 @@ pq <- dat %>%
   )
 
 # Quantities
-q.t1 <- pq %>% filter(year == 2023, balance_type == 'Quantity')  # Pivot wider here
+q.t1 <- pq %>% filter(entity == ent_parm, year == 2023, balance_type == 'Quantity')  # Pivot wider here
 q <- as.matrix(q.t1[, "amount"])
 rownames(q) <- paste(q.t1[, "service"], q.t1[, "asset_category"], q.t1[, "cost_driver"], sep = ".")
 q <- q %*% exp( cumsum( log( 1 + rep(0.05, 5) ) ) )
 #q[grepl("Trade", rownames(q)), ]
 
 # Prices
-pq.t1 <- pq %>% filter(year == 2023, balance_type == 'Price')
+pq.t1 <- pq %>% filter(entity == ent_parm, year == 2023, balance_type == 'Price')
 p0 <- as.matrix(pq.t1[, "amount"])
 rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "cost_driver"], sep = ".")
 
@@ -146,6 +159,14 @@ prices <- optim_result_list$prices
 
 rev <- colSums(prices * q) / 1e6
 
+
 # Check results
 sum(rev_req / (1 + 0.0255) ^ (1:length(rev_req))) # NPV of revenue requirement
 sum(rev     / (1 + 0.0255) ^ (1:length(rev    ))) # NPV of revenue
+
+
+cat(
+  paste0("Price delta of ", max(price_delta), " in year ", which.max(price_delta)),
+  paste0("on revenue requirement of ", round(sum(rev_req), 2)),
+  sep = "\n"
+)

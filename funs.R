@@ -207,9 +207,39 @@ depn_fun_opn <- function(open_rab_val, open_rab_rem) {
   #   a series of depreciation charges
   
   open_rab_depn <- open_rab_val / open_rab_rem
-  depn1 <- rep(round(open_rab_depn, 2), floor(open_rab_rem))
+  depn1 <- rep(round(open_rab_depn, 5), floor(open_rab_rem))
   depn2 <- open_rab_val - sum(depn1)
   depn <- c(depn1, depn2)
   
   return(depn)
+}
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Convert yearly data to monthly and add trend and seasonality
+# --------------------------------------------------------------------------------------------------------------------------
+
+add_trend_season <- function(y, s, a, p) {
+  
+  # Convert yearly data to monthly and add trend and seasonality
+  #
+  # Args:
+  #   y - yearly income/ expense
+  #   s - slope
+  #   a - amplitude
+  #   p - phase shift
+  #
+  # Returns
+  #   a monthly series
+  
+  m <- rep(y/12, 12)                                                            # monthly
+  m <- m + scale((1:12 * s), center = TRUE, scale = FALSE)                      # monthly with trend
+  m <- m[,1]
+  
+  x <- seq(from = 0, to = 2 * pi, length.out = 12)                              # sequence for seasonality
+  y <- scale(a * sin(x + p), center = TRUE, scale = FALSE)
+  y <- y[,1]
+  
+  return(y)
 }
