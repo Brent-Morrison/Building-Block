@@ -2,7 +2,7 @@
 # Matrix accounting
 # ---------------------------------------------------------------------------------------------------------
 
-library(readxl)
+#library(readxl)
 
 dat_src <- "local"   # "local" / "remote"
 
@@ -31,14 +31,15 @@ sew_txns$month <- as.Date(sew_txns$month)
 
 
 # Matrix dimensions
-mon <- 1:24   # Number of months
+mon <- 1:12   # Number of months
 txn <- unlist(txn_type[,"txn_code"], use.names = FALSE)  # Transaction types
 act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 
 
 # Transaction balances
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
-incm <- unlist(sew_txns[,"incm"], use.names = FALSE)
+#incm <- unlist(sew_txns[,"incm"], use.names = FALSE)
+incm <- as.vector(sapply(X = tot_rev, FUN = add_trend_season, s=0, a=1, p=1.5))
 exp1 <- unlist(sew_txns[,"exp1"], use.names = FALSE)
 cpx1 <- unlist(sew_txns[,"cpx1"], use.names = FALSE)
 dpn1 <- unlist(sew_txns[,"dpn1"], use.names = FALSE)

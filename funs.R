@@ -122,6 +122,7 @@ npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn_mode="obj") {
   #             , a value of zero returns an even price delta for each year 
   #   rev_req - vector of revenue requirement (length 5)
   #   p0      - matrix of initial prices, dimension n * 1 
+  #   q       - 
   #
   # Returns:
   #   error, the difference between two net present values
@@ -141,7 +142,6 @@ npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn_mode="obj") {
   obj          <- (npv_rev_req - npv_tot_r) ^ 2
   
   rtn_list <- list(price_delta = pdvec, prices = pnew)
-  #names(rtn_list) <- c("price_delta","prices")
   
   ifelse(rtn_mode == "obj", return(obj), return(rtn_list))
   
@@ -225,7 +225,7 @@ add_trend_season <- function(y, s, a, p) {
   # Convert yearly data to monthly and add trend and seasonality
   #
   # Args:
-  #   y - yearly income/ expense
+  #   y - yearly income / expense
   #   s - slope
   #   a - amplitude
   #   p - phase shift
@@ -241,5 +241,5 @@ add_trend_season <- function(y, s, a, p) {
   y <- scale(a * sin(x + p), center = TRUE, scale = FALSE)
   y <- y[,1]
   
-  return(y)
+  return(y + m)
 }

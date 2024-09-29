@@ -150,4 +150,6 @@ all.equal(round(colSums(dpn_mtrix), 4), round(unname(colSums(result)), 4))
 # --------------------------------------------------------------------------------------------------------------------------
 
 source("funs.R")
-add_trend_season(y=100, s=0, a=1, p=1.5)
+y <- add_trend_season(y=100, s=0, a=1, p=1.5)
+plot(1:12, y ,type="l", main = "trend")
+sum(y)

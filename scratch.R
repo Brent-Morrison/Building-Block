@@ -70,3 +70,19 @@ capex1 <- "
 capex1 <- as.numeric(unlist(strsplit(trimws(capex1), "\\s+")))
 capex <- matrix(capex1, ncol=5, byrow=TRUE)
 colSums(capex)
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Convert names
+# --------------------------------------------------------------------------------------------------------------------------
+dat <- read.csv("./data/price_subm_2023.csv")
+
+dat$asset_category <- gsub("-", "_", dat$asset_category)
+dat$asset_category <- gsub(" ", "_", dat$asset_category)
+dat$asset_category <- gsub("\\(", "", dat$asset_category)
+dat$asset_category <- gsub("\\)", "", dat$asset_category)
+dat$asset_category <- tolower(gsub("/", "_", dat$asset_category))
+unique(dat$asset_category)
+
+
+

@@ -2,7 +2,9 @@ source("funs.R")
 library(dplyr)
 library(tidyr)
 
-ent_parm <- "SEW"
+ent_parm <- "CW"
+initial_fcast_yr <- 2024
+price_delta_yr <- 2
 
 
 # Capex data -------------------------------------------------------------
@@ -75,17 +77,56 @@ opex <- dat %>%
 
 
 # RAB schedule -----------------------------------------------------------
-cc <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", ], FUN = sum)["amount"]  # Customer contributions
-gc <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", ], FUN = sum)["amount"]  # Customer contributions
+# Customer contributions
+cc.t <- rep(0, 5)
+y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
+if(sum(dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", "amount"]) != 0) {
+  ccdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", ], FUN = sum)
+  cc.t[which(ccdf$year == y)] <- ccdf$amount
+  cc <- cc.t
+} else {
+  cc <- cc.t
+}
+cc
+rm(cc.t, ccdf, y)
 
-open_rab_val <- 591.85
+# Government contributions
+gc.t <- rep(0, 5)
+y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
+if(sum(dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", "amount"]) != 0) {
+  gcdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", ], FUN = sum)
+  gc.t[which(gcdf$year == y)] <- gcdf$amount
+  gc <- gc.t
+} else {
+  gc <- gc.t
+}
+gc
+rm(gc.t, gcdf, y)
+
+# Disposals
+dp.t <- rep(0, 5)
+y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
+if(sum(dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", "amount"]) != 0) {
+  dpdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", ], FUN = sum)
+  dp.t[which(dpdf$year == y)] <- dpdf$amount
+  dp <- dp.t
+} else {
+  dp <- dp.t
+}
+dp
+rm(dp.t, dpdf, y)
+
+
+open_rab_val <- bv
 exist_rab_detail <- matrix(rep(0, 8*5), ncol=5)
 rownames(exist_rab_detail) <- c("open","capex","cust_cont","gov_cont","reg_depn","disp","close","average")
 colnames(exist_rab_detail) <- c(1:5)
 exist_rab_detail["open", 1] <- open_rab_val
-exist_rab_detail["capex", ] <- colSums(c)[1:5] + cc$amount[1:5]
-exist_rab_detail["cust_cont", ] <- -cc$amount[1:5]
+exist_rab_detail["capex", ] <- colSums(c)[1:5] + cc + gc
+exist_rab_detail["cust_cont", ] <- -cc 
+exist_rab_detail["gov_cont", ] <- -gc 
 exist_rab_detail["reg_depn", ] <- -dpn[1:5]
+exist_rab_detail["disp", ] <- -dp 
 exist_rab_detail["close", 1] <- sum(exist_rab_detail[1:6, 1])
 for(i in 2:5) {
   exist_rab_detail["open", i]  <- exist_rab_detail["close", i-1]
@@ -145,7 +186,7 @@ optim_result <- optim(
   upper = c(0.0255 + .Machine$double.eps,  0.5),
   
   # ... Further arguments to be passed to fn
-  pdyr    = 1,
+  pdyr    = price_delta_yr,
   rev_req = rev_req,
   p0      = p0,
   q       = q
@@ -153,20 +194,21 @@ optim_result <- optim(
 )
 optim_result
 
-optim_result_list <- npv_optim_func(theta=optim_result$par, pdyr=1, rev_req=rev_req, p0=p0, q=q, rtn="data")
+optim_result_list <- npv_optim_func(theta=optim_result$par, pdyr=price_delta_yr, rev_req=rev_req, p0=p0, q=q, rtn="data")
 price_delta <- optim_result_list$price_delta
 prices <- optim_result_list$prices
 
-rev <- colSums(prices * q) / 1e6
+rev <- prices * q
+tot_rev <- colSums(prices * q) / 1e6
 
 
 # Check results
 sum(rev_req / (1 + 0.0255) ^ (1:length(rev_req))) # NPV of revenue requirement
-sum(rev     / (1 + 0.0255) ^ (1:length(rev    ))) # NPV of revenue
+sum(tot_rev / (1 + 0.0255) ^ (1:length(tot_rev))) # NPV of revenue
 
 
 cat(
-  paste0("Price delta of ", max(price_delta), " in year ", which.max(price_delta)),
+  paste0("Price delta of ", price_delta[price_delta != 0], " in year ", which.max(price_delta[price_delta != 0])),
   paste0("on revenue requirement of ", round(sum(rev_req), 2)),
   sep = "\n"
 )
