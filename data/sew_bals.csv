@@ -1,5 +1,5 @@
 account_no,account_desc,sew_23,sew_22,cw_23,cw_22
-1000,Water-Service,-65651,-72372,,
+1000,Water-Service,-65651,-72372,-147095,-141737
 1001,Sewerage-Service,-284117,-277283,,
 1002,Trade waste-Service,-6760,-6321,,
 1003,Recycled water-Service,-1030,-1009,,
@@ -9,44 +9,46 @@ account_no,account_desc,sew_23,sew_22,cw_23,cw_22
 1103,Recycled water-Usage,-5426,-5220,,
 1200,Developer contributed assets,-91715,-74788,,
 1300,New customer contributions,-32190,-32426,,
-1400,Other revenue,-48398,-54456,,
+1400,Other revenue,-48398,-54456,-8693,-4117
 1500,Other income,-2106,-1937,,
-2000,Operating expenses ,638432,639341,,
-2100,Employee benefits,69514,59624,,
-2200,Depreciation and amortisation,123684,122917,,
-2300,Finance costs,89177,77986,,
-2400,Environmental contribution,43461,43461,,
-2450,Income tax expense,29363,32847,,
-2500,Dividends paid,21707,42116,,
+2000,Operating expenses ,638432,639341,66220,57951
+2100,Employee benefits,69514,59624,23441,20987
+2200,Depreciation and amortisation,123684,122917,37144,37328
+2300,Finance costs,89177,77986,23941,22978
+2400,Environmental contribution,43461,43461,5734,5734
+2600,Net gain / loss on disposal,0,0,3253,161
+2700,Other expenses,0,0,4807,1845
+2800,Income tax expense,29363,32847,-2622,-327
+2900,Dividends paid,21707,42116,0,0
 3000,Cash,91141,2409,26964,23804
 3100,Receivables,84585,101735,15683,14063
 3200,Contract assets,77797,75367,21725,19922
 3300,Other assets,12140,9650,2992,2116
-3500,"Infrastructure, property, plant and equipment ",4751780,4493121,,
-3505,Infrastructure & PPE- acc depn,0,0,,
-3600,Intangible assets,153833,153347,,
-3700,Right-of-use assets,7806,8680,,
-3800,Other financial assets,15,1062,,
-3900,Defined benefit superannuation asset,13443,10484,,
-4000,Payables,-126724,-100818,,
-4020,Accrued interest,0,0,,
-4100,Interest bearing liabilities,-894,-56745,,
-4200,Employee benefits provision,-23775,-21733,,
-4300,Income tax payable,-2575,-9392,,
-4350,Contract liabilities,-40069,-26258,,
-4400,Deposits and advances,-27173,-13418,,
-4450,Other provisions  ,-48,-163,,
-4500,Interest bearing liabilities,-2475338,-2246102,,
-4600,Deferred tax liabilities,-472492,-454950,,
-4700,Employee benefits provision,-3113,-3118,,
-4800,Other financial liabilities,-1759,0,,
-5000,Contributed equity,-288967,-288967,,
-5100,ARR - Land and buildings open,-342917,-292629,,
+3500,"Infrastructure, property, plant and equipment ",4751780,4493121,2149551,"1,907,699"
+3505,Infrastructure & PPE- acc depn,0,0,0,0
+3600,Intangible assets,153833,153347,71456,68118
+3700,Right-of-use assets,7806,8680,1799,1921
+3800,Other financial assets,15,1062,641,1345
+3900,Defined benefit superannuation asset,13443,10484,0,0
+4000,Payables,-126724,-100818,-30346,-22730
+4020,Accrued interest,0,0,0,0
+4100,Interest bearing liabilities,-894,-56745,-8375,-7744
+4200,Employee benefits provision,-23775,-21733,-7105,-6553
+4300,Income tax payable,-2575,-9392,0,0
+4350,Contract liabilities,-40069,-26258,-17216,-13817
+4400,Deposits and advances,-27173,-13418,-174,-598
+4450,Other provisions  ,-48,-163,0,0
+4500,Interest bearing liabilities,-2475338,-2246102,-488948,-455962
+4600,Deferred tax liabilities,-472492,-454950,-297976,-236437
+4700,Employee benefits provision,-3113,-3118,-613,-534
+4800,Other financial liabilities,-1759,0,-586,0
+5000,Contributed equity,-288967,-288967,-307800,-306525
+5100,ARR - Land and buildings open,-342917,-292629,-763791,-614077
 5101,ARR - Land and buildings change,0,-53290,,
 5102,ARR - Land and buildings change tax,0,3002,,
 5121,ARR - Infrastructure open,-498899,-566112,,
 5122,ARR - Infrastructure change,-68873,96018,,
 5123,ARR - Infrastructure change tax,20662,-28805,,
-5200,RE open,-792375,-748393,,
+5200,RE open,-792375,-748393,-374011,-374814
 5201,RE change re DBF,-3531,-11042,,
 5202,RE change re DBF,1058,3313,,
