@@ -18,7 +18,11 @@
 10,235,2350,Doubtful debts expense
 10,240,2400,Environmental contribution
 10,245,2450,Income tax expense
-25,250,2500,Dividends paid
+25,250,2500,xxxx
+26,260,2600,Net gain / loss on disposal
+27,270,2700,Other expenses
+28,280,2800,Income tax expense
+29,290,2900,Dividends paid
 30,300,3000,Cash
 30,310,3050,Accrued income
 30,310,3100,Trade debtors

@@ -5,33 +5,34 @@
 #library(readxl)
 
 dat_src <- "local"   # "local" / "remote"
-
+mons <- 60           # months to forecast
+open_bals_col <- "cw_23"
 
 if (dat_src == "local") {
   chart_src   <- "./data/chart.csv"
   txn_src     <- "./data/txn_type.csv"
-  bals_src    <- "./data/sew_bals.csv"
+  bals_src    <- "./data/open_bals.csv"
   txn_dat_src <- "./data/sew_txns.csv"
 } else {
   chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
   txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
-  bals_src    <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/sew_bals.csv"
+  bals_src    <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/open_bals.csv"
   txn_dat_src <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/sew_txns.csv"
 }
 
 chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
 txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
 rownames(txn_type) <- txn_type$txn_code
-sew_bals <- read.csv(bals_src, fileEncoding="UTF-8-BOM")
+open_bals <- read.csv(bals_src, fileEncoding="UTF-8-BOM")
 sew_txns <- read.csv(txn_dat_src, fileEncoding="UTF-8-BOM")
 sew_txns$month <- as.Date(sew_txns$month)
 
-#sew_bals <- read_xlsx("./data/SEW.xlsx", range = "bals!A1:D52", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
+#open_bals <- read_xlsx("./data/SEW.xlsx", range = "bals!A1:D52", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
 #sew_txns <- read_xlsx("./data/SEW.xlsx", range = "txns!A1:P25", col_names = TRUE, col_types = c("date",rep("numeric", 15)))
 
 
 # Matrix dimensions
-mon <- 1:12   # Number of months
+mon <- 1:mons   # Number of months
 txn <- unlist(txn_type[,"txn_code"], use.names = FALSE)  # Transaction types
 act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 
@@ -40,14 +41,15 @@ act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
 #incm <- unlist(sew_txns[,"incm"], use.names = FALSE)
 incm <- as.vector(sapply(X = tot_rev, FUN = add_trend_season, s=0, a=1, p=1.5))
-exp1 <- unlist(sew_txns[,"exp1"], use.names = FALSE)
+exp1 <- dat[dat$entity == ent_parm & dat$year %in% initial_fcast_yr:(initial_fcast_yr + 4) & dat$balance_type == "Operations & Maintenance", "amount"]
+#exp1 <- unlist(sew_txns[,"exp1"], use.names = FALSE)
 cpx1 <- unlist(sew_txns[,"cpx1"], use.names = FALSE)
 dpn1 <- unlist(sew_txns[,"dpn1"], use.names = FALSE)
 
 # Opening balances
-opn_bal <- merge(x = chart, y = sew_bals, by = "account_no", all.x = TRUE)
+opn_bal <- merge(x = chart, y = open_bals, by = "account_no", all.x = TRUE)
 opn_bal[is.na(opn_bal)] <- 0
-opn_bal <- unlist(opn_bal[,"sew_23"], use.names = FALSE)
+opn_bal <- unlist(opn_bal[,open_bals_col], use.names = FALSE)
 
 # Create matrix and assign names and opening balances
 mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))

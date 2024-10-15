@@ -208,7 +208,7 @@ sum(tot_rev / (1 + 0.0255) ^ (1:length(tot_rev))) # NPV of revenue
 
 
 cat(
-  paste0("Price delta of ", price_delta[price_delta != 0], " in year ", which.max(price_delta[price_delta != 0])),
+  paste0("Price delta of ", price_delta[price_delta != 0], " in year ", price_delta_yr),
   paste0("on revenue requirement of ", round(sum(rev_req), 2)),
   sep = "\n"
 )

@@ -243,3 +243,16 @@ add_trend_season <- function(y, s, a, p) {
   
   return(y + m)
 }
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Select DR's & Cr's
+# --------------------------------------------------------------------------------------------------------------------------
+drcr <- function(txn, txn_df) {
+  txn_type_parm = txn_df
+  dc <- as.character(unname(unlist(txn_type_parm[txn, c("dr", "cr")])))
+  return(dc)
+}
+
+drcr(txn = "incm", txn_df = txn_type)
+  
