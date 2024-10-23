@@ -41,7 +41,9 @@ act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
 #incm <- unlist(sew_txns[,"incm"], use.names = FALSE)
 incm <- as.vector(sapply(X = tot_rev, FUN = add_trend_season, s=0, a=1, p=1.5))
-exp1 <- dat[dat$entity == ent_parm & dat$year %in% initial_fcast_yr:(initial_fcast_yr + 4) & dat$balance_type == "Operations & Maintenance", "amount"]
+exp1 <- dat[dat$entity == ent_parm & dat$year %in% initial_fcast_yr:(initial_fcast_yr + 4) & dat$balance_type == "Operations & Maintenance", c("year","amount")]
+exp1 <- aggregate(exp1$amount, by = list(exp1$year), FUN = sum)
+exp1 <- exp1[order(exp1$Group.1), "x"]
 #exp1 <- unlist(sew_txns[,"exp1"], use.names = FALSE)
 cpx1 <- unlist(sew_txns[,"cpx1"], use.names = FALSE)
 dpn1 <- unlist(sew_txns[,"dpn1"], use.names = FALSE)

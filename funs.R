@@ -254,5 +254,5 @@ drcr <- function(txn, txn_df) {
   return(dc)
 }
 
-drcr(txn = "incm", txn_df = txn_type)
+#drcr(txn = "incm", txn_df = txn_type)
   
