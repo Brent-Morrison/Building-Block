@@ -5,6 +5,15 @@ library(tidyr)
 ent_parm <- "CW"
 initial_fcast_yr <- 2024
 price_delta_yr <- 2
+cost_of_debt_nmnl <- 0.0456
+fcast_infltn <- 0.03
+gearing <- 0.6
+cost_of_debt_real <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
+cost_of_debt_real
+roe <- 0.041
+rrr <- round((roe * (1 - gearing) + cost_of_debt_real * gearing),4)
+rrr
+
 
 
 # Capex data -------------------------------------------------------------
@@ -77,12 +86,16 @@ opex <- dat %>%
 
 
 # RAB schedule -----------------------------------------------------------
+# Capex
+cx <- colSums(c)[1:5]
+unlist(colSums(c)[1:5], use.names = FALSE)
+
 # Customer contributions
 cc.t <- rep(0, 5)
 y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
 if(sum(dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", "amount"]) != 0) {
   ccdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", ], FUN = sum)
-  cc.t[which(ccdf$year == y)] <- ccdf$amount
+  cc.t[which(ccdf$year == y)] <- ccdf$amount[1:5]
   cc <- cc.t
 } else {
   cc <- cc.t
@@ -95,7 +108,7 @@ gc.t <- rep(0, 5)
 y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
 if(sum(dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", "amount"]) != 0) {
   gcdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", ], FUN = sum)
-  gc.t[which(gcdf$year == y)] <- gcdf$amount
+  gc.t[which(gcdf$year == y)] <- gcdf$amount[1:5]
   gc <- gc.t
 } else {
   gc <- gc.t
@@ -108,7 +121,7 @@ dp.t <- rep(0, 5)
 y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
 if(sum(dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", "amount"]) != 0) {
   dpdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", ], FUN = sum)
-  dp.t[which(dpdf$year == y)] <- dpdf$amount
+  dp.t[which(dpdf$year == y)] <- dpdf$amount[1:5]
   dp <- dp.t
 } else {
   dp <- dp.t
@@ -122,7 +135,7 @@ exist_rab_detail <- matrix(rep(0, 8*5), ncol=5)
 rownames(exist_rab_detail) <- c("open","capex","cust_cont","gov_cont","reg_depn","disp","close","average")
 colnames(exist_rab_detail) <- c(1:5)
 exist_rab_detail["open", 1] <- open_rab_val
-exist_rab_detail["capex", ] <- colSums(c)[1:5] + cc + gc
+exist_rab_detail["capex", ] <- cx + cc + gc
 exist_rab_detail["cust_cont", ] <- -cc 
 exist_rab_detail["gov_cont", ] <- -gc 
 exist_rab_detail["reg_depn", ] <- -dpn[1:5]
@@ -141,13 +154,11 @@ exist_rab_detail
 
 
 # Return on assets -------------------------------------------------------
-rrr = 0.0255
 roa <- rrr * exist_rab_detail["average", ]
 
 
 # Revenue requirement ----------------------------------------------------
-rev_req <- roa + opex$amount + dpn
-rev_req <- rev_req[1:5]
+rev_req <- roa + opex$amount[1:5] + dpn[1:5]
 
 
 # Price & quantity data --------------------------------------------------
@@ -174,7 +185,7 @@ rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "co
 optim_result <- optim(
   
   # Initial values for the parameters to be optimized over
-  par = c(0.0255, 0),
+  par = c(rrr, 0),
   
   # Function to be minimized, first argument being vector of parameters over which minimization is applied
   fn  = npv_optim_func,
@@ -182,8 +193,8 @@ optim_result <- optim(
   method = "L-BFGS-B",
   
   # Upper & lower constraints for parameters
-  lower = c(0.0255 - .Machine$double.eps, -0.5),
-  upper = c(0.0255 + .Machine$double.eps,  0.5),
+  lower = c(rrr - .Machine$double.eps, -0.5),
+  upper = c(rrr + .Machine$double.eps,  0.5),
   
   # ... Further arguments to be passed to fn
   pdyr    = price_delta_yr,
@@ -199,16 +210,16 @@ price_delta <- optim_result_list$price_delta
 prices <- optim_result_list$prices
 
 rev <- prices * q
-tot_rev <- colSums(prices * q) / 1e6
+tot_rev_real <- colSums(prices * q) / 1e6
 
 
 # Check results
-sum(rev_req / (1 + 0.0255) ^ (1:length(rev_req))) # NPV of revenue requirement
-sum(tot_rev / (1 + 0.0255) ^ (1:length(tot_rev))) # NPV of revenue
+sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) # NPV of revenue requirement
+sum(tot_rev / (1 + rrr) ^ (1:length(tot_rev))) # NPV of revenue
 
 
 cat(
-  paste0("Price delta of ", price_delta[price_delta != 0], " in year ", price_delta_yr),
+  paste0("Price delta of ", round(price_delta[price_delta != 0] * 100, 2), " percent in year ", price_delta_yr),
   paste0("on revenue requirement of ", round(sum(rev_req), 2)),
   sep = "\n"
 )

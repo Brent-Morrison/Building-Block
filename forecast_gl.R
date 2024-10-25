@@ -2,33 +2,23 @@
 # Matrix accounting
 # ---------------------------------------------------------------------------------------------------------
 
-#library(readxl)
-
 dat_src <- "local"   # "local" / "remote"
 mons <- 60           # months to forecast
 open_bals_col <- "cw_23"
+infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
 
+# Data sources
 if (dat_src == "local") {
   chart_src   <- "./data/chart.csv"
   txn_src     <- "./data/txn_type.csv"
-  bals_src    <- "./data/open_bals.csv"
-  txn_dat_src <- "./data/sew_txns.csv"
 } else {
   chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
   txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
-  bals_src    <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/open_bals.csv"
-  txn_dat_src <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/sew_txns.csv"
 }
 
 chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
 txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
 rownames(txn_type) <- txn_type$txn_code
-open_bals <- read.csv(bals_src, fileEncoding="UTF-8-BOM")
-sew_txns <- read.csv(txn_dat_src, fileEncoding="UTF-8-BOM")
-sew_txns$month <- as.Date(sew_txns$month)
-
-#open_bals <- read_xlsx("./data/SEW.xlsx", range = "bals!A1:D52", col_names = TRUE, col_types = c("numeric","text","numeric","numeric"))
-#sew_txns <- read_xlsx("./data/SEW.xlsx", range = "txns!A1:P25", col_names = TRUE, col_types = c("date",rep("numeric", 15)))
 
 
 # Matrix dimensions
@@ -39,36 +29,34 @@ act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 
 # Transaction balances
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
-#incm <- unlist(sew_txns[,"incm"], use.names = FALSE)
-incm <- as.vector(sapply(X = tot_rev, FUN = add_trend_season, s=0, a=1, p=1.5))
-exp1 <- dat[dat$entity == ent_parm & dat$year %in% initial_fcast_yr:(initial_fcast_yr + 4) & dat$balance_type == "Operations & Maintenance", c("year","amount")]
-exp1 <- aggregate(exp1$amount, by = list(exp1$year), FUN = sum)
-exp1 <- exp1[order(exp1$Group.1), "x"]
-#exp1 <- unlist(sew_txns[,"exp1"], use.names = FALSE)
-cpx1 <- unlist(sew_txns[,"cpx1"], use.names = FALSE)
+
+# Income
+tot_rev_nmnl <- tot_rev_real * infltn_factor
+incm <- as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5))
+
+# Expenses
+exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * infltn_factor
+exp1 <- as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0))
+
+# Capex
+cpx1 <- cx
 dpn1 <- unlist(sew_txns[,"dpn1"], use.names = FALSE)
 
 # Opening balances
-opn_bal <- merge(x = chart, y = open_bals, by = "account_no", all.x = TRUE)
-opn_bal[is.na(opn_bal)] <- 0
-opn_bal <- unlist(opn_bal[,open_bals_col], use.names = FALSE)
+opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
 
 # Create matrix and assign names and opening balances
 mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
-dimnames(mat)[[1]] <- act  #chart$account_no
+dimnames(mat)[[1]] <- act
 dimnames(mat)[[2]] <- txn
 dimnames(mat)[[3]] <- mon
-mat[ , "open", 1] <- opn_bal
+mat[ , "open", 1]  <- opn_bal
 
 
 # Rollover and update retained earning
-mat["5200","open",1] <- mat["5200","open",1] + sum(mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "open" ,1]) + sum(mat[c("5201","5202"),"open",1])
-mat[as.character(chart[chart$account_type %in% c(10,25), ]$account_no), "open" ,1] <- 0
-mat[c("5201","5202"), "open" ,1] <- 0
-# Update ARR (note 2 groups of accounts)
-mat["5100","open",1] <- mat["5100","open",1] + sum(mat[c("5101","5102"),"open",1])
-mat["5121","open",1] <- mat["5121","open",1] + sum(mat[c("5122","5123"),"open",1])
-mat[c("5101","5102","5122","5123"), "open" ,1] <- 0
+mat["5200","open",1] <- mat["5200","open",1] + sum(mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1])
+mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1] <- 0
+
 # Check
 round(colSums(mat[,,1]), 3)
 mat[,,1]
@@ -85,8 +73,10 @@ for (i in 1:length(mon)) {
   }
   
   # Post income
-  # as.character(unname(unlist(txn_type["incm", c("dr", "cr")])))
-  mat[c("3100", "1000"), "incm", i] <- c(incm[i], -incm[i])
+  t <- "incm"
+  mat[drcr(t, txn_type), t, i] <- c(incm[i], -incm[i])
+  #mat[c("3100", "1000"), "incm", i] <- c(incm[i], -incm[i])
+
   
   # Cash receipt to specify desired closing balance for debtors days parameter 
   trail <- 3
