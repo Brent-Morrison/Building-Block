@@ -70,7 +70,7 @@ dpn_cpx
 
 
 # Total depreciation -----------------------------------------------------
-dpn <- dpn_open[1:5] + dpn_cpx
+dpn <- dpn_open[1:5] + dpn_cpx[1:5]
 
 
 # Opex -------------------------------------------------------------------
@@ -101,7 +101,7 @@ if(sum(dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", "amount"]) 
   cc <- cc.t
 }
 cc
-rm(cc.t, ccdf, y)
+suppressWarnings(rm(cc.t, ccdf, y))
 
 # Government contributions
 gc.t <- rep(0, 5)
@@ -114,7 +114,7 @@ if(sum(dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", "amount"]) !
   gc <- gc.t
 }
 gc
-rm(gc.t, gcdf, y)
+suppressWarnings(rm(gc.t, gcdf, y))
 
 # Disposals
 dp.t <- rep(0, 5)
@@ -127,7 +127,7 @@ if(sum(dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", "amount
   dp <- dp.t
 }
 dp
-rm(dp.t, dpdf, y)
+suppressWarnings(rm(dp.t, dpdf, y))
 
 
 open_rab_val <- bv
@@ -214,8 +214,8 @@ tot_rev_real <- colSums(prices * q) / 1e6
 
 
 # Check results
-sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) # NPV of revenue requirement
-sum(tot_rev / (1 + rrr) ^ (1:length(tot_rev))) # NPV of revenue
+sum(rev_req / (1 + rrr) ^ (1:length(rev_req)))             # NPV of revenue requirement
+sum(tot_rev_real / (1 + rrr) ^ (1:length(tot_rev_real)))   # NPV of revenue
 
 
 cat(

@@ -6,6 +6,7 @@ dat_src <- "local"   # "local" / "remote"
 mons <- 60           # months to forecast
 open_bals_col <- "cw_23"
 infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
+month_end <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons) - 1
 
 # Data sources
 if (dat_src == "local") {
@@ -32,15 +33,16 @@ act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 
 # Income
 tot_rev_nmnl <- tot_rev_real * infltn_factor
-incm <- as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5))
+incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
+gift <- rep(50, mons)            # TO DO - get gifted asset data from dat
 
 # Expenses
 exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * infltn_factor
-exp1 <- as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0))
+exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
 
 # Capex
-cpx1 <- cx
-dpn1 <- unlist(sew_txns[,"dpn1"], use.names = FALSE)
+cpx1 <- round(rep(cx / 12, each = 12), 3)  # TO DO - create capex schedule
+dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re opening balances and capex 
 
 # Opening balances
 opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
@@ -75,33 +77,38 @@ for (i in 1:length(mon)) {
   # Post income
   t <- "incm"
   mat[drcr(t, txn_type), t, i] <- c(incm[i], -incm[i])
-  #mat[c("3100", "1000"), "incm", i] <- c(incm[i], -incm[i])
 
   
   # Cash receipt to specify desired closing balance for debtors days parameter 
   trail <- 3
-  days <- as.numeric(format(as.Date(sew_txns$month), "%d"))
+  days <- as.numeric(format(month_end, "%d"))
   if (i < trail) s <- 1 else s <- i - (trail - 1)
   trail_inc <- -mean(mat["1000", "incm", s:i]) * trail
   sum_days <- mean(days[s:i]) * trail
   prior_bals <- mean(mat["3100", "open", (s+1):i]) * (trail - 1)
-  rcpt <- abs(40 * trail_inc / sum_days * 3 - prior_bals - mat["3100", "open", i] + mat["1000", "incm", i])
-  
-  mat[c("3000", "3100"), "cshd", i] <- c(rcpt, -rcpt)
+  rcpt <- round( abs(40 * trail_inc / sum_days * 3 - prior_bals - mat["3100", "open", i] + mat["1000", "incm", i]) , 3)
+  t <- "cshd"
+  mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
   # Bad debts WO
   # wo <- mat[,,i]["3053", "opn"] + mat[,,i]["3053", "csh"]
   # mat[,,i]["3053", "wof"] <- -wo
   # mat[,,i]["270", "wof"] <- wo
   
+  # Income re gifted assets
+  t <- "gift"
+  mat[drcr(t, txn_type), t, i] <- c(gift[i], -gift[i])
+  
   # Expenses
+  t <- "exp1"
   mat[c("2000", "3000"), "exp1", i] <- c(exp1[i], -exp1[i])
   
   # Capex
+  t <- "cpx1"
   mat[c("3500", "3000"), "cpx1", i] <- c(cpx1[i], -cpx1[i])
   
   # Interest (accrue)
-  int <- mat["4500", "open", i] * 0.05 / 12
+  int <- mat["4500", "open", i] * cost_of_debt_nmnl / 12
   mat[c("2300", "4020"), "inta", i] <- c(-int, int)
   
   # Interest (pay quarterly)

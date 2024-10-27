@@ -29,10 +29,21 @@
 2,30,310,3110,Provision for doubtful debts,0,0,0,0
 2,30,320,3200,Contract assets,77797,75367,21725,19922
 2,30,300,3300,Other assets,12140,9650,2992,2116
-2,35,300,3500,"Infrastructure, property, plant and equipment ",4751780,4493121,2149551,1907699
-2,35,300,3505,Infrastructure & PPE- acc depn,0,0,0,0
+2,35,300,3500,Land,324522,4367440,62213,1907699
+2,35,300,3505,Land - acc depn,0,0,0,0
+2,35,300,3510,Buildings,95712,0,2525,0
+2,35,300,3515,Buildings - acc depn,-5552,0,-313,0
+2,35,300,3520,Leasehold improvements,2188,0,4565,0
+2,35,300,3525,Leasehold improvements - acc depn,-2132,0,-4449,0
+2,35,300,3530,Plant & equipment,82099,0,5734,0
+2,35,300,3535,Plant & equipment - acc depn,-48191,0,-3994,0
+2,35,300,3540,Infrastructure,4183999,0,1895760,0
+2,35,300,3545,Infrastructure - acc depn,0,0,-58826,0
+2,35,300,3560,Service concession assets,0,0,198758,0
+2,35,300,3565,Service concession assets - acc depn,0,0,-11018,0
 2,35,300,3600,Intangible assets,153833,153347,71456,68118
-2,35,390,3645,WIP,0,0,0,0
+2,35,300,3605,Intangible assets - acc amort,0,0,0,0
+2,35,390,3645,WIP,119135,125681,58596,0
 2,35,300,3700,Right-of-use assets,7806,8680,1799,1921
 2,35,300,3800,Other financial assets,15,1062,641,1345
 2,35,300,3900,Defined benefit superannuation asset,13443,10484,0,0
