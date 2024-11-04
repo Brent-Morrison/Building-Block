@@ -7,6 +7,9 @@ mons <- 60           # months to forecast
 open_bals_col <- "cw_23"
 infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
 month_end <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons) - 1
+days <- as.numeric(format(month_end, "%d"))
+accrued_days <- 60
+debtors_days <- 45
 
 # Data sources
 if (dat_src == "local") {
@@ -32,7 +35,7 @@ act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
 
 # Income
-tot_rev_nmnl <- tot_rev_real * infltn_factor
+tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
 incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
 gift <- rep(50, mons)            # TO DO - get gifted asset data from dat
 
@@ -74,19 +77,27 @@ for (i in 1:length(mon)) {
 
   }
   
-  # Post income
-  t <- "incm"
+  # Post income (DR accrued income / CR income)
+  t <- "aidb"
   mat[drcr(t, txn_type), t, i] <- c(incm[i], -incm[i])
 
+  # Cash receipt to specify desired closing balance for accrued income days parameter 
+  trail <- 3
+  if (i < trail) s <- 1 else s <- i - (trail - 1)
+  trail_inc <- -mean(mat["1000", "aidb", s:i]) * trail
+  sum_days <- mean(days[s:i]) * trail
+  prior_bals <- mean(mat["3050", "open", s:i]) * (trail - 1)
+  tfer <- round( abs(accrued_days * trail_inc / sum_days * 3 - prior_bals - mat["3050", "open", i] + mat["1000", "aidb", i]) , 3)
+  t <- "incm"
+  mat[drcr(t, txn_type), t, i] <- c(tfer, -tfer)
   
   # Cash receipt to specify desired closing balance for debtors days parameter 
   trail <- 3
-  days <- as.numeric(format(month_end, "%d"))
   if (i < trail) s <- 1 else s <- i - (trail - 1)
-  trail_inc <- -mean(mat["1000", "incm", s:i]) * trail
+  trail_inc <- -mean(mat["3050", "incm", s:i]) * trail
   sum_days <- mean(days[s:i]) * trail
-  prior_bals <- mean(mat["3100", "open", (s+1):i]) * (trail - 1)
-  rcpt <- round( abs(40 * trail_inc / sum_days * 3 - prior_bals - mat["3100", "open", i] + mat["1000", "incm", i]) , 3)
+  prior_bals <- mean(mat["3100", "open", s:i]) * (trail - 1)
+  rcpt <- round( abs(debtors_days * trail_inc / sum_days * 3 - prior_bals - mat["3100", "open", i] + mat["3050", "incm", i]) , 3)
   t <- "cshd"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
@@ -101,29 +112,33 @@ for (i in 1:length(mon)) {
   
   # Expenses
   t <- "exp1"
-  mat[c("2000", "3000"), "exp1", i] <- c(exp1[i], -exp1[i])
+  mat[drcr(t, txn_type), t, i] <- c(exp1[i], -exp1[i])
   
   # Capex
   t <- "cpx1"
-  mat[c("3500", "3000"), "cpx1", i] <- c(cpx1[i], -cpx1[i])
+  mat[drcr(t, txn_type), t, i] <- c(cpx1[i], -cpx1[i])
   
   # Interest (accrue)
-  int <- mat["4500", "open", i] * cost_of_debt_nmnl / 12
-  mat[c("2300", "4020"), "inta", i] <- c(-int, int)
+  int <- round(mat["4500", "open", i] * cost_of_debt_nmnl / 12, 3)
+  t <- "inta"
+  mat[drcr(t, txn_type), t, i] <- c(-int, int)
   
   # Interest (pay quarterly)
   if (i %in% c(3,6,9,12)) {
-    mat["4020", "intp", i] <- -mat["4020", "open", i]
-    mat["3000", "intp", i] <- mat["4020", "open", i]
+    t <- "intp"
+    intp <- -mat["4020", "open", i]
+    mat[drcr(t, txn_type), t, i] <- c(intp, -intp)
   }
   
   # Depn
-  mat[c("2200", "3505"), "dpn1", i] <- c(dpn1[i], -dpn1[i])
+  t <- "dpn1"
+  mat[drcr(t, txn_type), t, i] <- c(dpn1[i], -dpn1[i])
   
   # Determine if borrowings required
   cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])
   if (cash_bal < 0) {
-    mat[c("3000", "4100"), "borr", i] <- c(10000,-10000)
+    t <- "borr"
+    mat[drcr(t, txn_type), t, i] <- c(10000,-10000)
   }
   
   # Update closing balance
@@ -131,6 +146,7 @@ for (i in 1:length(mon)) {
   
 }
 mat[,,1]
+mat[,,60]
 t(mat["3100",,])
 
 

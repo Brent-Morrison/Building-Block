@@ -153,3 +153,54 @@ source("funs.R")
 y <- add_trend_season(y=100, s=0, a=1, p=1.5)
 plot(1:12, y ,type="l", main = "trend")
 sum(y)
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Test days receivable logic
+# --------------------------------------------------------------------------------------------------------------------------
+
+debtors1 <- "
+15377 21465  20257
+11803 11948  11898
+-5714 -13157     0
+21465 20257     0
+"
+
+debtors2 <- as.numeric(unlist(strsplit(trimws(debtors1), "\\s+")))
+debtors  <- matrix(debtors2, ncol=3, byrow=TRUE)
+rownames(debtors) <- c("Open","Incm","Cash","Close")
+debtors
+
+
+# Excel version
+library(openxlsx)
+wb <- createWorkbook()
+addWorksheet(wb, "debtors_days")
+writeData(wb, sheet = "debtors_days", x = debtors)
+writeFormula(wb, 1, x = "ROUND(50*SUM(A3:C3)/92*3-SUM(A5:B5)-SUM(C2:C3), 0)", startCol = 3, startRow = 4)
+writeFormula(wb, 1, x = "SUM(C2:C4)", startCol = 3, startRow = 5)
+writeFormula(wb, 1, x = "ROUND(AVERAGE(A5:C5)/SUM(A3:C3)*92, 0)", startCol = 3, startRow = 6)
+saveWorkbook(wb, "./test/debtors_days_test.xlsx", overwrite = TRUE)
+
+
+lookback <- 3
+debtors_days <- 50
+trail_inc <- sum(debtors["Incm", 1:3])    # 35,649
+sum_days <- 92
+prior_bals <- sum(debtors["Close", 1:2]) # 41,722
+cash <- round(
+  abs( (debtors_days * trail_inc / sum_days * lookback )
+  - prior_bals         # this should be lookback less 1
+  - debtors["Open", 3] # 20,257 #mat["3100", "open", i]
+  - debtors["Incm", 3] # 11,898 #mat["1000", "incm", i]
+  ) , 3)
+
+cash                        #15,753
+debtors["Cash", 3] <- -cash
+debtors["Close", 3] <- sum(debtors[1:3, 3])
+debtors
+
+days_calc <- mean(debtors["Close", ]) / sum(debtors["Incm", ]) * sum_days
+days_calc
