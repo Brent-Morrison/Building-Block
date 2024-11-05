@@ -164,18 +164,28 @@ dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
 df <- expand.grid(act = act, txn = txn, mon = mon)
 df$mtd <- mat1[,1]
 
-# Filter zeros and remove opening and closing balances
+# Remove nil balances
 df1 <- df[df$mtd != 0, ]
-df1 <- df1[df1$txn %in% txn[-c(1, length(txn))], ]
+
+# Retain opening balances only for balance sheet, remove all closing balances
+df2 <- rbind(df1[df1$txn == "open" & df1$act >= 3000, ], df1[df1$txn %in% txn[-c(1, length(txn))], ])
+
+# Remove opening balance for P&L accounts
+#df2[df2$txn == "open" , c("mtd","ytd")] <- 0
 
 # Cumulative sum
-df1$yr <- ceiling(df1$mon / 12)
-df1$ltd <- ave(df1$mtd, df1$act, df1$txn, FUN=cumsum)
-df1$ytd <- ave(df1$mtd, df1$act, df1$txn, df1$yr, FUN=cumsum)
-df1 <- df1[with(df1, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]
+df2$yr <- ceiling(df2$mon / 12)
+df2$ltd <- ave(df2$mtd, df2$act, df2$txn, FUN=cumsum)
+df2$ytd <- ave(df2$mtd, df2$act, df2$txn, df2$yr, FUN=cumsum)
+df2[df2$txn == "open" , c("mtd","ytd")] <- 0
+df2 <- df2[with(df2, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]
+write.csv(df2, file = "slr.csv")
 
-df1[df1$yr == 2 & df$mon < 17 & df1$act == "4100", ] # 
 
+df2 %>%
+  filter(mon == 60) %>%
+  group_by(act) %>%
+  summarise(balance = sum(ltd))
 
 
 
