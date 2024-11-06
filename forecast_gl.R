@@ -179,6 +179,12 @@ df2$ltd <- ave(df2$mtd, df2$act, df2$txn, FUN=cumsum)
 df2$ytd <- ave(df2$mtd, df2$act, df2$txn, df2$yr, FUN=cumsum)
 df2[df2$txn == "open" , c("mtd","ytd")] <- 0
 df2 <- df2[with(df2, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]
+df3 <- df2[df2$txn == "open" & df2$yr == 1 & df2$mon == 1, ]
+for (i in df3$act) {
+  insert = df3[df3$act == i, "ltd"]
+  df2[df2$txn == "open" & df2$act == i, "ltd"] <- insert
+}
+
 write.csv(df2, file = "slr.csv")
 
 
