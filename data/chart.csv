@@ -13,7 +13,13 @@
 1,10,150,1500,Other income,-2106,-1937,0,0
 1,10,200,2000,Operating expenses ,638432,639341,66220,57951
 1,10,210,2100,Employee benefits,69514,59624,23441,20987
-1,10,220,2200,Depreciation and amortisation,123684,122917,37144,37328
+1,10,220,2200,Depreciation and amortisation,123684,122917,0,37328
+1,10,220,2215,Depreciation - buildings,0,0,143,0
+1,10,220,2225,Depreciation - l/hold impr.,0,0,10,0
+1,10,220,2235,Depreciation - p&e,0,0,385,0
+1,10,220,2245,Depreciation - infa,0,0,29560,0
+1,10,220,2265,Depreciation - SCA,0,0,5514,0
+1,10,220,2205,Amortisation - intangibles,0,0,1532,0
 1,10,230,2300,Finance costs,89177,77986,23941,22978
 1,10,235,2350,Doubtful debts expense,0,0,0,0
 1,10,240,2400,Environmental contribution,43461,43461,5734,5734
@@ -28,25 +34,25 @@
 2,30,310,3100,Trade debtors,84585,101735,15683,14063
 2,30,310,3110,Provision for doubtful debts,0,0,0,0
 2,30,320,3200,Contract assets,0,0,0,0
-2,30,300,3300,Other assets,12140,9650,2992,2116
-2,35,300,3500,Land,324522,4367440,62213,1907699
-2,35,300,3505,Land - acc depn,0,0,0,0
-2,35,300,3510,Buildings,95712,0,2525,0
-2,35,300,3515,Buildings - acc depn,-5552,0,-313,0
-2,35,300,3520,Leasehold improvements,2188,0,4565,0
-2,35,300,3525,Leasehold improvements - acc depn,-2132,0,-4449,0
-2,35,300,3530,Plant & equipment,82099,0,5734,0
-2,35,300,3535,Plant & equipment - acc depn,-48191,0,-3994,0
-2,35,300,3540,Infrastructure,4183999,0,1895760,0
-2,35,300,3545,Infrastructure - acc depn,0,0,-58826,0
-2,35,300,3560,Service concession assets,0,0,198758,0
-2,35,300,3565,Service concession assets - acc depn,0,0,-11018,0
-2,35,300,3600,Intangible assets,153833,153347,71456,68118
-2,35,300,3605,Intangible assets - acc amort,0,0,0,0
-2,35,390,3645,WIP,119135,125681,58596,0
-2,35,300,3700,Right-of-use assets,7806,8680,1799,1921
-2,35,300,3800,Other financial assets,15,1062,641,1345
-2,35,300,3900,Defined benefit superannuation asset,13443,10484,0,0
+2,30,330,3300,Other assets,12140,9650,2992,2116
+2,35,335,3500,Land,324522,4367440,62213,1907699
+2,35,335,3505,Land - acc depn,0,0,0,0
+2,35,340,3510,Buildings,95712,0,2525,0
+2,35,340,3515,Buildings - acc depn,-5552,0,-313,0
+2,35,340,3520,Leasehold improvements,2188,0,4565,0
+2,35,340,3525,Leasehold improvements - acc depn,-2132,0,-4449,0
+2,35,340,3530,Plant & equipment,82099,0,5734,0
+2,35,340,3535,Plant & equipment - acc depn,-48191,0,-3994,0
+2,35,340,3540,Infrastructure,4183999,0,1895760,0
+2,35,340,3545,Infrastructure - acc depn,0,0,-58826,0
+2,35,340,3560,Service concession assets,0,0,198758,0
+2,35,340,3565,Service concession assets - acc depn,0,0,-11018,0
+2,35,340,3600,Intangible assets,153833,153347,71456,68118
+2,35,340,3605,Intangible assets - acc amort,0,0,0,0
+2,35,350,3645,WIP,119135,125681,58596,0
+2,35,360,3700,Right-of-use assets,7806,8680,1799,1921
+2,35,370,3800,Other financial assets,15,1062,641,1345
+2,35,390,3900,Defined benefit superannuation asset,13443,10484,0,0
 2,40,400,4000,Trade creditors,-126724,-100818,-30346,-22730
 2,40,400,4005,Accrued expenses - opex,0,0,0,0
 2,40,400,4010,Accrued expenses - capex,0,0,0,0

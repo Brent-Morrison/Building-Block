@@ -108,6 +108,36 @@ depn_fun <- function(capex, yr_op, life) {
 
 
 
+# Depreciation of existing book value, estimation from depreciation charge
+
+depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
+  
+  # yrs - integer, length of series required in years
+  # de  - depreciation expense per annum
+  # gr  - gross book value
+  # ad  - accumulated depreciation
+
+  bv <- gr + ad                 # Book value
+  yrs_rem <- floor(bv / de)     # Years depreciation remaining
+  depn <- c(rep(de, yrs_remaining), bv - (de * yrs_rem)) 
+  
+  # Pad or truncate years as required
+  if (length(depn) < yrs) {
+    depn <- c(depn, rep(0, yrs - length(depn)))
+  } else {
+    depn <- depn[1:yrs]
+  }
+  
+  if (monthly) {
+    depn <- round(rep(depn / 12, each = 12), 3)
+  }
+  
+  return(depn)
+
+}
+
+#depn_bv(yrs=2, de=385, gr=chart[chart$account_no == 3530, "cw_23"], ad=chart[chart$account_no == 3535, "cw_23"], monthly=F)
+
 
 
 # --------------------------------------------------------------------------------------------------------------------------

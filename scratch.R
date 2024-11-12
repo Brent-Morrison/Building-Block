@@ -85,4 +85,6 @@ dat$asset_category <- tolower(gsub("/", "_", dat$asset_category))
 unique(dat$asset_category)
 
 
-
+# Depreciation estimate
+depn_rate_infa <- 29560 / chart[chart$account_no == 3540, "cw_23"] # p.92 accounts
+depn_rate_infa

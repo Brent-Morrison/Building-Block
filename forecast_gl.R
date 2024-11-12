@@ -37,15 +37,15 @@ act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 # Income
 tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
 incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
-gift <- rep(50, mons)            # TO DO - get gifted asset data from dat
+gift <- round(rep(cc / 12, each = 12), 3)
 
 # Expenses
 exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * infltn_factor
 exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
 
 # Capex
-cpx1 <- round(rep(cx / 12, each = 12), 3)  # TO DO - create capex schedule
-dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re opening balances and capex 
+cpx1 <- round(rep(cx / 12, each = 12), 3) 
+dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re opening balances and capex, assume transfer from WIP to asset register
 
 # Opening balances
 opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)

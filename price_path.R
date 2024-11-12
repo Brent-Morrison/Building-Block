@@ -2,6 +2,7 @@ source("funs.R")
 library(dplyr)
 library(tidyr)
 
+# Parameters
 ent_parm <- "CW"
 initial_fcast_yr <- 2024
 price_delta_yr <- 2
