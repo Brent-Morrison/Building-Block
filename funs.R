@@ -47,7 +47,7 @@ xl_to_df <- function(file, sheet=NULL, table=NULL, date_range, cols_range, cols_
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Depreciation
+# Depreciation on capex
 # --------------------------------------------------------------------------------------------------------------------------
 
 depn_fun <- function(capex, yr_op, life) {
@@ -103,12 +103,14 @@ depn_fun <- function(capex, yr_op, life) {
   dpn[!is.finite(dpn)] <- 0
   
   return(round(dpn, 4))
+  
 }
 
 
 
-
-# Depreciation of existing book value, estimation from depreciation charge
+# --------------------------------------------------------------------------------------------------------------------------
+# Depreciation of existing assets, estimation from depreciation charge
+# --------------------------------------------------------------------------------------------------------------------------
 
 depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
   
@@ -119,7 +121,7 @@ depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
 
   bv <- gr + ad                 # Book value
   yrs_rem <- floor(bv / de)     # Years depreciation remaining
-  depn <- c(rep(de, yrs_remaining), bv - (de * yrs_rem)) 
+  depn <- c(rep(de, yrs_rem), bv - (de * yrs_rem)) 
   
   # Pad or truncate years as required
   if (length(depn) < yrs) {

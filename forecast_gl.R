@@ -1,15 +1,15 @@
 # ---------------------------------------------------------------------------------------------------------
-# Matrix accounting
+# Matrix accounting set up
 # ---------------------------------------------------------------------------------------------------------
 
-dat_src <- "local"   # "local" / "remote"
-mons <- 60           # months to forecast
+dat_src       <- "local"   # "local" / "remote"
+mons          <- 60           # months to forecast
 open_bals_col <- "cw_23"
 infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
-month_end <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons) - 1
-days <- as.numeric(format(month_end, "%d"))
-accrued_days <- 60
-debtors_days <- 45
+month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons) - 1
+days          <- as.numeric(format(month_end, "%d"))
+accrued_days  <- 60
+debtors_days  <- 45
 
 # Data sources
 if (dat_src == "local") {
@@ -31,21 +31,78 @@ txn <- unlist(txn_type[,"txn_code"], use.names = FALSE)  # Transaction types
 act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
 
 
+# ---------------------------------------------------------------------------------------------------------
 # Transaction balances
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
+# ---------------------------------------------------------------------------------------------------------
 
-# Income
+
+# Income -----------------------------------------------------------------
 tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
 incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
 gift <- round(rep(cc / 12, each = 12), 3)
 
-# Expenses
+
+# Expenses ---------------------------------------------------------------
 exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * infltn_factor
 exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
 
-# Capex
+
+# Capex ------------------------------------------------------------------
 cpx1 <- round(rep(cx / 12, each = 12), 3) 
+
+
+# Depreciation -----------------------------------------------------------
+# - on opening balance
+stat_depn_bld <- depn_bv(
+  yrs=5, 
+  de=chart[chart$account_no == 2215, "cw_23"], 
+  gr=chart[chart$account_no == 3510, "cw_23"], 
+  ad=chart[chart$account_no == 3515, "cw_23"]
+  )
+
+stat_depn_lhi <- depn_bv(
+  yrs=5, 
+  de=chart[chart$account_no == 2225, "cw_23"], 
+  gr=chart[chart$account_no == 3520, "cw_23"], 
+  ad=chart[chart$account_no == 3525, "cw_23"]
+  )
+
+stat_depn_pae <- depn_bv(
+  yrs=5, 
+  de=chart[chart$account_no == 2235, "cw_23"], 
+  gr=chart[chart$account_no == 3530, "cw_23"], 
+  ad=chart[chart$account_no == 3535, "cw_23"]
+  )
+
+stat_depn_inf <- depn_bv(
+  yrs=5, 
+  de=chart[chart$account_no == 2245, "cw_23"], 
+  gr=chart[chart$account_no == 3540, "cw_23"], 
+  ad=chart[chart$account_no == 3545, "cw_23"]
+  )
+
+stat_depn_sca <- depn_bv(
+  yrs=5, 
+  de=chart[chart$account_no == 2265, "cw_23"], 
+  gr=chart[chart$account_no == 3560, "cw_23"], 
+  ad=chart[chart$account_no == 3565, "cw_23"]
+  )
+
+stat_depn_int <- depn_bv(
+  yrs=5, 
+  de=chart[chart$account_no == 2205, "cw_23"], 
+  gr=chart[chart$account_no == 3600, "cw_23"], 
+  ad=chart[chart$account_no == 3605, "cw_23"]
+  )
+
+stat_depn_opn <- stat_depn_bld + stat_depn_lhi + stat_depn_pae + stat_depn_inf + stat_depn_sca + stat_depn_int
+
+
+# - on capex (balances moved from WIP)
 dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re opening balances and capex, assume transfer from WIP to asset register
+dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
+dpn_mtrix
 
 # Opening balances
 opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
