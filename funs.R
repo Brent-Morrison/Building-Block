@@ -282,7 +282,7 @@ add_trend_season <- function(y, s, a, p) {
 # --------------------------------------------------------------------------------------------------------------------------
 drcr <- function(txn, txn_df) {
   txn_type_parm = txn_df
-  dc <- as.character(unname(unlist(txn_type_parm[txn, c("dr", "cr")])))
+  dc <- as.character(na.omit(unname(unlist(txn_type_parm[txn, c("dr", "cr","dr1", "cr1","dr2", "cr2","dr3", "cr3","dr4", "cr4","dr5", "cr5")]))))
   return(dc)
 }
 

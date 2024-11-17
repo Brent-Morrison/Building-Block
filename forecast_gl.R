@@ -2,6 +2,7 @@
 # Matrix accounting set up
 # ---------------------------------------------------------------------------------------------------------
 
+# Parameters -------------------------------------------------------------
 dat_src       <- "local"   # "local" / "remote"
 mons          <- 60           # months to forecast
 open_bals_col <- "cw_23"
@@ -25,16 +26,36 @@ txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
 rownames(txn_type) <- txn_type$txn_code
 
 
-# Matrix dimensions
+# Matrix -----------------------------------------------------------------
 mon <- 1:mons   # Number of months
 txn <- unlist(txn_type[,"txn_code"], use.names = FALSE)  # Transaction types
 act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
+
+# Create matrix and assign names 
+mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
+dimnames(mat)[[1]] <- act
+dimnames(mat)[[2]] <- txn
+dimnames(mat)[[3]] <- mon
+
+# Insert opening balances
+mat[ , "open", 1]  <- opn_bal
+
+# Rollover and update retained earning
+mat["5200","open",1] <- mat["5200","open",1] + sum(mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1])
+mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1] <- 0
+
+# Check
+round(colSums(mat[,,1]), 3)
+mat[,,1]
 
 
 # ---------------------------------------------------------------------------------------------------------
 # Transaction balances
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
 # ---------------------------------------------------------------------------------------------------------
+
+# Opening balances
+opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
 
 
 # Income -----------------------------------------------------------------
@@ -96,7 +117,6 @@ stat_depn_int <- depn_bv(
   ad=chart[chart$account_no == 3605, "cw_23"]
   )
 
-stat_depn_opn <- stat_depn_bld + stat_depn_lhi + stat_depn_pae + stat_depn_inf + stat_depn_sca + stat_depn_int
 
 
 # - on capex (balances moved from WIP)
@@ -104,26 +124,12 @@ dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re ope
 dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
 dpn_mtrix
 
-# Opening balances
-opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
-
-# Create matrix and assign names and opening balances
-mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
-dimnames(mat)[[1]] <- act
-dimnames(mat)[[2]] <- txn
-dimnames(mat)[[3]] <- mon
-mat[ , "open", 1]  <- opn_bal
 
 
-# Rollover and update retained earning
-mat["5200","open",1] <- mat["5200","open",1] + sum(mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1])
-mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1] <- 0
-
-# Check
-round(colSums(mat[,,1]), 3)
-mat[,,1]
-
+# ---------------------------------------------------------------------------------------------------------
 # Transaction loop
+# ---------------------------------------------------------------------------------------------------------
+
 for (i in 1:length(mon)) {
   
   # Opening balances & debtors ageing post loop / month 1
@@ -187,15 +193,32 @@ for (i in 1:length(mon)) {
     mat[drcr(t, txn_type), t, i] <- c(intp, -intp)
   }
   
-  # Depn
+  # Depreciation
   t <- "dpn1"
-  mat[drcr(t, txn_type), t, i] <- c(dpn1[i], -dpn1[i])
-  
+  p <- c(
+    stat_depn_bld[i], -stat_depn_bld[i],
+    stat_depn_lhi[i], -stat_depn_lhi[i],
+    stat_depn_pae[i], -stat_depn_pae[i],
+    stat_depn_pae[i], -stat_depn_pae[i],
+    stat_depn_sca[i], -stat_depn_sca[i],
+    0, 0
+    )
+  a <- drcr(t, txn_type)
+  if (sum(p) == 0 & length(p) == length(a)) {
+    mat[a, t, i] <- p
+  } else if (sum(p) != 0) {
+    print("Depreciation not posted, accounting entries do not balance to nil")
+  } else if (length(p) != length(a)) {
+    print(paste0("Depreciation not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
+  }
+    
   # Determine if borrowings required
+  # TODO - determine amount to borrow dynamically
+  borrow_amt <- 10000
   cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])
   if (cash_bal < 0) {
     t <- "borr"
-    mat[drcr(t, txn_type), t, i] <- c(10000,-10000)
+    mat[drcr(t, txn_type), t, i] <- c(borrow_amt,-borrow_amt)
   }
   
   # Update closing balance
