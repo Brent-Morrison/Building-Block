@@ -53,9 +53,9 @@
 2,35,360,3700,Right-of-use assets,7806,8680,1799,1921
 2,35,370,3800,Other financial assets,15,1062,641,1345
 2,35,390,3900,Defined benefit superannuation asset,13443,10484,0,0
-2,40,400,4000,Trade creditors,-126724,-100818,-30346,-22730
+2,40,400,4000,Trade creditors,-126724,-100818,-20346,-22730
 2,40,400,4005,Accrued expenses - opex,0,0,0,0
-2,40,400,4010,Accrued expenses - capex,0,0,0,0
+2,40,400,4010,Accrued expenses - capex,0,0,-10000,0
 2,40,400,4020,Accrued interest,0,0,0,0
 2,40,400,4100,Interest bearing liabilities,-894,-56745,-8375,-7744
 2,40,400,4200,Employee benefits provision,-23775,-21733,-7105,-6553

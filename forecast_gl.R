@@ -11,6 +11,7 @@ month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons)
 days          <- as.numeric(format(month_end, "%d"))
 accrued_days  <- 60
 debtors_days  <- 45
+creditor_days <- 30
 
 # Data sources
 if (dat_src == "local") {
@@ -38,6 +39,7 @@ dimnames(mat)[[2]] <- txn
 dimnames(mat)[[3]] <- mon
 
 # Insert opening balances
+opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
 mat[ , "open", 1]  <- opn_bal
 
 # Rollover and update retained earning
@@ -54,10 +56,6 @@ mat[,,1]
 # https://stackoverflow.com/questions/19340401/convert-a-row-of-a-data-frame-to-a-simple-vector-in-r
 # ---------------------------------------------------------------------------------------------------------
 
-# Opening balances
-opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
-
-
 # Income -----------------------------------------------------------------
 tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
 incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
@@ -65,7 +63,7 @@ gift <- round(rep(cc / 12, each = 12), 3)
 
 
 # Expenses ---------------------------------------------------------------
-exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * infltn_factor
+exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * 1000 * infltn_factor
 exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
 
 
@@ -160,7 +158,8 @@ for (i in 1:length(mon)) {
   trail_inc <- -mean(mat["3050", "incm", s:i]) * trail
   sum_days <- mean(days[s:i]) * trail
   prior_bals <- mean(mat["3100", "open", s:i]) * (trail - 1)
-  rcpt <- round( abs(debtors_days * trail_inc / sum_days * 3 - prior_bals - mat["3100", "open", i] + mat["3050", "incm", i]) , 3)
+  desired_bal <- debtors_days * trail_inc / sum_days * 3 - prior_bals
+  rcpt <- round( abs(desired_bal - mat["3100", "open", i] + mat["3050", "incm", i]) , 3)
   t <- "cshd"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
@@ -177,9 +176,31 @@ for (i in 1:length(mon)) {
   t <- "exp1"
   mat[drcr(t, txn_type), t, i] <- c(exp1[i], -exp1[i])
   
+  # Cash payment re trade creditors
+  trail <- 3
+  if (i < trail) s <- 1 else s <- i - (trail - 1)
+  trail_exp <- -mean(mat["2000", "exp1", s:i]) * trail
+  sum_days <- mean(days[s:i]) * trail
+  prior_bals <- mean(mat["4000", "open", (s-1):i]) * pmin(max(s,i), trail-1)
+  desired_bal <- creditor_days * trail_exp / sum_days * 3 - prior_bals
+  rcpt <- round( abs(desired_bal - mat["4000", "open", i] + mat["2000", "exp1", i]) , 3)
+  t <- "crd1"
+  mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
+  
   # Capex
   t <- "cpx1"
   mat[drcr(t, txn_type), t, i] <- c(cpx1[i], -cpx1[i])
+  
+  # Cash payment re capex
+  trail <- 3
+  if (i < trail) s <- 1 else s <- i - (trail - 1)
+  trail_exp <- -mean(mat["3645", "cpx1", s:i]) * trail
+  sum_days <- mean(days[s:i]) * trail
+  prior_bals <- mean(mat["4010", "clos", (s-1):i]) * pmin(max(s,i), trail-1)
+  desired_bal <- creditor_days * trail_inc / sum_days * 3 - prior_bals
+  rcpt <- round( abs(desired_bal - mat["4010", "open", i] + mat["3645", "exp1", i]) , 3)
+  t <- "wipc"
+  mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
   # Interest (accrue)
   int <- round(mat["4500", "open", i] * cost_of_debt_nmnl / 12, 3)
@@ -268,13 +289,22 @@ for (i in df3$act) {
 write.csv(df2, file = "slr.csv")
 
 
-df2 %>%
-  filter(mon == 60) %>%
-  group_by(act) %>%
-  summarise(balance = sum(ltd))
+rpt <- df2 %>%
+  left_join(chart, by = c("act" = "account_no")) %>% 
+  filter(mon %in% c(12,24,36,48,60)) %>%
+  group_by(yr, account_grp) %>%
+  #summarise(balance = round(sum(ytd), 0)) %>% 
+  summarise(balance = round(sum(if_else(account_grp >= 300, ltd, ytd)), 0)) %>% 
+  pivot_wider(
+    names_from = yr,
+    values_from = balance
+  )
 
-
-
+#write.csv(rpt, file = "rpt.csv")
+rpt1 <- chart[,c("account_grp","account_no",open_bals_col)] %>% 
+  group_by(account_grp) %>% 
+  summarise(balance = round(sum(cw_23), 0)) %>% 
+  filter(balance != 0)
 
 
 

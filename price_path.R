@@ -2,7 +2,8 @@ source("funs.R")
 library(dplyr)
 library(tidyr)
 
-# Parameters
+# Parameters -------------------------------------------------------------
+dat_src       <- "local"   # "local" / "remote"
 ent_parm <- "CW"
 initial_fcast_yr <- 2024
 price_delta_yr <- 2
@@ -17,8 +18,14 @@ rrr
 
 
 
-# Capex data -------------------------------------------------------------
-dat <- read.csv("./data/price_subm_2023.csv")
+# Data -------------------------------------------------------------------
+if (dat_src == "local") {
+  dat_src   <- "./data/price_subm_2023.csv"
+} else {
+  dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
+}
+
+dat <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
 
 capex <- dat %>%
   mutate(net_capex = case_when(
