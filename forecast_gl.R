@@ -11,7 +11,7 @@ month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons)
 days          <- as.numeric(format(month_end, "%d"))
 accrued_days  <- 60
 debtors_days  <- 45
-creditor_days <- 30
+creditor_days <- 90
 
 # Data sources
 if (dat_src == "local") {
@@ -68,7 +68,7 @@ exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0))
 
 
 # Capex ------------------------------------------------------------------
-cpx1 <- round(rep(cx / 12, each = 12), 3) 
+cpx1 <- round(rep(cx / 12, each = 12), 3) * 1000
 
 
 # Depreciation -----------------------------------------------------------
@@ -178,12 +178,14 @@ for (i in 1:length(mon)) {
   
   # Cash payment re trade creditors
   trail <- 3
-  if (i < trail) s <- 1 else s <- i - (trail - 1)
-  trail_exp <- -mean(mat["2000", "exp1", s:i]) * trail
-  sum_days <- mean(days[s:i]) * trail
-  prior_bals <- mean(mat["4000", "open", (s-1):i]) * pmin(max(s,i), trail-1)
-  desired_bal <- creditor_days * trail_exp / sum_days * 3 - prior_bals
-  rcpt <- round( abs(desired_bal - mat["4000", "open", i] + mat["2000", "exp1", i]) , 3)
+  #if (i < trail) s <- 1 else s <- i - (trail - 1)
+  #trail_exp <- -mean(mat["2000", "exp1", s:i]) * trail
+  #sum_days <- mean(days[s:i]) * trail
+  #prior_bals <- mean(mat["4000", "open", (s-1):i]) * pmin(max(s,i), trail-1)
+  #desired_bal <- creditor_days * trail_exp / sum_days * 3 - prior_bals
+  #rcpt <- round( abs(desired_bal - mat["4000", "open", i] + mat["2000", "exp1", i]) , 3)
+  
+  rcpt <- trgt_days(i, d=creditor_days, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
   t <- "crd1"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
@@ -192,13 +194,15 @@ for (i in 1:length(mon)) {
   mat[drcr(t, txn_type), t, i] <- c(cpx1[i], -cpx1[i])
   
   # Cash payment re capex
-  trail <- 3
-  if (i < trail) s <- 1 else s <- i - (trail - 1)
-  trail_exp <- -mean(mat["3645", "cpx1", s:i]) * trail
-  sum_days <- mean(days[s:i]) * trail
-  prior_bals <- mean(mat["4010", "clos", (s-1):i]) * pmin(max(s,i), trail-1)
-  desired_bal <- creditor_days * trail_inc / sum_days * 3 - prior_bals
-  rcpt <- round( abs(desired_bal - mat["4010", "open", i] + mat["3645", "exp1", i]) , 3)
+  #trail <- 3
+  #if (i < trail) s <- 1 else s <- i - (trail - 1)
+  #trail_exp <- -mean(mat["3645", "cpx1", s:i]) * trail
+  #sum_days <- mean(days[s:i]) * trail
+  #prior_bals <- mean(mat["4010", "clos", (s-1):i]) * pmin(max(s,i), trail-1)
+  #desired_bal <- creditor_days * trail_inc / sum_days * 3 - prior_bals
+  #rcpt <- round( abs(desired_bal - mat["4010", "open", i] + mat["3645", "exp1", i]) , 3)
+  
+  rcpt <- trgt_days(i, d=creditor_days, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
   t <- "wipc"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   

@@ -287,4 +287,41 @@ drcr <- function(txn, txn_df) {
 }
 
 #drcr(txn = "incm", txn_df = txn_type)
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Target cash payment re creditors / debtors based on debtor (creditors) days
+# --------------------------------------------------------------------------------------------------------------------------
+trgt_days <- function(i, d, trail, bal_acnt, pl_acnt, txn) {
+  # Assumes matrix is called "mat"
   
+  # Return the cash receipt / payment to arrive at balance required for designated debtors / creditors days
+  # - assumes presence of matrix "mat" in environment
+  #
+  # Args:
+  #   i        - the iteration of the loop passing over "mat"
+  #   d        - the target debtors (creditors) days, must be integer
+  #   trail    - number of period to calculate over
+  #   bal_acnt - debtors / creditors account
+  #   pl_acnt  - P&L account accruing to debtors / creditors account
+  #   txn      - the transaction type 
+  #
+  # Returns
+  #   the cash payment / receipt to arrive at balance required for designated debtors / creditors days 
+  
+  if (i < trail) s <- 1 else s <- i - (trail - 1)
+  trail_exp <- -mean(mat[pl_acnt, txn, s:i]) * trail
+  sum_days <- mean(days[s:i]) * trail
+  prior_bals <- mean(mat[bal_acnt, "clos", s:(i-1)]) * (trail-1)
+  desired_bal <- d * trail_exp / sum_days * trail - prior_bals
+  rcpt0 <- round( abs(desired_bal - mat[bal_acnt, "open", i] + mat[pl_acnt, txn, i]) , 3)
+  if (i < trail) rcpt <- -mat[bal_acnt, txn, i] else rcpt <- rcpt0
+  #if (as.integer(substr(bal_acnt,1,1)) <= 3 CHECK IF DESIRED RESULT IS THE INCORRECT SIGN
+  return(rcpt)
+  
+}
+
+#xxx(i=3, d=creditor_days, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
+#mat[c("2000","4000"),c("open","exp1","crd1","clos"),5:7]
+#mat[c("3645","4010"),c("open","cpx1","wipc","clos"),1:3]
