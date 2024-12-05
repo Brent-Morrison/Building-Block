@@ -315,6 +315,12 @@ trgt_days <- function(i, d, trail, bal_acnt, pl_acnt, txn) {
   sum_days <- mean(days[s:i]) * trail
   prior_bals <- mean(mat[bal_acnt, "clos", s:(i-1)]) * (trail-1)
   desired_bal <- d * trail_exp / sum_days * trail - prior_bals
+  
+  # Check if the desired balance is the same sign as the natural balance associated with the account type
+  # (asset-DR / liability-CR)
+  if (as.integer(substr(bal_acnt,1,1)) <= 3) exp_sign <- 1 else exp_sign <- -1
+  if (sign(desired_bal) == exp_sign) desired_bal <- desired_bal else desired_bal <- mat[bal_acnt, "open", i]
+  
   rcpt0 <- round( abs(desired_bal - mat[bal_acnt, "open", i] + mat[pl_acnt, txn, i]) , 3)
   if (i < trail) rcpt <- -mat[bal_acnt, txn, i] else rcpt <- rcpt0
   #if (as.integer(substr(bal_acnt,1,1)) <= 3 CHECK IF DESIRED RESULT IS THE INCORRECT SIGN

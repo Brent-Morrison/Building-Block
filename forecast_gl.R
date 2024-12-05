@@ -11,7 +11,8 @@ month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons)
 days          <- as.numeric(format(month_end, "%d"))
 accrued_days  <- 60
 debtors_days  <- 45
-creditor_days <- 90
+crdtr_days_ox <- 90
+crdtr_days_cx <- 45
 
 # Data sources
 if (dat_src == "local") {
@@ -124,13 +125,13 @@ dpn_mtrix
 
 
 
-# ---------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 # Transaction loop
-# ---------------------------------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 
 for (i in 1:length(mon)) {
   
-  # Opening balances & debtors ageing post loop / month 1
+  # Opening balances & debtors ageing post loop / month 1 -----------------------------------------
   if (i > 1) {
    
     # Opening balances
@@ -138,11 +139,13 @@ for (i in 1:length(mon)) {
 
   }
   
-  # Post income (DR accrued income / CR income)
+  
+  # Post income (DR accrued income / CR income) ---------------------------------------------------
   t <- "aidb"
   mat[drcr(t, txn_type), t, i] <- c(incm[i], -incm[i])
 
-  # Cash receipt to specify desired closing balance for accrued income days parameter 
+  
+  # Cash receipt to specify desired closing balance for accrued income days parameter -------------
   trail <- 3
   if (i < trail) s <- 1 else s <- i - (trail - 1)
   trail_inc <- -mean(mat["1000", "aidb", s:i]) * trail
@@ -152,7 +155,8 @@ for (i in 1:length(mon)) {
   t <- "incm"
   mat[drcr(t, txn_type), t, i] <- c(tfer, -tfer)
   
-  # Cash receipt to specify desired closing balance for debtors days parameter 
+  
+  # Cash receipt to specify desired closing balance for debtors days parameter --------------------
   trail <- 3
   if (i < trail) s <- 1 else s <- i - (trail - 1)
   trail_inc <- -mean(mat["3050", "incm", s:i]) * trail
@@ -163,62 +167,71 @@ for (i in 1:length(mon)) {
   t <- "cshd"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
+  
   # Bad debts WO
   # wo <- mat[,,i]["3053", "opn"] + mat[,,i]["3053", "csh"]
   # mat[,,i]["3053", "wof"] <- -wo
   # mat[,,i]["270", "wof"] <- wo
   
-  # Income re gifted assets
+  
+  # Income re gifted assets -----------------------------------------------------------------------
   t <- "gift"
   mat[drcr(t, txn_type), t, i] <- c(gift[i], -gift[i])
   
-  # Expenses
+  
+  # Expenses --------------------------------------------------------------------------------------
   t <- "exp1"
   mat[drcr(t, txn_type), t, i] <- c(exp1[i], -exp1[i])
   
-  # Cash payment re trade creditors
+  
+  # Cash payment re trade creditors ---------------------------------------------------------------
   trail <- 3
   #if (i < trail) s <- 1 else s <- i - (trail - 1)
   #trail_exp <- -mean(mat["2000", "exp1", s:i]) * trail
   #sum_days <- mean(days[s:i]) * trail
   #prior_bals <- mean(mat["4000", "open", (s-1):i]) * pmin(max(s,i), trail-1)
-  #desired_bal <- creditor_days * trail_exp / sum_days * 3 - prior_bals
+  #desired_bal <- crdtr_days_ox * trail_exp / sum_days * 3 - prior_bals
   #rcpt <- round( abs(desired_bal - mat["4000", "open", i] + mat["2000", "exp1", i]) , 3)
   
-  rcpt <- trgt_days(i, d=creditor_days, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
+  rcpt <- trgt_days(i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
   t <- "crd1"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
+  
   
   # Capex
   t <- "cpx1"
   mat[drcr(t, txn_type), t, i] <- c(cpx1[i], -cpx1[i])
   
-  # Cash payment re capex
+  
+  # Cash payment re capex -------------------------------------------------------------------------
   #trail <- 3
   #if (i < trail) s <- 1 else s <- i - (trail - 1)
   #trail_exp <- -mean(mat["3645", "cpx1", s:i]) * trail
   #sum_days <- mean(days[s:i]) * trail
   #prior_bals <- mean(mat["4010", "clos", (s-1):i]) * pmin(max(s,i), trail-1)
-  #desired_bal <- creditor_days * trail_inc / sum_days * 3 - prior_bals
+  #desired_bal <- crdtr_days_ox * trail_inc / sum_days * 3 - prior_bals
   #rcpt <- round( abs(desired_bal - mat["4010", "open", i] + mat["3645", "exp1", i]) , 3)
   
-  rcpt <- trgt_days(i, d=creditor_days, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
+  rcpt <- trgt_days(i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
   t <- "wipc"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
-  # Interest (accrue)
+  
+  # Interest (accrue) -----------------------------------------------------------------------------
   int <- round(mat["4500", "open", i] * cost_of_debt_nmnl / 12, 3)
   t <- "inta"
   mat[drcr(t, txn_type), t, i] <- c(-int, int)
   
-  # Interest (pay quarterly)
+  
+  # Interest (pay quarterly) ----------------------------------------------------------------------
   if (i %in% c(3,6,9,12)) {
     t <- "intp"
     intp <- -mat["4020", "open", i]
     mat[drcr(t, txn_type), t, i] <- c(intp, -intp)
   }
   
-  # Depreciation
+  
+  # Depreciation ----------------------------------------------------------------------------------
   t <- "dpn1"
   p <- c(
     stat_depn_bld[i], -stat_depn_bld[i],
@@ -237,7 +250,8 @@ for (i in 1:length(mon)) {
     print(paste0("Depreciation not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
   }
     
-  # Determine if borrowings required
+  
+  # Determine if borrowings required --------------------------------------------------------------
   # TODO - determine amount to borrow dynamically
   borrow_amt <- 10000
   cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])
