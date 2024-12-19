@@ -180,6 +180,7 @@ for (i in 1:length(mon)) {
   
   
   # Expenses --------------------------------------------------------------------------------------
+  # TO DO - ADD EMPLOYEE EXPENSES (AC 2100)
   t <- "exp1"
   mat[drcr(t, txn_type), t, i] <- c(exp1[i], -exp1[i])
   
@@ -218,13 +219,13 @@ for (i in 1:length(mon)) {
   
   
   # Interest (accrue) -----------------------------------------------------------------------------
-  int <- round(mat["4500", "open", i] * cost_of_debt_nmnl / 12, 3)
+  int <- round(sum(mat[c("4100","4500"), "open", i]) * cost_of_debt_nmnl / 12, 3)
   t <- "inta"
   mat[drcr(t, txn_type), t, i] <- c(-int, int)
   
   
   # Interest (pay quarterly) ----------------------------------------------------------------------
-  if (i %in% c(3,6,9,12)) {
+  if (i %in% seq(0, mons, by = 3)) {
     t <- "intp"
     intp <- -mat["4020", "open", i]
     mat[drcr(t, txn_type), t, i] <- c(intp, -intp)
@@ -283,8 +284,7 @@ dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
 df <- expand.grid(act = act, txn = txn, mon = mon)
 df$mtd <- mat1[,1]
 
-# Remove nil balances
-df1 <- df[df$mtd != 0, ]
+df1 <- df
 
 # Retain opening balances only for balance sheet, remove all closing balances
 df2 <- rbind(df1[df1$txn == "open" & df1$act >= 3000, ], df1[df1$txn %in% txn[-c(1, length(txn))], ])
@@ -296,15 +296,51 @@ df2 <- rbind(df1[df1$txn == "open" & df1$act >= 3000, ], df1[df1$txn %in% txn[-c
 df2$yr <- ceiling(df2$mon / 12)
 df2$ltd <- ave(df2$mtd, df2$act, df2$txn, FUN=cumsum)
 df2$ytd <- ave(df2$mtd, df2$act, df2$txn, df2$yr, FUN=cumsum)
-df2[df2$txn == "open" , c("mtd","ytd")] <- 0
-df2 <- df2[with(df2, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]
-df3 <- df2[df2$txn == "open" & df2$yr == 1 & df2$mon == 1, ]
+
+# Order and select columns
+df2 <- df2[with(df2, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]  
+
+# Insert LTD opening balance into all months opening balance
+df3 <- df2[df2$txn == "open" & df2$yr == 1 & df2$mon == 1, ] # Get global P1 opening balance for B/S accounts
 for (i in df3$act) {
   insert = df3[df3$act == i, "ltd"]
   df2[df2$txn == "open" & df2$act == i, "ltd"] <- insert
 }
 
+# Insert YTD opening balances into all month opening balance
+df4 <- df2[df2$txn == "open" & df2$mon %in% (1:5*12 - 11) & df2$act >= 3000, ]  # Get annual P1 opening balance for B/S accounts
+for (i in unique(df4$act)) {
+  for (j in (1:(mons/12))) {
+    insert = df4[df4$act == i & df4$yr == j, "mtd"]
+    df2[df2$txn == "open" & df2$act == i & df2$yr == j, "ytd"] <- insert
+  }
+}
+
+# Remove nil balances and write to csv
+df2 <- df2[df2$mtd != 0 & df2$ytd != 0 & df2$ltd != 0, ]
 write.csv(df2, file = "slr.csv")
+
+slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
+
+monthly_indicators <- slr %>%
+  mutate(
+    ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), mtd, 0),
+    net_int_pay  = if_else(act == 4020 & txn == "intp", mtd, 0),
+    total_debt   = if_else(act %in% c(4100,4500), ytd, 0),
+    total_assets = if_else(account_type %in% c(30,35), ytd, 0)
+  ) %>%
+  group_by(yr, mon) %>%
+  summarise(
+    ebitda       = round(sum(ebitda), 0),
+    net_int_pay  = round(sum(net_int_pay), 0),
+    total_debt   = round(sum(total_debt), 0),
+    total_assets = round(sum(total_assets), 0)
+  ) %>%
+  mutate(
+    gearing        = total_debt / total_assets,
+    cash_int_cover = ebitda / net_int_pay
+  ) %>%
+  filter(mon %in% (1:10*6))
 
 
 rpt <- df2 %>%
@@ -324,7 +360,7 @@ rpt1 <- chart[,c("account_grp","account_no",open_bals_col)] %>%
   summarise(balance = round(sum(cw_23), 0)) %>% 
   filter(balance != 0)
 
-
+mat["4020",c("open","inta","intp","clos"),]
 
 
 # Create YTD matrix

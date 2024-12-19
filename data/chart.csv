@@ -1,73 +1,73 @@
-﻿statement_type,account_type,account_grp,account_no,account_desc,sew_23,sew_22,cw_23,cw_22
-1,10,100,1000,Water-Service,-65651,-72372,-147095,-141737
-1,10,100,1001,Sewerage-Service,-284117,-277283,0,0
-1,10,100,1002,Trade waste-Service,-6760,-6321,0,0
-1,10,100,1003,Recycled water-Service,-1030,-1009,0,0
-1,10,110,1100,Water-Usage,-399957,-413378,0,0
-1,10,110,1101,Sewerage-Usage,-98783,-93754,0,0
-1,10,110,1102,Trade waste-Usage,-23943,-21601,0,0
-1,10,110,1103,Recycled water-Usage,-5426,-5220,0,0
-1,10,120,1200,Developer contributed assets,-91715,-74788,0,0
-1,10,130,1300,New customer contributions,-32190,-32426,0,0
-1,10,150,1400,Other revenue,-48398,-54456,-8693,-4117
-1,10,150,1500,Other income,-2106,-1937,0,0
-1,10,200,2000,Operating expenses ,638432,639341,66220,57951
-1,10,210,2100,Employee benefits,69514,59624,23441,20987
-1,10,220,2200,Depreciation and amortisation,123684,122917,0,37328
-1,10,220,2215,Depreciation - buildings,0,0,143,0
-1,10,220,2225,Depreciation - l/hold impr.,0,0,10,0
-1,10,220,2235,Depreciation - p&e,0,0,385,0
-1,10,220,2245,Depreciation - infa,0,0,29560,0
-1,10,220,2265,Depreciation - SCA,0,0,5514,0
-1,10,220,2205,Amortisation - intangibles,0,0,1532,0
-1,10,230,2300,Finance costs,89177,77986,23941,22978
-1,10,235,2350,Doubtful debts expense,0,0,0,0
-1,10,240,2400,Environmental contribution,43461,43461,5734,5734
-1,10,245,2450,Income tax expense,0,0,0,0
-1,25,250,2500,xxxx,0,0,0,0
-1,26,260,2600,Net gain / loss on disposal,0,0,3253,161
-1,27,270,2700,Other expenses,0,0,4807,1845
-1,28,280,2800,Income tax expense,29363,32847,-2622,-327
-1,29,290,2900,Dividends paid,21707,42116,0,0
-2,30,300,3000,Cash,91141,2409,26964,23804
-2,30,310,3050,Accrued income,77797,75367,21725,19922
-2,30,310,3100,Trade debtors,84585,101735,15683,14063
-2,30,310,3110,Provision for doubtful debts,0,0,0,0
-2,30,320,3200,Contract assets,0,0,0,0
-2,30,330,3300,Other assets,12140,9650,2992,2116
-2,35,335,3500,Land,324522,4367440,62213,1907699
-2,35,335,3505,Land - acc depn,0,0,0,0
-2,35,340,3510,Buildings,95712,0,2525,0
-2,35,340,3515,Buildings - acc depn,-5552,0,-313,0
-2,35,340,3520,Leasehold improvements,2188,0,4565,0
-2,35,340,3525,Leasehold improvements - acc depn,-2132,0,-4449,0
-2,35,340,3530,Plant & equipment,82099,0,5734,0
-2,35,340,3535,Plant & equipment - acc depn,-48191,0,-3994,0
-2,35,340,3540,Infrastructure,4183999,0,1895760,0
-2,35,340,3545,Infrastructure - acc depn,0,0,-58826,0
-2,35,340,3560,Service concession assets,0,0,198758,0
-2,35,340,3565,Service concession assets - acc depn,0,0,-11018,0
-2,35,340,3600,Intangible assets,153833,153347,71456,68118
-2,35,340,3605,Intangible assets - acc amort,0,0,0,0
-2,35,350,3645,WIP,119135,125681,58596,0
-2,35,360,3700,Right-of-use assets,7806,8680,1799,1921
-2,35,370,3800,Other financial assets,15,1062,641,1345
-2,35,390,3900,Defined benefit superannuation asset,13443,10484,0,0
-2,40,400,4000,Trade creditors,-126724,-100818,-20346,-22730
-2,40,400,4005,Accrued expenses - opex,0,0,0,0
-2,40,400,4010,Accrued expenses - capex,0,0,-10000,0
-2,40,400,4020,Accrued interest,0,0,0,0
-2,40,400,4100,Interest bearing liabilities,-894,-56745,-8375,-7744
-2,40,400,4200,Employee benefits provision,-23775,-21733,-7105,-6553
-2,40,400,4300,Income tax payable,-2575,-9392,0,0
-2,40,400,4350,Contract liabilities,-40069,-26258,-17216,-13817
-2,40,400,4400,Deposits and advances,-27173,-13418,-174,-598
-2,40,400,4450,Other provisions  ,-48,-163,0,0
-2,45,450,4500,Interest bearing liabilities,-2475338,-2246102,-488948,-455962
-2,45,450,4600,Deferred tax liabilities,-472492,-454950,-297976,-236437
-2,45,450,4700,Employee benefits provision,-3113,-3118,-613,-534
-2,45,450,4800,Other financial liabilities,-1759,0,-586,0
-2,50,500,5000,Contributed equity,-288967,-288967,-307800,-306525
-2,50,510,5100,ARR - Land and buildings,-342917,-342917,-763791,-614077
-2,50,510,5121,ARR - Infrastructure open,-547110,-498899,0,0
-2,50,520,5200,Retained earnings,-794848,-756122,-374011,-374814
+﻿statement_type,account_type,account_grp,account_no,account_desc,cf_flag,sew_23,sew_22,cw_23,cw_22
+1,10,100,1000,Water-Service,s_u,-65651,-72372,-147095,-141737
+1,10,100,1001,Sewerage-Service,s_u,-284117,-277283,0,0
+1,10,100,1002,Trade waste-Service,s_u,-6760,-6321,0,0
+1,10,100,1003,Recycled water-Service,s_u,-1030,-1009,0,0
+1,10,110,1100,Water-Usage,s_u,-399957,-413378,0,0
+1,10,110,1101,Sewerage-Usage,s_u,-98783,-93754,0,0
+1,10,110,1102,Trade waste-Usage,s_u,-23943,-21601,0,0
+1,10,110,1103,Recycled water-Usage,s_u,-5426,-5220,0,0
+1,10,120,1200,Developer contributed assets,pay_ppe,-91715,-74788,0,0
+1,10,130,1300,New customer contributions,other_rec,-32190,-32426,0,0
+1,10,150,1400,Other revenue,inv_int,-48398,-54456,-8693,-4117
+1,10,150,1500,Other income,other_rec,-2106,-1937,0,0
+1,10,200,2000,Operating expenses ,pay_emp,638432,639341,66220,57951
+1,10,210,2100,Employee benefits,pay_emp,69514,59624,23441,20987
+1,10,220,2200,Depreciation and amortisation,pay_sup,123684,122917,0,37328
+1,10,220,2215,Depreciation - buildings,pay_sup,0,0,143,0
+1,10,220,2225,Depreciation - l/hold impr.,pay_sup,0,0,10,0
+1,10,220,2235,Depreciation - p&e,pay_sup,0,0,385,0
+1,10,220,2245,Depreciation - infa,pay_sup,0,0,29560,0
+1,10,220,2265,Depreciation - SCA,pay_sup,0,0,5514,0
+1,10,220,2205,Amortisation - intangibles,pay_sup,0,0,1532,0
+1,10,230,2300,Finance costs,pay_sup,89177,77986,23941,22978
+1,10,235,2350,Doubtful debts expense,pay_sup,0,0,0,0
+1,10,240,2400,Environmental contribution,pay_sup,43461,43461,5734,5734
+1,10,245,2450,Income tax expense,tax,0,0,0,0
+1,25,250,2500,xxxx,interest,0,0,0,0
+1,26,260,2600,Net gain / loss on disposal,pay_sup,0,0,3253,161
+1,27,270,2700,Other expenses,depn,0,0,4807,1845
+1,28,280,2800,Income tax expense,tax,29363,32847,-2622,-327
+1,29,290,2900,Dividends paid,div,21707,42116,0,0
+2,30,300,3000,Cash,cash,91141,2409,26964,23804
+2,30,310,3050,Accrued income,s_u,77797,75367,21725,19922
+2,30,310,3100,Trade debtors,s_u,84585,101735,15683,14063
+2,30,310,3110,Provision for doubtful debts,s_u,0,0,0,0
+2,30,320,3200,Contract assets,s_u,0,0,0,0
+2,30,330,3300,Other assets,pay_sup,12140,9650,2992,2116
+2,35,335,3500,Land,pay_ppe,324522,4367440,62213,1907699
+2,35,335,3505,Land - acc depn,depn,0,0,0,0
+2,35,340,3510,Buildings,pay_ppe,95712,0,2525,0
+2,35,340,3515,Buildings - acc depn,depn,-5552,0,-313,0
+2,35,340,3520,Leasehold improvements,pay_ppe,2188,0,4565,0
+2,35,340,3525,Leasehold improvements - acc depn,depn,-2132,0,-4449,0
+2,35,340,3530,Plant & equipment,pay_ppe,82099,0,5734,0
+2,35,340,3535,Plant & equipment - acc depn,depn,-48191,0,-3994,0
+2,35,340,3540,Infrastructure,pay_ppe,4183999,0,1895760,0
+2,35,340,3545,Infrastructure - acc depn,depn,0,0,-58826,0
+2,35,340,3560,Service concession assets,pay_ppe,0,0,198758,0
+2,35,340,3565,Service concession assets - acc depn,depn,0,0,-11018,0
+2,35,340,3600,Intangible assets,pay_ppe,153833,153347,71456,68118
+2,35,340,3605,Intangible assets - acc amort,depn,0,0,0,0
+2,35,350,3645,WIP,pay_ppe,119135,125681,58596,0
+2,35,360,3700,Right-of-use assets,pay_lease,7806,8680,1799,1921
+2,35,370,3800,Other financial assets,depn_rou,15,1062,641,1345
+2,35,390,3900,Defined benefit superannuation asset,na,13443,10484,0,0
+2,40,400,4000,Trade creditors,pay_sup,-126724,-100818,-20346,-22730
+2,40,400,4005,Accrued expenses - opex,pay_sup,0,0,0,0
+2,40,400,4010,Accrued expenses - capex,pay_ppe,0,0,-10000,0
+2,40,400,4020,Accrued interest,interest,0,0,0,0
+2,40,400,4100,Interest bearing liabilities,rec_borr,-894,-56745,-8375,-7744
+2,40,400,4200,Employee benefits provision,rec_borr,-23775,-21733,-7105,-6553
+2,40,400,4300,Income tax payable,boot,-2575,-9392,0,0
+2,40,400,4350,Contract liabilities,pay_ppe,-40069,-26258,-17216,-13817
+2,40,400,4400,Deposits and advances,s_u,-27173,-13418,-174,-598
+2,40,400,4450,Other provisions  ,pay_sup,-48,-163,0,0
+2,45,450,4500,Interest bearing liabilities,rec_borr,-2475338,-2246102,-488948,-455962
+2,45,450,4600,Deferred tax liabilities,tax,-472492,-454950,-297976,-236437
+2,45,450,4700,Employee benefits provision,pay_emp,-3113,-3118,-613,-534
+2,45,450,4800,Other financial liabilities,pay_supp,-1759,0,-586,0
+2,50,500,5000,Contributed equity,cont_cap,-288967,-288967,-307800,-306525
+2,50,510,5100,ARR - Land and buildings,arr,-342917,-342917,-763791,-614077
+2,50,510,5121,ARR - Infrastructure open,arr,-547110,-498899,0,0
+2,50,520,5200,Retained earnings,na,-794848,-756122,-374011,-374814
