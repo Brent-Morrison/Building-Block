@@ -178,6 +178,10 @@ for (i in 1:length(mon)) {
   t <- "gift"
   mat[drcr(t, txn_type), t, i] <- c(gift[i], -gift[i])
   
+  # Other income TO DO ----------------------------------------------------------------------------
+  
+  # Interest income TO DO -------------------------------------------------------------------------
+  
   
   # Expenses --------------------------------------------------------------------------------------
   # TO DO - ADD EMPLOYEE EXPENSES (AC 2100)
@@ -322,25 +326,52 @@ write.csv(df2, file = "slr.csv")
 
 slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
 
+# https://www.audit.vic.gov.au/report/auditor-generals-report-annual-financial-report-state-victoria-2017-18?section=33061&show-sections=1#33059--appendix-f-water-sector-financial-sustainability-risk-indicators
+# Cash interest cover      - Net operating cash flows before net interest and tax payments / Net interest payments
+# Gearing ratio            - Total debt (including finance leases) / Total assets
+# Internal financing ratio - Net operating cash flows less dividends / Net capital expenditure
+# Current ratio            - Current assets / Current liabilities (excluding long-term employee provisions and revenue in advance)
+# Return on assets         - Earnings before net interest and tax / average assets
+# Return on equity         - Net profit after tax / average total equity
+# EBITDA margin            - Earnings before interest, tax, depreciation and amortisation / Total revenue
+
+
 monthly_indicators <- slr %>%
   mutate(
-    ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), mtd, 0),
-    net_int_pay  = if_else(act == 4020 & txn == "intp", mtd, 0),
-    total_debt   = if_else(act %in% c(4100,4500), ytd, 0),
-    total_assets = if_else(account_type %in% c(30,35), ytd, 0)
+    ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), -ytd, 0),
+    net_int_pay  = if_else(act == 4020 & txn == "intp", ytd, 0),
+    total_debt   = if_else(act %in% c(4100,4500), -ytd, 0),
+    total_assets = if_else(account_type %in% c(30,35), ytd, 0),
+    cf_rec_cust  = if_else(cf_flag == "rec_cus" & txn != "open", ytd, 0),
+    cf_rec_oth   = if_else(cf_flag == "rec_oth" & txn != "open", ytd, 0),
+    cf_pay_sup   = if_else(cf_flag == "pay_sup" & txn != "open", ytd, 0),
+    cf_pay_int   = if_else(cf_flag == "pay_int" & txn != "open", ytd, 0)
   ) %>%
   group_by(yr, mon) %>%
   summarise(
     ebitda       = round(sum(ebitda), 0),
     net_int_pay  = round(sum(net_int_pay), 0),
     total_debt   = round(sum(total_debt), 0),
-    total_assets = round(sum(total_assets), 0)
+    total_assets = round(sum(total_assets), 0),
+    cf_rec_cust  = round(sum(cf_rec_cust), 0),
+    cf_rec_oth   = round(sum(cf_rec_oth), 0),
+    cf_pay_sup   = round(sum(cf_pay_sup), 0),
+    cf_pay_int   = round(sum(cf_pay_int), 0)
   ) %>%
   mutate(
-    gearing        = total_debt / total_assets,
-    cash_int_cover = ebitda / net_int_pay
-  ) %>%
-  filter(mon %in% (1:10*6))
+    cash_int_cover = ebitda / net_int_pay,
+    gearing        = total_debt / total_assets
+    #int_fin_ratio  =
+    #current_ratio  =
+    #ret_on_ass     =
+    #ret_on_eqt     =
+    #ebitda_mgn     =
+    #average customer bill
+  ) 
+
+monthly_indicators %>%
+  filter(mon %in% (1:5*12)) %>% 
+  select(yr, gearing, cash_int_cover)
 
 
 rpt <- df2 %>%
