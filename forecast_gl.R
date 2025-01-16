@@ -279,7 +279,7 @@ round(colSums(mat[,,6]), 3)
 
 
 
-# ------------------------------------------------------------
+# -------------------------------------------------------------------------------------------------
 # Stack 3 dim array and unpivot
 
 mat1 <- mat
@@ -370,9 +370,25 @@ monthly_indicators <- slr %>%
   ) 
 
 monthly_indicators %>%
-  filter(mon %in% (1:5*12)) %>% 
-  select(yr, gearing, cash_int_cover)
+  #filter(mon %in% (1:5*12)) %>% 
+  filter(mon %in% seq(3, 60, by = 3)) %>% 
+  mutate(date = )
+  select(yr, mon, gearing, cash_int_cover)
 
+
+
+
+
+
+
+
+
+
+
+
+# -------------------------------------------------------------------------------------------------
+# Scratch
+# -------------------------------------------------------------------------------------------------
 
 rpt <- df2 %>%
   left_join(chart, by = c("act" = "account_no")) %>% 
