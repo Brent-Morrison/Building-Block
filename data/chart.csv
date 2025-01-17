@@ -36,22 +36,22 @@
 2,30,320,3200,Contract assets,rec_cus,0,0,0,0
 2,30,330,3300,Other assets,pay_sup,12140,9650,2992,2116
 2,35,335,3500,Land,pay_ppe,324522,4367440,62213,1907699
-2,35,335,3505,Land - acc depn,depn,0,0,0,0
+2,35,335,3505,Land - acc depn,pay_ppe,0,0,0,0
 2,35,340,3510,Buildings,pay_ppe,95712,0,2525,0
-2,35,340,3515,Buildings - acc depn,depn,-5552,0,-313,0
+2,35,340,3515,Buildings - acc depn,pay_ppe,-5552,0,-313,0
 2,35,340,3520,Leasehold improvements,pay_ppe,2188,0,4565,0
-2,35,340,3525,Leasehold improvements - acc depn,depn,-2132,0,-4449,0
+2,35,340,3525,Leasehold improvements - acc depn,pay_ppe,-2132,0,-4449,0
 2,35,340,3530,Plant & equipment,pay_ppe,82099,0,5734,0
-2,35,340,3535,Plant & equipment - acc depn,depn,-48191,0,-3994,0
+2,35,340,3535,Plant & equipment - acc depn,pay_ppe,-48191,0,-3994,0
 2,35,340,3540,Infrastructure,pay_ppe,4183999,0,1895760,0
-2,35,340,3545,Infrastructure - acc depn,depn,0,0,-58826,0
+2,35,340,3545,Infrastructure - acc depn,pay_ppe,0,0,-58826,0
 2,35,340,3560,Service concession assets,pay_ppe,0,0,198758,0
-2,35,340,3565,Service concession assets - acc depn,depn,0,0,-11018,0
+2,35,340,3565,Service concession assets - acc depn,pay_ppe,0,0,-11018,0
 2,35,340,3600,Intangible assets,pay_ppe,153833,153347,71456,68118
-2,35,340,3605,Intangible assets - acc amort,depn,0,0,0,0
+2,35,340,3605,Intangible assets - acc amort,pay_ppe,0,0,0,0
 2,35,350,3645,WIP,pay_ppe,119135,125681,58596,0
 2,35,360,3700,Right-of-use assets,pay_lease,7806,8680,1799,1921
-2,35,370,3800,Other financial assets,depn_rou,15,1062,641,1345
+2,35,370,3800,Other financial assets,pay_ppe,15,1062,641,1345
 2,35,390,3900,Defined benefit superannuation asset,na,13443,10484,0,0
 2,40,400,4000,Trade creditors,pay_sup,-126724,-100818,-20346,-22730
 2,40,400,4005,Accrued expenses - opex,pay_sup,0,0,0,0

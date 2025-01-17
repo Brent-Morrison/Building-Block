@@ -11,8 +11,8 @@ cust_theme1 <- theme_minimal() +
     plot.caption = element_text(size = 8, color = "grey55", face = 'italic'), 
     axis.title.y = element_text(size = 8, color = "darkslategrey"),
     axis.title.x = element_text(size = 8, color = "darkslategrey"),
-    axis.text.y = element_text(size = 7, color = "darkslategrey"),
-    axis.text.x = element_text(size = 7, color = "darkslategrey"),
+    axis.text.y = element_text(size = 8, color = "darkslategrey"),
+    axis.text.x = element_text(size = 8, color = "darkslategrey"),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
   )
@@ -26,8 +26,8 @@ cust_theme2 <- theme_classic() +
     plot.caption = element_text(size = 8, color = "grey55", face = 'italic'), 
     axis.title.y = element_text(size = 8, color = "darkslategrey"),
     axis.title.x = element_text(size = 8, color = "darkslategrey"),
-    axis.text.y = element_text(size = 7, color = "darkslategrey"),
-    axis.text.x = element_text(size = 7, color = "darkslategrey"),
+    axis.text.y = element_text(size = 8, color = "darkslategrey"),
+    axis.text.x = element_text(size = 8, color = "darkslategrey"),
     plot.background = element_blank(),
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
@@ -43,15 +43,15 @@ monthly_indicators %>%
     if_else(mon > 12, mon-((yr-1)*12), mon), 
     1)
   ) %>% 
-  select(yr, mon, date, gearing, cash_int_cover) %>% 
+  select(yr, mon, date, gearing, cash_int_cover, int_fin_ratio, current_ratio) %>% 
   pivot_longer(
-    cols = c(gearing, cash_int_cover),
+    cols = c(gearing, cash_int_cover, int_fin_ratio, current_ratio),
     names_to = 'indicator', 
     values_to = 'value'
    ) %>% 
   ggplot(aes(x = date, y = value)) +
   geom_line() +
-  facet_wrap(vars(indicator), scales = "free_y") +
+  facet_wrap(vars(indicator), scales = "free_y", ncol = 2) +
   labs(x = '',
        y = '',
        title = 'Titles',

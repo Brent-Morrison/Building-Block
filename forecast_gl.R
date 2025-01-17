@@ -340,29 +340,35 @@ monthly_indicators <- slr %>%
   mutate(
     ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), -ytd, 0),
     net_int_pay  = if_else(act == 4020 & txn == "intp", ytd, 0),
-    total_debt   = if_else(act %in% c(4100,4500), -ytd, 0),
+    curr_assets  = if_else(account_type == 30, ytd, 0),
     total_assets = if_else(account_type %in% c(30,35), ytd, 0),
+    curr_liabs   = if_else(account_type == 40, ytd, 0),
+    total_debt   = if_else(act %in% c(4100,4500), ytd, 0),
     cf_rec_cust  = if_else(cf_flag == "rec_cus" & txn != "open", ytd, 0),
     cf_rec_oth   = if_else(cf_flag == "rec_oth" & txn != "open", ytd, 0),
     cf_pay_sup   = if_else(cf_flag == "pay_sup" & txn != "open", ytd, 0),
-    cf_pay_int   = if_else(cf_flag == "pay_int" & txn != "open", ytd, 0)
+    cf_pay_int   = if_else(cf_flag == "pay_int" & txn != "open", ytd, 0),
+    cf_pay_ppe   = if_else(cf_flag == "pay_ppe" & txn != "open", ytd, 0)
   ) %>%
   group_by(yr, mon) %>%
   summarise(
     ebitda       = round(sum(ebitda), 0),
     net_int_pay  = round(sum(net_int_pay), 0),
-    total_debt   = round(sum(total_debt), 0),
+    curr_assets  = round(sum(curr_assets), 0),
     total_assets = round(sum(total_assets), 0),
+    curr_liabs   = round(sum(curr_liabs), 0),
+    total_debt   = round(sum(total_debt), 0),
     cf_rec_cust  = round(sum(cf_rec_cust), 0),
     cf_rec_oth   = round(sum(cf_rec_oth), 0),
     cf_pay_sup   = round(sum(cf_pay_sup), 0),
-    cf_pay_int   = round(sum(cf_pay_int), 0)
+    cf_pay_int   = round(sum(cf_pay_int), 0),
+    cf_pay_ppe   = round(sum(cf_pay_ppe), 0)
   ) %>%
   mutate(
     cash_int_cover = ebitda / net_int_pay,
-    gearing        = total_debt / total_assets
-    #int_fin_ratio  =
-    #current_ratio  =
+    gearing        = -total_debt / total_assets,
+    int_fin_ratio  = -( cf_rec_cust + cf_rec_oth + cf_pay_sup ) / cf_pay_ppe,
+    current_ratio  = curr_assets / -curr_liabs
     #ret_on_ass     =
     #ret_on_eqt     =
     #ebitda_mgn     =
