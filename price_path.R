@@ -2,7 +2,7 @@ source("funs.R")
 library(dplyr)
 library(tidyr)
 
-# Parameters -------------------------------------------------------------
+# Parameters --------------------------------------------------------------------------------------
 dat_src       <- "local"   # "local" / "remote"
 ent_parm <- "CW"
 initial_fcast_yr <- 2024
@@ -18,7 +18,7 @@ rrr
 
 
 
-# Data -------------------------------------------------------------------
+# Data --------------------------------------------------------------------------------------------
 if (dat_src == "local") {
   dat_src   <- "./data/price_subm_2023.csv"
 } else {
@@ -54,7 +54,7 @@ life <- capex$regulatory_life
 life
 
 
-# Depreciation on opening RAB --------------------------------------------
+# Depreciation on opening RAB ---------------------------------------------------------------------
 
 bv <- dat[dat$entity == ent_parm & dat$year == 2023 & dat$balance_type == "rab_book_value", "amount"]
 rl <- dat[dat$entity == ent_parm & dat$year == 2023 & dat$balance_type == "rab_remaining_life", "amount"]
@@ -70,18 +70,18 @@ dpn_open_dtl <- do.call(rbind, dpn_open_dtl)
 dpn_open <- colSums(dpn_open_dtl)
 
 
-# Depreciation on capex --------------------------------------------------
+# Depreciation on capex ---------------------------------------------------------------------------
 dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
 dpn_mtrix
 dpn_cpx <- colSums(dpn_mtrix)
 dpn_cpx
 
 
-# Total depreciation -----------------------------------------------------
+# Total depreciation ------------------------------------------------------------------------------
 dpn <- dpn_open[1:5] + dpn_cpx[1:5]
 
 
-# Opex -------------------------------------------------------------------
+# Opex --------------------------------------------------------------------------------------------
 opex <- dat %>%
   filter(
     balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
@@ -93,7 +93,7 @@ opex <- dat %>%
   summarise(amount = sum(amount))
 
 
-# RAB schedule -----------------------------------------------------------
+# RAB schedule ------------------------------------------------------------------------------------
 # Capex
 cx <- colSums(c)[1:5]
 unlist(colSums(c)[1:5], use.names = FALSE)
@@ -161,15 +161,15 @@ for(i in 1:5) {
 exist_rab_detail
 
 
-# Return on assets -------------------------------------------------------
+# Return on assets --------------------------------------------------------------------------------
 roa <- rrr * exist_rab_detail["average", ]
 
 
-# Revenue requirement ----------------------------------------------------
+# Revenue requirement -----------------------------------------------------------------------------
 rev_req <- roa + opex$amount[1:5] + dpn[1:5]
 
 
-# Price & quantity data --------------------------------------------------
+# Price & quantity data ---------------------------------------------------------------------------
 pq <- dat %>%
   filter(
     balance_type %in% c("Price", "Quantity"),
@@ -180,7 +180,14 @@ pq <- dat %>%
 q.t1 <- pq %>% filter(entity == ent_parm, year == 2023, balance_type == 'Quantity')  # Pivot wider here
 q <- as.matrix(q.t1[, "amount"])
 rownames(q) <- paste(q.t1[, "service"], q.t1[, "asset_category"], q.t1[, "cost_driver"], sep = ".")
-q <- q %*% exp( cumsum( log( 1 + rep(0.05, 5) ) ) )
+
+# Avg. annual consumption (kL per household) 
+# TO DO - use this to flex income, ref. line 229.  kL up or down on wet, dry basis
+kl_hhold_pa <- q["Water.Residential.Variable", 1][[1]] / q["Water.Residential.Fixed", ][[1]]
+
+# Convert p0 quantities to p1 - p5 with fixed growth rate
+# TO DO - 0.05 growth rate to be parameter
+q <- q %*% exp( cumsum( log( 1 + rep(0.05, 5) ) ) ) 
 #q[grepl("Trade", rownames(q)), ]
 
 # Prices
@@ -189,13 +196,14 @@ p0 <- as.matrix(pq.t1[, "amount"])
 rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "cost_driver"], sep = ".")
 
 
-# Perform optimisation ---------------------------------------------------
+# Perform optimisation ----------------------------------------------------------------------------
 optim_result <- optim(
   
   # Initial values for the parameters to be optimized over
   par = c(rrr, 0),
   
-  # Function to be minimized, first argument being vector of parameters over which minimization is applied
+  # Function to be minimized, first argument being vector of 
+  # parameters over which minimization is applied
   fn  = npv_optim_func,
   
   method = "L-BFGS-B",
