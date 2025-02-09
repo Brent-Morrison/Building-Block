@@ -146,12 +146,13 @@ depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
 # Optimisation / price goal seek
 # --------------------------------------------------------------------------------------------------------------------------
 
-npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn_mode="obj") {
+npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") {
   
   # Args:
   #   theta   - a numeric vector of length 2 being regulatory rate of return and price delta
   #   pdyr    - an integer between 0 and 5 representing the year in which price delta 2 comes into effect
   #             , a value of zero returns an even price delta for each year 
+  #   single  - logical, if true the only price delta (that of pdpar1) occurs
   #   rev_req - vector of revenue requirement (length 5)
   #   p0      - matrix of initial prices, dimension n * 1 
   #   q       - 
@@ -159,11 +160,16 @@ npv_optim_func <- function(theta, pdyr, rev_req, p0, q, rtn_mode="obj") {
   # Returns:
   #   error, the difference between two net present values
   
-  pdpar        <- theta[-1]  # price delta
-  rrr          <- theta[1]   # regulatory rate of return
+  pdpar1 <- theta[2]  # First price delta   
+  pdpar2 <- theta[3]  # Second price delta
+  rrr    <- theta[1]  # regulatory rate of return
   
-  pdvec        <- rep(pdpar, 5)
-  pdvec[(1:5)[-pdyr]] <- 0
+  pdpar2 <- if (pdyr == 1) pdpar1 else pdpar2
+  pdvec  <- c(rep(pdpar1, pdyr-1), rep(pdpar2, 5-pdyr+1))
+  pdvecT <- rep(pdpar1, 5)
+  pdvecT[(1:5)[-pdyr]] <- 0
+  pdvec  <- if (single == T) pdvecT else pdvec
+  
   pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1
   pnew         <- p0 %*% (1 + pdcum)
   r            <- pnew * q
