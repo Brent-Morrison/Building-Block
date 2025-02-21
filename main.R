@@ -1,4 +1,3 @@
-source("funs.R")
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -7,7 +6,7 @@ library(lubridate)
 
 
 # Parameters --------------------------------------------------------------------------------------
-dat_src            <- "local"   # "local" / "remote"
+src                <- "local"   # "local" / "remote"
 ent_parm           <- "CW"      # select data for specific entity
 initial_fcast_yr   <- 2024
 price_delta_yr     <- 2         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
@@ -22,15 +21,18 @@ roe                <- 0.041
 rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
 
 
-
 # Data --------------------------------------------------------------------------------------------
-if (dat_src == "local") {
+if (src == "local") {
   dat_src   <- "./data/price_subm_2023.csv"
+  funs_src  <- "funs.R"
 } else {
   dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
+  funs_src  <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/funs.R"
 }
 
 dat <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
+source(funs_src)
+
 
 capex <- dat %>%
   mutate(net_capex = case_when(
@@ -592,6 +594,7 @@ slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
 
 monthly_indicators <- slr %>%
   mutate(
+    net_income   = if_else(statement_type == 1, ytd, 0),
     ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), -ytd, 0),
     net_int_pay  = if_else(act == 4020 & txn == "intp", ytd, 0),
     curr_assets  = if_else(account_type == 30, ytd, 0),
@@ -606,6 +609,7 @@ monthly_indicators <- slr %>%
   ) %>%
   group_by(yr, mon) %>%
   summarise(
+    net_income   = round(sum(net_income), 0),
     ebitda       = round(sum(ebitda), 0),
     net_int_pay  = round(sum(net_int_pay), 0),
     curr_assets  = round(sum(curr_assets), 0),
@@ -622,8 +626,8 @@ monthly_indicators <- slr %>%
     cash_int_cover = ebitda / net_int_pay,
     gearing        = -total_debt / total_assets,
     int_fin_ratio  = -( cf_rec_cust + cf_rec_oth + cf_pay_sup ) / cf_pay_ppe,
-    current_ratio  = curr_assets / -curr_liabs
-    #ret_on_ass     =
+    current_ratio  = curr_assets / -curr_liabs,
+    ret_on_asset   = total_assets / -net_income
     #ret_on_eqt     =
     #ebitda_mgn     =
     #average customer bill
@@ -673,21 +677,21 @@ cust_theme2 <- theme_classic() +
 
 monthly_indicators %>%
   #filter(mon %in% (1:5*12)) %>% 
-  filter(mon %in% seq(3, 60, by = 3)) %>% 
+  filter(mon %in% seq(3, mons, by = 3)) %>% 
   mutate(date = make_date(
     yr+2022, 
     if_else(mon > 12, mon-((yr-1)*12), mon), 
     1)
   ) %>% 
-  select(yr, mon, date, gearing, cash_int_cover, int_fin_ratio, current_ratio) %>% 
+  select(yr, mon, date, gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset) %>% 
   pivot_longer(
-    cols = c(gearing, cash_int_cover, int_fin_ratio, current_ratio),
+    cols = c(gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset),
     names_to = 'indicator', 
     values_to = 'value'
   ) %>% 
   ggplot(aes(x = date, y = value)) +
   geom_line() +
-  facet_wrap(vars(indicator), scales = "free_y", ncol = 2) +
+  facet_wrap(vars(indicator), scales = "free_y", ncol = 3) +
   labs(x = '',
        y = '',
        title = 'Titles',
