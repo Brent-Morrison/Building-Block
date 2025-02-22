@@ -1,7 +1,10 @@
 library(dplyr)
 library(tidyr)
+library(slider)
 library(ggplot2)
 library(lubridate)
+library(kableExtra)
+library(scales)
 
 
 
@@ -24,13 +27,16 @@ rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing),
 # Data --------------------------------------------------------------------------------------------
 if (src == "local") {
   dat_src   <- "./data/price_subm_2023.csv"
+  ref_src   <- "./data/reference.csv"
   funs_src  <- "funs.R"
 } else {
   dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
+  ref_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/reference.csv"
   funs_src  <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/funs.R"
 }
 
 dat <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
+ref <- read.csv(ref_src, fileEncoding="UTF-8-BOM")
 source(funs_src)
 
 
@@ -594,9 +600,9 @@ slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
 
 monthly_indicators <- slr %>%
   mutate(
-    net_income   = if_else(statement_type == 1, ytd, 0),
-    ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), -ytd, 0),
-    net_int_pay  = if_else(act == 4020 & txn == "intp", ytd, 0),
+    net_income   = if_else(statement_type == 1, mtd, 0),
+    ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), mtd, 0),
+    net_int_pay  = if_else(act == 4020 & txn == "intp", mtd, 0),
     curr_assets  = if_else(account_type == 30, ytd, 0),
     total_assets = if_else(account_type %in% c(30,35), ytd, 0),
     curr_liabs   = if_else(account_type == 40, ytd, 0),
@@ -622,12 +628,17 @@ monthly_indicators <- slr %>%
     cf_pay_int   = round(sum(cf_pay_int), 0),
     cf_pay_ppe   = round(sum(cf_pay_ppe), 0)
   ) %>%
+  ungroup() %>% 
   mutate(
-    cash_int_cover = ebitda / net_int_pay,
-    gearing        = -total_debt / total_assets,
-    int_fin_ratio  = -( cf_rec_cust + cf_rec_oth + cf_pay_sup ) / cf_pay_ppe,
-    current_ratio  = curr_assets / -curr_liabs,
-    ret_on_asset   = total_assets / -net_income
+    net_income_ttm   = slide_sum(net_income, before = 12),
+    total_assets_ttm = slide_mean(total_assets, before = 12),
+    ebitda_ttm       = slide_sum(ebitda, before = 12),
+    net_int_pay_ttm  = slide_sum(net_int_pay, before = 12),
+    cash_int_cover   = -ebitda_ttm / net_int_pay_ttm,
+    gearing          = -total_debt / total_assets,
+    int_fin_ratio    = -( cf_rec_cust + cf_rec_oth + cf_pay_sup ) / cf_pay_ppe,
+    current_ratio    = curr_assets / -curr_liabs,
+    ret_on_asset     = -net_income / total_assets_ttm
     #ret_on_eqt     =
     #ebitda_mgn     =
     #average customer bill
@@ -675,6 +686,7 @@ cust_theme2 <- theme_classic() +
   )
 
 
+# Plot
 monthly_indicators %>%
   #filter(mon %in% (1:5*12)) %>% 
   filter(mon %in% seq(3, mons, by = 3)) %>% 
@@ -701,3 +713,29 @@ monthly_indicators %>%
   scale_x_date(date_breaks = '1 year',
                date_labels = '%Y') + 
   cust_theme2
+
+
+
+# Financial statement tables
+slr %>% 
+  filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
+  left_join(ref, by = join_by(account_grp == lookup1)) %>% 
+  group_by(mon, ref1, ref2) %>% 
+  summarise(amount = sum(ytd)) %>% 
+  ungroup() %>% 
+  mutate(mon = (mon / 12 ) + initial_fcast_yr - 1) %>% 
+  pivot_wider(names_from = mon, values_from = amount) %>% 
+  arrange(ref2) %>% 
+  mutate(across(where(is.numeric), abs)) %>%
+  mutate(across(where(is.numeric), label_comma())) %>% 
+  select(-ref2) %>% 
+  rename(" " = ref1) %>% 
+  kbl(
+    align = c("l","r","r","r","r","r"),
+    caption = "Comprehensive operating statement"
+  ) %>% 
+  kable_classic(full_width = F, html_font = "Cambria") %>% 
+  pack_rows(group_label = "REVENUE AND INCOME FROM TRANSACTIONS", start_row = 1, end_row = 3) %>% 
+  column_spec(1,  width = "24em") %>%
+  column_spec(2:6,  width = "8em") %>% 
+  row_spec(2, , extra_css = "border-bottom: 1px solid")  #hline_after = TRUE)
