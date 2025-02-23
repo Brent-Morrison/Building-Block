@@ -1,7 +1,12 @@
 ﻿ref_type,lookup1,ref1,ref2
 account_grp,100,Revenue from contracts with customers,1
 account_grp,110,Revenue from contracts with customers,1
-account_grp,120,Other revenue,2
-account_grp,150,Other revenue,2
-account_grp,210,Employee benefits,3
-account_grp,220,Depreciation,4
+account_grp,120,Revenue from contracts with customers,1
+account_grp,130,Revenue from contracts with customers,1
+account_grp,150,Government funding,2
+account_grp,160,Interest income,3
+account_grp,140,Other income,4
+account_grp,200,Operating and administration expenses,6
+account_grp,210,Employee benefits,7
+account_grp,220,Depreciation,8
+account_grp,230,Finance costs,9

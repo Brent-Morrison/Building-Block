@@ -267,7 +267,7 @@ round(price_delta * 100, 2)
 
 # Parameters 
 mons          <- 60           # months to forecast
-open_bals_col <- "cw_23"
+open_bals_col <- "cw_23"      # column in the 'chart.csv' file representing the entities data
 infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
 month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons) - 1
 days          <- as.numeric(format(month_end, "%d"))
@@ -277,7 +277,7 @@ crdtr_days_ox <- 90
 crdtr_days_cx <- 45
 
 # Data sources
-if (dat_src == "local") {
+if (src == "local") {
   chart_src   <- "./data/chart.csv"
   txn_src     <- "./data/txn_type.csv"
 } else {
@@ -717,25 +717,58 @@ monthly_indicators %>%
 
 
 # Financial statement tables
-slr %>% 
-  filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
-  left_join(ref, by = join_by(account_grp == lookup1)) %>% 
-  group_by(mon, ref1, ref2) %>% 
-  summarise(amount = sum(ytd)) %>% 
-  ungroup() %>% 
+inc <- bind_rows(
+  slr %>% 
+    filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
+    left_join(ref, by = join_by(account_grp == lookup1)) %>% 
+    group_by(mon, ref1, ref2) %>% 
+    summarise(amount = sum(ytd)) %>% 
+    ungroup()
+  , 
+  chart %>% 
+    left_join(ref, by = join_by(account_grp == lookup1)) %>% 
+    group_by(ref1, ref2) %>% 
+    summarise(amount = sum(cw_23)) %>% 
+    ungroup() %>% 
+    mutate(mon = 0) %>% 
+    select(mon, ref1, ref2, amount)
+  ) %>% 
+  filter(mon %in% c(0, 12, 24, 36, 48, 60)) %>% 
+  arrange(mon) %>% 
   mutate(mon = (mon / 12 ) + initial_fcast_yr - 1) %>% 
   pivot_wider(names_from = mon, values_from = amount) %>% 
+  arrange(ref2)  
+
+tot1 <- data.table::transpose(data.frame(c(ref1 = "Total revenue and income from transactions", ref2 = 5, colSums(inc[inc$ref2 %in% 1:4, 3:8], na.rm = TRUE))))
+names(tot1) <- names(inc)
+tot1[,2:8] <- as.numeric(tot1[,2:8])
+inc <- bind_rows(inc, tot1) %>% 
   arrange(ref2) %>% 
   mutate(across(where(is.numeric), abs)) %>%
   mutate(across(where(is.numeric), label_comma())) %>% 
+  mutate(across(everything(), \(x) replace_na(x, "- "))) %>% 
+  add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 5) %>% 
+  add_row(ref1 = "EXPENSES FROM TRANSACTIONS", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 6)
+
+inc %>% 
   select(-ref2) %>% 
   rename(" " = ref1) %>% 
   kbl(
-    align = c("l","r","r","r","r","r"),
+    align = c("l",rep("r",6)),
     caption = "Comprehensive operating statement"
   ) %>% 
   kable_classic(full_width = F, html_font = "Cambria") %>% 
-  pack_rows(group_label = "REVENUE AND INCOME FROM TRANSACTIONS", start_row = 1, end_row = 3) %>% 
   column_spec(1,  width = "24em") %>%
-  column_spec(2:6,  width = "8em") %>% 
-  row_spec(2, , extra_css = "border-bottom: 1px solid")  #hline_after = TRUE)
+  column_spec(2:7,  width = "8em") %>% 
+  pack_rows(group_label = "REVENUE AND INCOME FROM TRANSACTIONS", start_row = 1, end_row = 4, indent = FALSE) %>% 
+  row_spec(4, , extra_css = "border-bottom: 1px solid") %>%
+  row_spec(5, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
+  row_spec(6, color = "white") %>%
+  row_spec(7, bold = TRUE) %>%
+  #row_spec(5, bold = TRUE, extra_css = "vertical-align: top") %>% 
+  #pack_rows(group_label = "EXPENSES FROM TRANSACTIONS", start_row = 6, end_row = 9, indent = FALSE) %>% 
+  row_spec(11, , extra_css = "border-bottom: 1px solid") 
+
+
+
+

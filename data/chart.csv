@@ -9,26 +9,28 @@
 1,10,110,1103,Recycled water-Usage,rec_cus,-5426,-5220,0,0
 1,10,120,1200,Developer contributed assets,pay_ppe,-91715,-74788,0,0
 1,10,130,1300,New customer contributions,rec_oth,-32190,-32426,0,0
-1,10,150,1400,Other revenue,rec_oth,-48398,-54456,-8693,-4117
-1,10,150,1500,Other income,rec_oth,-2106,-1937,0,0
+1,10,140,1400,Other revenue,rec_oth,-50387,-56331,-2230,-2088
+1,10,150,1500,Government funding,rec_oth,0,0,-6057,-1998
+1,10,160,1600,Interest income,rec_oth,-117,-62,-406,-31
+1,10,170,1700,Other income,rec_oth,0,0,0,0
 1,10,200,2000,Operating expenses ,pay_sup,638432,639341,66220,57951
 1,10,210,2100,Employee benefits,pay_emp,69514,59624,23441,20987
-1,10,220,2200,Depreciation and amortisation,pay_ppe,123684,122917,0,37328
-1,10,220,2215,Depreciation - buildings,pay_ppe,0,0,143,0
-1,10,220,2225,Depreciation - l/hold impr.,pay_ppe,0,0,10,0
-1,10,220,2235,Depreciation - p&e,pay_ppe,0,0,385,0
-1,10,220,2245,Depreciation - infa,pay_ppe,0,0,29560,0
-1,10,220,2265,Depreciation - SCA,pay_ppe,0,0,5514,0
-1,10,220,2205,Amortisation - intangibles,pay_ppe,0,0,1532,0
-1,10,230,2300,Finance costs,pay_int,89177,77986,23941,22978
-1,10,235,2350,Doubtful debts expense,rec_cus,0,0,0,0
-1,10,240,2400,Environmental contribution,pay_gov,43461,43461,5734,5734
-1,10,245,2450,Income tax expense,tax,0,0,0,0
-1,25,250,2500,xxxx,pay_int,0,0,0,0
-1,26,260,2600,Net gain / loss on disposal,pay_ppe,0,0,3253,161
-1,27,270,2700,Other expenses,pay_sup,0,0,4807,1845
-1,28,280,2800,Income tax expense,tax,29363,32847,-2622,-327
-1,29,290,2900,Dividends paid,div,21707,42116,0,0
+1,20,220,2200,Depreciation and amortisation,pay_ppe,123684,122917,0,37328
+1,20,220,2215,Depreciation - buildings,pay_ppe,0,0,143,0
+1,20,220,2225,Depreciation - l/hold impr.,pay_ppe,0,0,10,0
+1,20,220,2235,Depreciation - p&e,pay_ppe,0,0,385,0
+1,20,220,2245,Depreciation - infa,pay_ppe,0,0,29560,0
+1,20,220,2265,Depreciation - SCA,pay_ppe,0,0,5514,0
+1,20,220,2205,Amortisation - intangibles,pay_ppe,0,0,1532,0
+1,20,230,2300,Finance costs,pay_int,89177,77986,23941,22978
+1,20,235,2350,Doubtful debts expense,rec_cus,0,0,0,0
+1,20,240,2400,Environmental contribution,pay_gov,43461,43461,5734,5734
+1,20,245,2450,Income tax expense,tax,0,0,0,0
+1,20,250,2500,xxxx,pay_int,0,0,0,0
+1,20,260,2600,Net gain / loss on disposal,pay_ppe,0,0,3253,161
+1,20,270,2700,Other expenses,pay_sup,0,0,4807,1845
+1,20,280,2800,Income tax expense,tax,29363,32847,-2622,-327
+1,20,290,2900,Dividends paid,div,21707,42116,0,0
 2,30,300,3000,Cash,cash,91141,2409,26964,23804
 2,30,310,3050,Accrued income,rec_cus,77797,75367,21725,19922
 2,30,310,3100,Trade debtors,rec_cus,84585,101735,15683,14063
