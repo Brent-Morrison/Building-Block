@@ -335,3 +335,31 @@ trgt_days <- function(i, d, trail, bal_acnt, pl_acnt, txn) {
 #xxx(i=3, d=creditor_days, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
 #mat[c("2000","4000"),c("open","exp1","crd1","clos"),5:7]
 #mat[c("3645","4010"),c("open","cpx1","wipc","clos"),1:3]
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Accounting numbers
+# --------------------------------------------------------------------------------------------------------------------------
+
+acc_num <- function(x){
+  xc <- prettyNum(abs(round(x, 0)), big.mark = ',')
+  xo1 <- ifelse(
+    round(x, 0) > 0, 
+    xc, 
+    ifelse(
+      round(x, 0) == 0, 
+      "- ", 
+      paste0('(', xc, ')')
+    )
+  )
+  xo <- ifelse(
+    round(x, 0) > 0,
+    paste0(xo1, ' '),
+    xo1
+  )
+  return(xo)
+}
+
+#x <- c(-50000, 50000, -500, -49979, 48778, 1000, -41321, 0, .01)
+#acc_num(x)
