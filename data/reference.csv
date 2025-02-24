@@ -1,12 +1,15 @@
 ﻿ref_type,lookup1,ref1,ref2
-account_grp,100,Revenue from contracts with customers,1
-account_grp,110,Revenue from contracts with customers,1
-account_grp,120,Revenue from contracts with customers,1
-account_grp,130,Revenue from contracts with customers,1
-account_grp,150,Government funding,2
-account_grp,160,Interest income,3
-account_grp,140,Other income,4
-account_grp,200,Operating and administration expenses,6
-account_grp,210,Employee benefits,7
-account_grp,220,Depreciation,8
-account_grp,230,Finance costs,9
+account_grp,100,Service charges,2
+account_grp,110,Usage charges,3
+account_grp,120,Contributions & gifted assets,5
+account_grp,130,Contributions & gifted assets,5
+account_grp,150,Government funding,4
+account_grp,160,Interest income,6
+account_grp,140,Other income,7
+account_grp,200,Operating and administration expenses,11
+account_grp,210,Employee benefits,12
+account_grp,270,Expenditure of government funding,13
+account_grp,220,Depreciation,15
+account_grp,230,Finance costs,14
+account_grp,240,Environmental contribution,16
+account_grp,260,Other economic flows,19
