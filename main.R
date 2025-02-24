@@ -752,12 +752,12 @@ tot2 <- data.table::transpose(data.frame(c(ref1 = "Total expenses from transacti
 names(tot2) <- names(inc)
 tot2[,2:8] <- as.numeric(tot2[,2:8])
 
-inc <- bind_rows(inc, tot1) %>% 
+inc <- bind_rows(inc, tot1, tot2) %>% 
   arrange(ref2) %>% 
   mutate(across(where(is.numeric), abs)) %>%
   mutate(across(where(is.numeric), label_comma())) %>% 
   mutate(across(everything(), \(x) replace_na(x, "- "))) %>% 
-  mutate(across(3:8, \(x) replace(x, "0", "- "))) %>% 
+  #mutate(across(3:8, \(x) replace(x, "0", "- "))) %>% 
   add_row(ref1 = "Revenue from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 0) %>% 
   add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 8) %>% 
   add_row(ref1 = "Expenses from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 9)
@@ -776,12 +776,12 @@ inc %>%
   column_spec(1,  width = "24em") %>%
   column_spec(2:7,  width = "8em") %>% 
   row_spec(1, bold = TRUE) %>%
-  row_spec(6, , extra_css = "border-bottom: 1px solid") %>%
-  row_spec(7, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
-  row_spec(8, color = "white") %>%
-  row_spec(9, bold = TRUE) %>%
-  row_spec(15, , extra_css = "border-bottom: 1px solid") %>% 
-  row_spec(16, bold = TRUE)
+  row_spec(7, , extra_css = "border-bottom: 1px solid") %>%
+  row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
+  row_spec(9, color = "white") %>%
+  row_spec(10, bold = TRUE) %>%
+  row_spec(16, , extra_css = "border-bottom: 1px solid") %>% 
+  row_spec(17, bold = TRUE)
 
 
 
