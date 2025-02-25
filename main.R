@@ -388,7 +388,8 @@ stat_depn_int <- depn_bv(
 # - on capex (balances moved from WIP)
 dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re opening balances and capex, assume transfer from WIP to asset register
 dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
-
+dpn_cpx <- colSums(dpn_mtrix)
+dpn_cpx <- rep(dpn_cpx / 5, each = 12)
 
 
 # -------------------------------------------------------------------------------------------------
@@ -496,9 +497,9 @@ for (i in 1:length(mon)) {
     stat_depn_bld[i], -stat_depn_bld[i],
     stat_depn_lhi[i], -stat_depn_lhi[i],
     stat_depn_pae[i], -stat_depn_pae[i],
+    stat_depn_inf[i]+dpn_cpx[i], -stat_depn_inf[i]-dpn_cpx[i], # assumes all capex is infrastructure
     stat_depn_pae[i], -stat_depn_pae[i],
-    stat_depn_sca[i], -stat_depn_sca[i],
-    0, 0
+    stat_depn_sca[i], -stat_depn_sca[i]
   )
   a <- drcr(t, txn_type)
   if (sum(p) == 0 & length(p) == length(a)) {
