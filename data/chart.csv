@@ -1,15 +1,18 @@
 ﻿statement_type,account_type,account_grp,account_no,account_desc,cf_flag,sew_23,sew_22,cw_23,cw_22
-1,10,100,1000,Water-Service,rec_cus,-65651,-72372,-147095,-141737
-1,10,100,1001,Sewerage-Service,rec_cus,-284117,-277283,0,0
-1,10,100,1002,Trade waste-Service,rec_cus,-6760,-6321,0,0
-1,10,100,1003,Recycled water-Service,rec_cus,-1030,-1009,0,0
-1,10,110,1100,Water-Usage,rec_cus,-399957,-413378,0,0
-1,10,110,1101,Sewerage-Usage,rec_cus,-98783,-93754,0,0
-1,10,110,1102,Trade waste-Usage,rec_cus,-23943,-21601,0,0
-1,10,110,1103,Recycled water-Usage,rec_cus,-5426,-5220,0,0
-1,10,120,1200,Developer contributed assets,pay_ppe,-91715,-74788,0,0
-1,10,130,1300,New customer contributions,rec_oth,-32190,-32426,0,0
-1,10,140,1400,Other revenue,rec_oth,-50387,-56331,-2230,-2088
+1,10,100,1000,Water-Service,rec_cus,-65651,-72372,-20749,-19960
+1,10,100,1001,Sewerage-Service,rec_cus,-284117,-277283,-51128,-49010
+1,10,100,1002,Trade waste-Service,rec_cus,-6760,-6321,-3398,-3044
+1,10,100,1003,Recycled water-Service,rec_cus,-1030,-1009,-50,-43
+1,10,100,1004,Rural water-Service,rec_cus,0,0,-2555,-2504
+1,10,110,1100,Water-Usage,rec_cus,-399957,-413378,-44893,-47341
+1,10,110,1101,Sewerage-Usage,rec_cus,-98783,-93754,-1529,-1377
+1,10,110,1102,Trade waste-Usage,rec_cus,-23943,-21601,-956,-874
+1,10,110,1103,Recycled water-Usage,rec_cus,-5426,-5220,-502,-642
+1,10,110,1104,Rural water-Usage,rec_cus,0,0,-559,-797
+1,10,110,1105,Temp water sales-Usage,rec_cus,0,0,-331,-1807
+1,10,120,1200,Developer contributed assets,pay_ppe,-91715,-74788,-15642,-10390
+1,10,130,1300,New customer contributions,rec_oth,-32190,-32426,-4803,-3953
+1,10,140,1400,Other revenue,rec_oth,-50387,-56331,-2230,-2083
 1,10,150,1500,Government funding,rec_oth,0,0,-6057,-1998
 1,10,160,1600,Interest income,rec_oth,-117,-62,-406,-31
 1,10,170,1700,Other income,rec_oth,0,0,0,0
