@@ -717,7 +717,7 @@ monthly_indicators %>%
 
 
 # Financial statement tables
-inc <- bind_rows(
+inc1 <- bind_rows(
   slr %>% 
     filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
     left_join(ref, by = join_by(account_grp == lookup1)) %>% 
@@ -743,24 +743,30 @@ inc <- bind_rows(
   arrange(ref2)  
 
 # Total income
-tot1 <- data.table::transpose(data.frame(c(ref1 = "Total revenue and income from transactions", ref2 = 8, colSums(inc[inc$ref2 %in% 2:7, 3:8], na.rm = TRUE))))
-names(tot1) <- names(inc)
+tot1 <- data.table::transpose(data.frame(c(ref1 = "Total revenue from transactions", ref2 = 8, colSums(inc1[inc1$ref2 %in% 2:7, 3:8], na.rm = TRUE))))
+names(tot1) <- names(inc1)
 tot1[,2:8] <- as.numeric(tot1[,2:8])
 
 # Total expense
-tot2 <- data.table::transpose(data.frame(c(ref1 = "Total expenses from transactions", ref2 = 17, colSums(inc[inc$ref2 %in% 11:16, 3:8], na.rm = TRUE))))
-names(tot2) <- names(inc)
+tot2 <- data.table::transpose(data.frame(c(ref1 = "Total expenses from transactions", ref2 = 17, colSums(inc1[inc1$ref2 %in% 11:16, 3:8], na.rm = TRUE))))
+names(tot2) <- names(inc1)
 tot2[,2:8] <- as.numeric(tot2[,2:8])
 
-inc <- bind_rows(inc, tot1, tot2) %>% 
+# Total result txn
+tot3 <- data.table::transpose(data.frame(c(ref1 = "Net result from transactions", ref2 = 18, colSums(inc1[inc1$ref2 %in% 1:16, 3:8], na.rm = TRUE))))
+names(tot3) <- names(inc1)
+tot3[,2:8] <- as.numeric(tot3[,2:8])
+
+inc <- bind_rows(inc1, tot1, tot2, tot3) %>% 
   arrange(ref2) %>% 
   mutate(across(where(is.numeric), abs)) %>%
   mutate(across(where(is.numeric), label_comma())) %>% 
   mutate(across(everything(), \(x) replace_na(x, "- "))) %>% 
   #mutate(across(3:8, \(x) replace(x, "0", "- "))) %>% 
   add_row(ref1 = "Revenue from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 0) %>% 
-  add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 8) %>% 
-  add_row(ref1 = "Expenses from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 9)
+  add_row(ref1 = ".", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 8) %>% 
+  add_row(ref1 = "Expenses from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 9) %>% 
+  add_row(ref1 = ".", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 17)
 
 # Replace zeros
 #inc <- replace(inc[,3:8], "0", "-")
@@ -780,9 +786,7 @@ inc %>%
   row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
   row_spec(9, color = "white") %>%
   row_spec(10, bold = TRUE) %>%
-  row_spec(16, , extra_css = "border-bottom: 1px solid") %>% 
-  row_spec(17, bold = TRUE)
-
-
-
-
+  row_spec(16, extra_css = "border-bottom: 1px solid") %>% 
+  row_spec(17, bold = TRUE) %>% 
+  row_spec(18, extra_css = "border-bottom: 1px solid") %>% #color = "white", 
+  row_spec(19, bold = TRUE, extra_css = "border-bottom: 1px solid")
