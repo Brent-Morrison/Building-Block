@@ -13,3 +13,4 @@ account_grp,220,Depreciation,15
 account_grp,230,Finance costs,14
 account_grp,240,Environmental contribution,16
 account_grp,260,Other economic flows,19
+statement_type,1,Net Result,20
