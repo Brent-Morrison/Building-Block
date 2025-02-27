@@ -721,13 +721,13 @@ monthly_indicators %>%
 inc1 <- bind_rows(
   slr %>% 
     filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
-    left_join(ref, by = join_by(account_grp == lookup1)) %>% 
+    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
     group_by(mon, ref1, ref2) %>% 
     summarise(amount = sum(ytd)) %>% 
     ungroup()
   , 
   chart %>% 
-    left_join(ref, by = join_by(account_grp == lookup1)) %>% 
+    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
     group_by(ref1, ref2) %>% 
     summarise(amount = sum(cw_23)) %>% 
     ungroup() %>% 
@@ -760,6 +760,7 @@ tot3[,2:8] <- as.numeric(tot3[,2:8])
 
 inc <- bind_rows(inc1, tot1, tot2, tot3) %>% 
   arrange(ref2) %>% 
+  filter(ref2 != 19) %>% 
   mutate(across(where(is.numeric), abs)) %>%
   mutate(across(where(is.numeric), label_comma())) %>% 
   mutate(across(everything(), \(x) replace_na(x, "- "))) %>% 
