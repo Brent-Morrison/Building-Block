@@ -13,4 +13,11 @@ account_grp,220,Depreciation,15
 account_grp,230,Finance costs,14
 account_grp,240,Environmental contribution,16
 account_grp,260,Other economic flows,19
-statement_type,1,Net Result,20
+account_grp,280,Other economic flows,19
+account_grp,290,Other economic flows,19
+statement_type,1,Net Result,22
+account_grp,300,of which Cash,25
+account_grp,310,of which Receivables and contract assets,26
+account_grp,340,of which Infrastructure assets,28
+account_grp,350,of which Infrastructure assets,28
+account_grp,400,of which Payables,33
