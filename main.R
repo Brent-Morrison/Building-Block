@@ -719,30 +719,30 @@ monthly_indicators %>%
 
 # Financial statement tables
 inc1 <- bind_rows(
-  slr %>% 
-    filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
-    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
-    group_by(mon, ref1, ref2) %>% 
-    summarise(amount = sum(ytd)) %>% 
-    ungroup()
-  , 
-  chart %>% 
-    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
-    group_by(ref1, ref2) %>% 
-    summarise(amount = sum(cw_23)) %>% 
-    ungroup() %>% 
-    mutate(mon = 0) %>% 
-    select(mon, ref1, ref2, amount)
+    slr %>% 
+      filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
+      left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
+      group_by(mon, ref1, ref2) %>% 
+      summarise(amount = sum(ytd)) %>% 
+      ungroup()
+    , 
+    chart %>% 
+      left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
+      group_by(ref1, ref2) %>% 
+      summarise(amount = sum(cw_23)) %>% 
+      ungroup() %>% 
+      mutate(mon = 0) %>% 
+      select(mon, ref1, ref2, amount)
   ) %>% 
   filter(mon %in% c(0, 12, 24, 36, 48, 60)) %>% 
   arrange(mon) %>% 
   mutate(
     mon = (mon / 12 ) + initial_fcast_yr - 1,
     amount = round(amount, 0)
-    ) %>% 
+  ) %>% 
   pivot_wider(names_from = mon, values_from = amount) %>% 
   arrange(ref2)  
-
+  
 # Total income
 tot1 <- data.table::transpose(data.frame(c(ref1 = "Total revenue from transactions", ref2 = 8, colSums(inc1[inc1$ref2 %in% 2:7, 3:8], na.rm = TRUE))))
 names(tot1) <- names(inc1)
@@ -753,26 +753,44 @@ tot2 <- data.table::transpose(data.frame(c(ref1 = "Total expenses from transacti
 names(tot2) <- names(inc1)
 tot2[,2:8] <- as.numeric(tot2[,2:8])
 
-# Total result txn
-tot3 <- data.table::transpose(data.frame(c(ref1 = "Net result from transactions", ref2 = 18, colSums(inc1[inc1$ref2 %in% 1:16, 3:8], na.rm = TRUE))))
+# Net result from transactions
+tot3 <- data.table::transpose(data.frame(c(ref1 = "Net result from transactions", ref2 = 18, colSums(inc1[inc1$ref2 %in% 2:17, 3:8], na.rm = TRUE))))
 names(tot3) <- names(inc1)
 tot3[,2:8] <- as.numeric(tot3[,2:8])
 
-inc <- bind_rows(inc1, tot1, tot2, tot3) %>% 
-  arrange(ref2) %>% 
-  filter(ref2 != 19) %>% 
+# Net result
+tot4 <- data.table::transpose(data.frame(c(ref1 = "Net result", ref2 = 20, colSums(inc1[inc1$ref2 %in% 2:19, 3:8], na.rm = TRUE))))
+names(tot4) <- names(inc1)
+tot4[,2:8] <- as.numeric(tot4[,2:8])
+
+inc <- bind_rows(inc1, tot1, tot2, tot3, tot4) %>% 
+  arrange(ref2) 
+
+# Assign correct sign
+inc[, 3:8] <- as.matrix(inc[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1, -1, rep(1,4)), 6), ncol = 6)
+
+# Format as character
+nums <- as.matrix(inc[, 3:8])
+nums[is.na(nums)] <- 0
+nums_new <- t(prettyNum(abs(nums), big.mark=','))
+#ifelse(nums >= 0, nums_new, paste0('(', nums_new, ')'))
+nums_new <- ifelse(nums >= 0, paste0(nums_new, ' '), paste0('(', nums_new, ')'))
+nums_new <- ifelse(nums == 0, "- ", nums_new) 
+nums_new
+inc[, 3:8] <- nums_new
+inc
+  
+# Add title rows
+inc <- inc %>% 
   mutate(across(where(is.numeric), abs)) %>%
   mutate(across(where(is.numeric), label_comma())) %>% 
   mutate(across(everything(), \(x) replace_na(x, "- "))) %>% 
   #mutate(across(3:8, \(x) replace(x, "0", "- "))) %>% 
   add_row(ref1 = "Revenue from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 0) %>% 
-  add_row(ref1 = ".", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 8) %>% 
+  add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 8) %>% 
   add_row(ref1 = "Expenses from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 9) %>% 
   add_row(ref1 = ".", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 17)
-
-# Replace zeros
-#inc <- replace(inc[,3:8], "0", "-")
-
+  
 inc %>% 
   select(-ref2) %>% 
   rename(" " = ref1) %>% 
@@ -788,7 +806,5 @@ inc %>%
   row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
   row_spec(9, color = "white") %>%
   row_spec(10, bold = TRUE) %>%
-  row_spec(16, extra_css = "border-bottom: 1px solid") %>% 
-  row_spec(17, bold = TRUE) %>% 
-  row_spec(18, extra_css = "border-bottom: 1px solid") %>% #color = "white", 
-  row_spec(19, bold = TRUE, extra_css = "border-bottom: 1px solid")
+  row_spec(16, , extra_css = "border-bottom: 1px solid") %>% 
+  row_spec(17, bold = TRUE)
