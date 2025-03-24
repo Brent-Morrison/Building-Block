@@ -717,16 +717,16 @@ monthly_indicators %>%
 
 
 
-# Financial statement tables
+# Financial statement tables (INCOME STATEMENT)
 inc1 <- bind_rows(
-    slr %>% 
+    slr %>% # modelled / forward looking data
       filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
       left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
       group_by(mon, ref1, ref2) %>% 
       summarise(amount = sum(ytd)) %>% 
       ungroup()
     , 
-    chart %>% 
+    chart %>% # opening balances
       left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
       group_by(ref1, ref2) %>% 
       summarise(amount = sum(cw_23)) %>% 
@@ -741,7 +741,8 @@ inc1 <- bind_rows(
     amount = round(amount, 0)
   ) %>% 
   pivot_wider(names_from = mon, values_from = amount) %>% 
-  arrange(ref2)  
+  arrange(ref2) %>% 
+  filter(!is.na(ref1))
   
 # Total income
 tot1 <- data.table::transpose(data.frame(c(ref1 = "Total revenue from transactions", ref2 = 8, colSums(inc1[inc1$ref2 %in% 2:7, 3:8], na.rm = TRUE))))
@@ -763,25 +764,25 @@ tot4 <- data.table::transpose(data.frame(c(ref1 = "Net result", ref2 = 20, colSu
 names(tot4) <- names(inc1)
 tot4[,2:8] <- as.numeric(tot4[,2:8])
 
-inc <- bind_rows(inc1, tot1, tot2, tot3, tot4) %>% 
+inc2 <- bind_rows(inc1, tot1, tot2, tot3, tot4) %>% 
   arrange(ref2) 
 
 # Assign correct sign
-inc[, 3:8] <- as.matrix(inc[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1, -1, rep(1,4)), 6), ncol = 6)
+inc2[, 3:8] <- as.matrix(inc2[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1, -1, rep(1,4)), 6), ncol = 6)
 
 # Format as character
-nums <- as.matrix(inc[, 3:8])
+nums <- as.matrix(inc2[, 3:8])
 nums[is.na(nums)] <- 0
 nums_new <- t(prettyNum(abs(nums), big.mark=','))
 #ifelse(nums >= 0, nums_new, paste0('(', nums_new, ')'))
 nums_new <- ifelse(nums >= 0, paste0(nums_new, ' '), paste0('(', nums_new, ')'))
 nums_new <- ifelse(nums == 0, "- ", nums_new) 
 nums_new
-inc[, 3:8] <- nums_new
-inc
+inc2[, 3:8] <- nums_new
+inc2
   
 # Add title rows
-inc <- inc %>% 
+inc3 <- inc2 %>% 
   mutate(across(where(is.numeric), abs)) %>%
   mutate(across(where(is.numeric), label_comma())) %>% 
   mutate(across(everything(), \(x) replace_na(x, "- "))) %>% 
@@ -789,9 +790,9 @@ inc <- inc %>%
   add_row(ref1 = "Revenue from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 0) %>% 
   add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 8) %>% 
   add_row(ref1 = "Expenses from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 9) %>% 
-  add_row(ref1 = ".", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 17)
+  add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 17)
   
-inc %>% 
+inc3 %>% 
   select(-ref2) %>% 
   rename(" " = ref1) %>% 
   kbl(
@@ -802,9 +803,42 @@ inc %>%
   column_spec(1,  width = "24em") %>%
   column_spec(2:7,  width = "8em") %>% 
   row_spec(1, bold = TRUE) %>%
-  row_spec(7, , extra_css = "border-bottom: 1px solid") %>%
+  row_spec(7, extra_css = "border-bottom: 1px solid") %>%
   row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
   row_spec(9, color = "white") %>%
   row_spec(10, bold = TRUE) %>%
-  row_spec(16, , extra_css = "border-bottom: 1px solid") %>% 
-  row_spec(17, bold = TRUE)
+  row_spec(16, extra_css = "border-bottom: 1px solid") %>% 
+  row_spec(17, bold = TRUE) %>% 
+  row_spec(18, color = "white", extra_css = "border-bottom: 1px solid") %>% 
+  row_spec(c(19,21), bold = TRUE)
+
+
+
+
+
+# Financial statement tables (BALANCE SHEET)
+bal1 <- bind_rows(
+  slr %>% # modelled / forward looking data
+    filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
+    left_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
+    group_by(mon, ref1, ref2) %>% 
+    summarise(amount = sum(ytd)) %>% 
+    ungroup()
+  , 
+  chart %>% # opening balances
+    left_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
+    group_by(ref1, ref2) %>% 
+    summarise(amount = sum(cw_23)) %>% 
+    ungroup() %>% 
+    mutate(mon = 0) %>% 
+    select(mon, ref1, ref2, amount)
+) %>% 
+  filter(mon %in% c(0, 12, 24, 36, 48, 60)) %>% 
+  arrange(mon) %>% 
+  mutate(
+    mon = (mon / 12 ) + initial_fcast_yr - 1,
+    amount = round(amount, 0)
+  ) %>% 
+  pivot_wider(names_from = mon, values_from = amount) %>% 
+  arrange(ref2) %>% 
+  filter(!is.na(ref1))
