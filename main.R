@@ -414,24 +414,15 @@ for (i in 1:length(mon)) {
   
   # Cash receipt to specify desired closing balance for accrued income days parameter -------------
   trail <- 3
-  if (i < trail) s <- 1 else s <- i - (trail - 1)
-  trail_inc <- -mean(mat["1000", "aidb", s:i]) * trail
-  sum_days <- mean(days[s:i]) * trail
-  prior_bals <- mean(mat["3050", "open", s:i]) * (trail - 1)
-  tfer <- round( abs(accrued_days * trail_inc / sum_days * 3 - prior_bals - mat["3050", "open", i] + mat["1000", "aidb", i]) , 3)
   t <- "incm"
+  tfer <- trgt_days(i, accrued_days, trail, bal_acnt="3050", pl_acnt="1000", txn="aidb")
   mat[drcr(t, txn_type), t, i] <- c(tfer, -tfer)
   
   
   # Cash receipt to specify desired closing balance for debtors days parameter --------------------
   trail <- 3
-  if (i < trail) s <- 1 else s <- i - (trail - 1)
-  trail_inc <- -mean(mat["3050", "incm", s:i]) * trail
-  sum_days <- mean(days[s:i]) * trail
-  prior_bals <- mean(mat["3100", "open", s:i]) * (trail - 1)
-  desired_bal <- debtors_days * trail_inc / sum_days * 3 - prior_bals
-  rcpt <- round( abs(desired_bal - mat["3100", "open", i] + mat["3050", "incm", i]) , 3)
   t <- "cshd"
+  rcpt <- trgt_days(i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
   
   
@@ -768,7 +759,7 @@ inc2 <- bind_rows(inc1, tot1, tot2, tot3, tot4) %>%
   arrange(ref2) 
 
 # Assign correct sign
-inc2[, 3:8] <- as.matrix(inc2[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1, -1, rep(1,4)), 6), ncol = 6)
+inc2[, 3:8] <- as.matrix(inc2[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1, -1, rep(1,3)), 6), ncol = 6)
 
 # Format as character
 nums <- as.matrix(inc2[, 3:8])
@@ -812,7 +803,7 @@ inc3 %>%
   row_spec(18, color = "white", extra_css = "border-bottom: 1px solid") %>% 
   row_spec(c(19,21), bold = TRUE)
 
-
+mat[c("1000","3000","3050","3100"),c("open","aidb","incm","cshd","clos"), 1:13]
 
 
 

@@ -161,34 +161,58 @@ sum(y)
 # Test days receivable logic
 # --------------------------------------------------------------------------------------------------------------------------
 
-debtors1 <- "
-15377 21465  20257
-11803 11948  11898
--5714 -13157     0
-21465 20257     0
+source("funs.R")
+
+# 
+debtors.r1 <- "
+   30     30     31
+15377  21465  20257
+11803  11948  11898
+-5714 -13157      0
+21465  20257      0
 "
 
-debtors2 <- as.numeric(unlist(strsplit(trimws(debtors1), "\\s+")))
-debtors  <- matrix(debtors2, ncol=3, byrow=TRUE)
-rownames(debtors) <- c("Open","Incm","Cash","Close")
-debtors
+debtors1 <- as.numeric(unlist(strsplit(trimws(debtors.r1), "\\s+")))
+debtors1 <- matrix(debtors1, ncol=3, byrow=TRUE)
+rownames(debtors1) <- c("Days","Open","Incm","Cash","Close")
+debtors1
 
+# 
+debtors.r2 <- "
+   30     30     31
+ 5000   5000   5000
+ 2466   2466   2548
+-2466  -2466      0
+ 5000   5000      0
+"
+
+debtors2 <- as.numeric(unlist(strsplit(trimws(debtors.r2), "\\s+")))
+debtors2 <- matrix(debtors2, ncol=3, byrow=TRUE)
+rownames(debtors2) <- c("Days","Open","Incm","Cash","Close")
+debtors2
 
 # Excel version
 library(openxlsx)
 wb <- createWorkbook()
 addWorksheet(wb, "debtors_days")
-writeData(wb, sheet = "debtors_days", x = debtors)
-writeFormula(wb, 1, x = "ROUND(30*SUM(A3:C3)/91*3-SUM(B2:C2)-SUM(C2:C3), 0)", startCol = 3, startRow = 4)
-writeFormula(wb, 1, x = "SUM(C2:C4)", startCol = 3, startRow = 5)
-writeFormula(wb, 1, x = "ROUND(AVERAGE(A5:C5)/SUM(A3:C3)*92, 0)", startCol = 3, startRow = 6)
+writeData(wb, sheet = "debtors_days", x = debtors1, startCol = 2, startRow = 2)
+writeData(wb, sheet = "debtors_days", x = 60, startCol = 4, startRow = 1)
+writeData(wb, sheet = "debtors_days", x = debtors2, startCol = 2, startRow = 11)
+writeData(wb, sheet = "debtors_days", x = 60, startCol = 4, startRow = 10)
+writeFormula(wb, 1, x = "MIN(0, MAX(-SUM(D4:D5),ROUND(D1*SUM(B5:D5)/SUM(B3:D3)*3-SUM(C4:D4)-SUM(D4:D5),0)))", startCol = 4, startRow = 6)
+writeFormula(wb, 1, x = "MIN(0, MAX(-SUM(D13:D14),ROUND(D10*SUM(B14:D14)/SUM(B12:D12)*3-SUM(C13:D13)-SUM(D13:D14),0)))", startCol = 4, startRow = 15)
+writeFormula(wb, 1, x = "SUM(D4:D6)", startCol = 4, startRow = 7)
+writeFormula(wb, 1, x = "SUM(D13:D15)", startCol = 4, startRow = 16)
+writeFormula(wb, 1, x = "ROUND(AVERAGE(B7:D7)/SUM(B5:D5)*SUM(B3:D3), 0)", startCol = 4, startRow = 8)
+writeFormula(wb, 1, x = "ROUND(AVERAGE(B16:D16)/SUM(B14:D14)*SUM(B12:D12), 0)", startCol = 4, startRow = 17)
 saveWorkbook(wb, "./test/debtors_days_test.xlsx", overwrite = TRUE)
 
 
 lookback <- 3
-debtors_days <- 50
+debtors_days <- 60
+debtors <- debtors1
 trail_inc <- sum(debtors["Incm", 1:3])    # 35,649
-sum_days <- 92
+sum_days <- 91
 prior_bals <- sum(debtors["Close", 1:2]) # 41,722
 cash <- round(
   abs( (debtors_days * trail_inc / sum_days * lookback )
