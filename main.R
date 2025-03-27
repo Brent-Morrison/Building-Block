@@ -711,13 +711,17 @@ monthly_indicators %>%
 # Financial statement tables (INCOME STATEMENT)
 inc1 <- bind_rows(
     slr %>% # modelled / forward looking data
-      filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
+      filter(
+        statement_type == 1,
+        mon %in% c(12, 24, 36, 48, 60)
+        ) %>% 
       left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
       group_by(mon, ref1, ref2) %>% 
       summarise(amount = sum(ytd)) %>% 
       ungroup()
     , 
     chart %>% # opening balances
+      filter(statement_type == 1) %>% 
       left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
       group_by(ref1, ref2) %>% 
       summarise(amount = sum(cw_23)) %>% 
@@ -759,7 +763,7 @@ inc2 <- bind_rows(inc1, tot1, tot2, tot3, tot4) %>%
   arrange(ref2) 
 
 # Assign correct sign
-inc2[, 3:8] <- as.matrix(inc2[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1, -1, rep(1,3)), 6), ncol = 6)
+inc2[, 3:8] <- as.matrix(inc2[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1), 6), ncol = 6)   # , -1, rep(1,3)
 
 # Format as character
 nums <- as.matrix(inc2[, 3:8])
@@ -810,14 +814,37 @@ mat[c("1000","3000","3050","3100"),c("open","aidb","incm","cshd","clos"), 1:13]
 # Financial statement tables (BALANCE SHEET)
 bal1 <- bind_rows(
   slr %>% # modelled / forward looking data
-    filter(mon %in% c(12, 24, 36, 48, 60)) %>% 
+    filter(
+      statement_type == 2,
+      mon %in% c(12, 24, 36, 48, 60)
+    ) %>% 
     left_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
     group_by(mon, ref1, ref2) %>% 
     summarise(amount = sum(ytd)) %>% 
     ungroup()
   , 
   chart %>% # opening balances
+    filter(statement_type == 2) %>% 
     left_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
+    group_by(ref1, ref2) %>% 
+    summarise(amount = sum(cw_23)) %>% 
+    ungroup() %>% 
+    mutate(mon = 0) %>% 
+    select(mon, ref1, ref2, amount)
+  ,
+  slr %>% # modelled / forward looking data
+    filter(
+      statement_type == 2,
+      mon %in% c(12, 24, 36, 48, 60)
+    ) %>% 
+    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
+    group_by(mon, ref1, ref2) %>% 
+    summarise(amount = sum(ytd)) %>% 
+    ungroup()
+  , 
+  chart %>% # opening balances
+    filter(statement_type == 2) %>% 
+    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
     group_by(ref1, ref2) %>% 
     summarise(amount = sum(cw_23)) %>% 
     ungroup() %>% 
@@ -830,6 +857,7 @@ bal1 <- bind_rows(
     mon = (mon / 12 ) + initial_fcast_yr - 1,
     amount = round(amount, 0)
   ) %>% 
+  filter(!is.na(ref1)) %>% 
   pivot_wider(names_from = mon, values_from = amount) %>% 
-  arrange(ref2) %>% 
-  filter(!is.na(ref1))
+  arrange(ref2)
+  
