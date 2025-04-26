@@ -23,4 +23,7 @@ account_grp,310,of which Receivables and contract assets,27
 account_grp,335,of which Infrastructure assets,29
 account_grp,340,of which Infrastructure assets,29
 account_grp,350,of which Infrastructure assets,29
-account_grp,400,of which Payables,31
+account_type,40,Total current liabilities,30
+account_type,45,Total non-current liabilities,31
+account_grp,400,of which Payables,32
+account_grp,450,of which Interest bearing,33

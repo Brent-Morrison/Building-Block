@@ -186,7 +186,16 @@ debtors.r2 <- "
  5000   5000      0
 "
 
-debtors2 <- as.numeric(unlist(strsplit(trimws(debtors.r2), "\\s+")))
+# 
+debtors.r3 <- "
+    30     30     31
+-20346   -20346   -20346
+ -7717    -7717    -7717
+  7717     7717        0
+-20346   -20346        0
+"
+
+debtors2 <- as.numeric(unlist(strsplit(trimws(debtors.r3), "\\s+")))
 debtors2 <- matrix(debtors2, ncol=3, byrow=TRUE)
 rownames(debtors2) <- c("Days","Open","Incm","Cash","Close")
 debtors2

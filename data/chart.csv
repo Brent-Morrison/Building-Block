@@ -62,16 +62,16 @@
 2,40,400,4005,Accrued expenses - opex,pay_sup,0,0,0,0
 2,40,400,4010,Accrued expenses - capex,pay_ppe,0,0,-10000,0
 2,40,400,4020,Accrued interest,pay_int,0,0,0,0
-2,40,400,4100,Interest bearing liabilities,rec_borr,-894,-56745,-8375,-7744
-2,40,400,4200,Employee benefits provision,pay_emp,-23775,-21733,-7105,-6553
-2,40,400,4300,Income tax payable,tax,-2575,-9392,0,0
-2,40,400,4350,Contract liabilities,pay_ppe,-40069,-26258,-17216,-13817
-2,40,400,4400,Deposits and advances,rec_cus,-27173,-13418,-174,-598
-2,40,400,4450,Other provisions  ,pay_sup,-48,-163,0,0
+2,40,410,4100,Interest bearing liabilities,rec_borr,-894,-56745,-8375,-7744
+2,40,420,4200,Employee benefits provision,pay_emp,-23775,-21733,-7105,-6553
+2,40,430,4300,Income tax payable,tax,-2575,-9392,0,0
+2,40,440,4350,Contract liabilities,pay_ppe,-40069,-26258,-17216,-13817
+2,40,440,4400,Deposits and advances,rec_cus,-27173,-13418,-174,-598
+2,40,440,4450,Other provisions  ,pay_sup,-48,-163,0,0
 2,45,450,4500,Interest bearing liabilities,rec_borr,-2475338,-2246102,-488948,-455962
-2,45,450,4600,Deferred tax liabilities,tax,-472492,-454950,-297976,-236437
-2,45,450,4700,Employee benefits provision,pay_emp,-3113,-3118,-613,-534
-2,45,450,4800,Other financial liabilities,pay_sup,-1759,0,-586,0
+2,45,460,4600,Deferred tax liabilities,tax,-472492,-454950,-297976,-236437
+2,45,470,4700,Employee benefits provision,pay_emp,-3113,-3118,-613,-534
+2,45,480,4800,Other financial liabilities,pay_sup,-1759,0,-586,0
 2,50,500,5000,Contributed equity,cont_cap,-288967,-288967,-307800,-306525
 2,50,510,5100,ARR - Land and buildings,arr,-342917,-342917,-763791,-614077
 2,50,510,5121,ARR - Infrastructure open,arr,-547110,-498899,0,0

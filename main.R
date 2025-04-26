@@ -273,7 +273,7 @@ month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons)
 days          <- as.numeric(format(month_end, "%d"))
 accrued_days  <- 60
 debtors_days  <- 45
-crdtr_days_ox <- 90
+crdtr_days_ox <- 30
 crdtr_days_cx <- 45
 
 # Data sources
@@ -327,7 +327,7 @@ round(colSums(mat[,,1]), 3)
 # Income 
 tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
 incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
-gift <- round(rep(cc / 12, each = 12), 3)
+gift <- round(rep(cc / 12, each = 12), 3) * 1000
 
 
 # Expenses 
@@ -454,6 +454,7 @@ for (i in 1:length(mon)) {
   rcpt <- trgt_days(i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
   t <- "crd1"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
+  cat(c(i, ": Cash payment re cred - ", rcpt, "\n"))
   
   
   # Capex -----------------------------------------------------------------------------------------
@@ -466,6 +467,7 @@ for (i in 1:length(mon)) {
   rcpt <- trgt_days(i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
   t <- "wipc"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
+  cat(c(i, ": Cash payment re capx - ", rcpt, "\n"))
   
   
   # Interest (accrue) -----------------------------------------------------------------------------
@@ -517,7 +519,7 @@ for (i in 1:length(mon)) {
 }
 #mat[,,1]
 #mat[,,60]
-
+#z <- data.frame(mat[ , , 3])
 
 
 # Check balances
@@ -861,3 +863,5 @@ bal1 <- bind_rows(
   pivot_wider(names_from = mon, values_from = amount) %>% 
   arrange(ref2)
   
+bal1[ ,3:8] <- apply(bal1[ ,3:8], 2, acc_num)
+bal1
