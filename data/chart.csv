@@ -62,7 +62,7 @@
 2,40,400,4005,Accrued expenses - opex,pay_sup,0,0,0,0
 2,40,400,4010,Accrued expenses - capex,pay_ppe,0,0,-10000,0
 2,40,400,4020,Accrued interest,pay_int,0,0,0,0
-2,40,410,4100,Interest bearing liabilities,rec_borr,-894,-56745,-8375,-7744
+2,40,450,4100,Interest bearing liabilities,rec_borr,-894,-56745,-8375,-7744
 2,40,420,4200,Employee benefits provision,pay_emp,-23775,-21733,-7105,-6553
 2,40,430,4300,Income tax payable,tax,-2575,-9392,0,0
 2,40,440,4350,Contract liabilities,pay_ppe,-40069,-26258,-17216,-13817

@@ -186,6 +186,11 @@ debtors.r2 <- "
  5000   5000      0
 "
 
+debtors2 <- as.numeric(unlist(strsplit(trimws(debtors.r2), "\\s+")))
+debtors2 <- matrix(debtors2, ncol=3, byrow=TRUE)
+rownames(debtors2) <- c("Days","Open","Incm","Cash","Close")
+debtors2
+
 # 
 debtors.r3 <- "
     30     30     31
@@ -195,10 +200,10 @@ debtors.r3 <- "
 -20346   -20346        0
 "
 
-debtors2 <- as.numeric(unlist(strsplit(trimws(debtors.r3), "\\s+")))
-debtors2 <- matrix(debtors2, ncol=3, byrow=TRUE)
-rownames(debtors2) <- c("Days","Open","Incm","Cash","Close")
-debtors2
+debtors3 <- as.numeric(unlist(strsplit(trimws(debtors.r3), "\\s+")))
+debtors3 <- matrix(debtors3, ncol=3, byrow=TRUE)
+rownames(debtors3) <- c("Days","Open","Exps","Cash","Close")
+debtors3
 
 # Excel version
 library(openxlsx)
@@ -219,7 +224,7 @@ saveWorkbook(wb, "./test/debtors_days_test.xlsx", overwrite = TRUE)
 
 lookback <- 3
 debtors_days <- 60
-debtors <- debtors1
+debtors <- debtors3
 trail_inc <- sum(debtors["Incm", 1:3])    # 35,649
 sum_days <- 91
 prior_bals <- sum(debtors["Close", 1:2]) # 41,722

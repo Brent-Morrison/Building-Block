@@ -22,6 +22,7 @@ gearing            <- 0.6
 cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
 roe                <- 0.041
 rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
+cash_buffer        <- 10000
 
 
 # Data --------------------------------------------------------------------------------------------
@@ -454,7 +455,6 @@ for (i in 1:length(mon)) {
   rcpt <- trgt_days(i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
   t <- "crd1"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
-  cat(c(i, ": Cash payment re cred - ", rcpt, "\n"))
   
   
   # Capex -----------------------------------------------------------------------------------------
@@ -467,7 +467,6 @@ for (i in 1:length(mon)) {
   rcpt <- trgt_days(i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
   t <- "wipc"
   mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
-  cat(c(i, ": Cash payment re capx - ", rcpt, "\n"))
   
   
   # Interest (accrue) -----------------------------------------------------------------------------
@@ -506,12 +505,14 @@ for (i in 1:length(mon)) {
   
   # Determine if borrowings required --------------------------------------------------------------
   # TO DO - determine amount to borrow dynamically
-  borrow_amt <- 10000
-  cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])
+  cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])  # cash balance after all transactions
+  borrow_amt <- -cash_bal + cash_buffer
   if (cash_bal < 0) {
     t <- "borr"
     mat[drcr(t, txn_type), t, i] <- c(borrow_amt,-borrow_amt)
   }
+  cat(c(i, ": Cash balance - ", cash_bal, "\n"))
+  cat(c(i, ": Borrowing requirement - ", borrow_amt, "\n"))
   
   # Update closing balance
   mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
@@ -519,7 +520,9 @@ for (i in 1:length(mon)) {
 }
 #mat[,,1]
 #mat[,,60]
-#z <- data.frame(mat[ , , 3])
+z <- data.frame(mat[ , , 3])
+mat[c("1000","3000","4020","4100"),c("open","cshd","borr","saca","crd1","wipc","intp","clos"), 1:6]
+
 
 
 # Check balances
@@ -808,8 +811,6 @@ inc3 %>%
   row_spec(17, bold = TRUE) %>% 
   row_spec(18, color = "white", extra_css = "border-bottom: 1px solid") %>% 
   row_spec(c(19,21), bold = TRUE)
-
-mat[c("1000","3000","3050","3100"),c("open","aidb","incm","cshd","clos"), 1:13]
 
 
 
