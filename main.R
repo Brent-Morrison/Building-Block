@@ -413,18 +413,18 @@ for (i in 1:length(mon)) {
   mat[drcr(t, txn_type), t, i] <- c(incm[i], -incm[i])
   
   
-  # Cash receipt to specify desired closing balance for accrued income days parameter -------------
+  # Transfer to debtors to specify desired closing balance for accrued income days parameter -------------
   trail <- 3
   t <- "incm"
   tfer <- trgt_days(i, accrued_days, trail, bal_acnt="3050", pl_acnt="1000", txn="aidb")
-  mat[drcr(t, txn_type), t, i] <- c(tfer, -tfer)
+  mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
   
   
   # Cash receipt to specify desired closing balance for debtors days parameter --------------------
   trail <- 3
   t <- "cshd"
   rcpt <- trgt_days(i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
-  mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
+  mat[drcr(t, txn_type), t, i] <- c(-rcpt, rcpt)
   
   
   # Bad debts WO
@@ -518,11 +518,11 @@ for (i in 1:length(mon)) {
   mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
   
 }
-#mat[,,1]
-#mat[,,60]
-z <- data.frame(mat[ , , 3])
-mat[c("1000","3000","4020","4100"),c("open","cshd","borr","saca","crd1","wipc","intp","clos"), 1:6]
 
+# Diagnostics
+z <- data.frame(mat[ , , 5])
+m1 <- mat[c("1000","2000","3000","3050","3100","3645","4000","4010","4020","4100"),c("open","aidb","incm","cshd","borr","exp1","crd1","cpx1","wipc","intp","borr","clos"), 24:26]
+m1
 
 
 # Check balances
@@ -530,9 +530,15 @@ round(colSums(mat[,,6]), 3)
 
 
 
+
 # -------------------------------------------------------------------------------------------------
 # Accounting data (3d matrix to 2d data frame)
 # -------------------------------------------------------------------------------------------------
+
+# Check transactions sum to nil / extract profit
+sum(mat[, !colnames(mat) %in% c("open", "clos"), 1:60])
+sum(mat[as.integer(row.names(mat)) < 3000, !colnames(mat) %in% c("open", "clos"), 49:60])
+
 
 # Stack 3 dim array and unpivot
 mat1 <- mat
@@ -575,9 +581,49 @@ for (i in unique(df4$act)) {
 
 # Remove nil balances and write to csv
 df2 <- df2[df2$mtd != 0 & df2$ytd != 0 & df2$ltd != 0, ]
-write.csv(df2, file = "slr.csv")
-
 slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
+
+# Check SLR
+slr_check1 <- slr %>%
+  filter(txn != "open") %>%
+  group_by(mon) %>%
+  summarise(total = round(sum(mtd), 3))
+
+write.csv(slr, file = "slr.csv")
+
+
+# Create trial balance
+tb1 <- slr %>%
+  mutate(vals = if_else(act < 3000, ytd, ltd)) %>%
+  select(mon, act, account_desc, vals) %>%
+  pivot_wider(names_from = mon, values_from = vals, values_fn = sum, values_fill = 0)
+
+re <- slr %>%
+  filter(mon %in% c(12,24,36,48,60), statement_type == 1) %>%
+  group_by(mon) %>%
+  summarise(profit = sum(ytd))
+re
+
+# Add retained earnings
+tbmat <- as.matrix(tb1[, 3:ncol(tb1)])
+tbmat <- rbind(tbmat, rep(c(0, cumsum(re$profit)), each = 12)[1:60])
+round(colSums(tbmat), 3)
+
+tb <- data.frame(tbmat)
+names(tb) <- 1:60
+tb <- tb %>%
+  mutate(
+    act = c(tb1$act, 5201),
+    account_desc = c(tb1$account_desc, "Retained earnings - profit")
+  ) %>%
+  relocate(c("act", "account_desc"), .before = '1')
+
+rm(list=c("tb1","tbmat","re"))
+round(colSums(tb[, 3:ncol(tb)], 3))
+
+# Pretty number
+tb[ ,3:ncol(tb)] <- apply(tb[ ,3:ncol(tb)], 2, acc_num)
+
 
 
 
