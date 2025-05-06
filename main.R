@@ -557,6 +557,7 @@ df2 <- rbind(df1[df1$txn == "open" & df1$act >= 3000, ], df1[df1$txn %in% txn[-c
 
 # Cumulative sum
 df2$yr <- ceiling(df2$mon / 12)
+df2 <- df2[with(df2, order(mon, act, txn)), ] # order
 df2$ltd <- ave(df2$mtd, df2$act, df2$txn, FUN=cumsum)
 df2$ytd <- ave(df2$mtd, df2$act, df2$txn, df2$yr, FUN=cumsum)
 
@@ -580,7 +581,7 @@ for (i in unique(df4$act)) {
 }
 
 # Remove nil balances and write to csv
-df2 <- df2[df2$mtd != 0 & df2$ytd != 0 & df2$ltd != 0, ]
+#df2 <- df2[df2$mtd != 0 & df2$ytd != 0 & df2$ltd != 0, ]
 slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
 
 # Check SLR

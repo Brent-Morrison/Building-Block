@@ -16,7 +16,7 @@ gift,receipt of gifted assets,3645,1200,,,,,,,,,,
 dpn1,depreciation,2215,3515,2225,3525,2235,3535,2245,3545,2265,3565,2205,3605
 inta,interest (accrue),2300,4020,,,,,,,,,,
 intp,interest (pay),4020,3000,,,,,,,,,,
-borr,borrow if cash balance is negative,3000,4100,,,,,,,,,,
+borr,borrow if cash balance is negative,3000,4500,,,,,,,,,,
 saas,asset sale - asset,1500,3500,,,,,,,,,,
 sade,asset sale - depn,3505,1500,,,,,,,,,,
 saca,asset sale - cash,3000,1500,,,,,,,,,,
