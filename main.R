@@ -332,8 +332,14 @@ gift <- round(rep(cc / 12, each = 12), 3) * 1000
 
 
 # Expenses 
-exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * 1000 * infltn_factor
+# Percentage of opex relating to employee expenses (from published accounts)
+# This required to disaggregate baseline opex from pricing submission
+perc_opex_emp <- chart[chart$account_no == 2100, "cw_23"] / sum(chart[chart$account_no %in% c(2000,2100), "cw_23"])
+
+exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * 1000 * infltn_factor * (1-perc_opex_emp)
 exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
+exp2 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * 1000 * infltn_factor * perc_opex_emp
+exp2 <- round(as.vector(sapply(X = exp2, FUN = add_trend_season, s=0, a=0, p=0)), 3)
 
 
 # Capex 
@@ -445,9 +451,11 @@ for (i in 1:length(mon)) {
   
   
   # Expenses --------------------------------------------------------------------------------------
-  # TO DO - ADD EMPLOYEE EXPENSES (AC 2100)
   t <- "exp1"
   mat[drcr(t, txn_type), t, i] <- c(exp1[i], -exp1[i])
+    
+  t <- "exp2"
+  mat[drcr(t, txn_type), t, i] <- c(exp2[i], -exp2[i])
   
   
   # Cash payment re trade creditors ---------------------------------------------------------------
