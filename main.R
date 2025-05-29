@@ -334,7 +334,7 @@ gift <- round(rep(cc / 12, each = 12), 3) * 1000
 # Expenses 
 # Percentage of opex relating to employee expenses (from published accounts)
 # This required to disaggregate baseline opex from pricing submission
-perc_opex_emp <- chart[chart$account_no == 2100, "cw_23"] / sum(chart[chart$account_no %in% c(2000,2100), "cw_23"])
+perc_opex_emp <- chart[chart$account_no == 2100, open_bals_col] / sum(chart[chart$account_no %in% c(2000,2100), open_bals_col])
 
 exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * 1000 * infltn_factor * (1-perc_opex_emp)
 exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
@@ -350,44 +350,44 @@ cpx1 <- round(rep(cx / 12, each = 12), 3) * 1000
 # - on opening balance
 stat_depn_bld <- depn_bv(
   yrs=5, 
-  de=chart[chart$account_no == 2215, "cw_23"], 
-  gr=chart[chart$account_no == 3510, "cw_23"], 
-  ad=chart[chart$account_no == 3515, "cw_23"]
+  de=chart[chart$account_no == 2215, open_bals_col], 
+  gr=chart[chart$account_no == 3510, open_bals_col], 
+  ad=chart[chart$account_no == 3515, open_bals_col]
 )
 
 stat_depn_lhi <- depn_bv(
   yrs=5, 
-  de=chart[chart$account_no == 2225, "cw_23"], 
-  gr=chart[chart$account_no == 3520, "cw_23"], 
-  ad=chart[chart$account_no == 3525, "cw_23"]
+  de=chart[chart$account_no == 2225, open_bals_col], 
+  gr=chart[chart$account_no == 3520, open_bals_col], 
+  ad=chart[chart$account_no == 3525, open_bals_col]
 )
 
 stat_depn_pae <- depn_bv(
   yrs=5, 
-  de=chart[chart$account_no == 2235, "cw_23"], 
-  gr=chart[chart$account_no == 3530, "cw_23"], 
-  ad=chart[chart$account_no == 3535, "cw_23"]
+  de=chart[chart$account_no == 2235, open_bals_col], 
+  gr=chart[chart$account_no == 3530, open_bals_col], 
+  ad=chart[chart$account_no == 3535, open_bals_col]
 )
 
 stat_depn_inf <- depn_bv(
   yrs=5, 
-  de=chart[chart$account_no == 2245, "cw_23"], 
-  gr=chart[chart$account_no == 3540, "cw_23"], 
-  ad=chart[chart$account_no == 3545, "cw_23"]
+  de=chart[chart$account_no == 2245, open_bals_col], 
+  gr=chart[chart$account_no == 3540, open_bals_col], 
+  ad=chart[chart$account_no == 3545, open_bals_col]
 )
 
 stat_depn_sca <- depn_bv(
   yrs=5, 
-  de=chart[chart$account_no == 2265, "cw_23"], 
-  gr=chart[chart$account_no == 3560, "cw_23"], 
-  ad=chart[chart$account_no == 3565, "cw_23"]
+  de=chart[chart$account_no == 2265, open_bals_col], 
+  gr=chart[chart$account_no == 3560, open_bals_col], 
+  ad=chart[chart$account_no == 3565, open_bals_col]
 )
 
 stat_depn_int <- depn_bv(
   yrs=5, 
-  de=chart[chart$account_no == 2205, "cw_23"], 
-  gr=chart[chart$account_no == 3600, "cw_23"], 
-  ad=chart[chart$account_no == 3605, "cw_23"]
+  de=chart[chart$account_no == 2205, open_bals_col], 
+  gr=chart[chart$account_no == 3600, open_bals_col], 
+  ad=chart[chart$account_no == 3605, open_bals_col]
 )
 
 
@@ -519,8 +519,8 @@ for (i in 1:length(mon)) {
     t <- "borr"
     mat[drcr(t, txn_type), t, i] <- c(borrow_amt,-borrow_amt)
   }
-  cat(c(i, ": Cash balance - ", cash_bal, "\n"))
-  cat(c(i, ": Borrowing requirement - ", borrow_amt, "\n"))
+  #cat(c(i, ": Cash balance - ", cash_bal, "\n"))
+  #cat(c(i, ": Borrowing requirement - ", borrow_amt, "\n"))
   
   # Update closing balance
   mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
