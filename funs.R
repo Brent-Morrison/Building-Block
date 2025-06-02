@@ -299,7 +299,7 @@ drcr <- function(txn, txn_df) {
 # --------------------------------------------------------------------------------------------------------------------------
 # Target cash payment re creditors / debtors based on debtor (creditors) days
 # --------------------------------------------------------------------------------------------------------------------------
-trgt_days <- function(i, d, trail, bal_acnt, pl_acnt, txn) {
+trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
   #
   # Return the cash receipt / payment to arrive at balance required for designated debtors / creditors days
   # - assumes presence of matrix "mat" in environment

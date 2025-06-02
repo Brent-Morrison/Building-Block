@@ -8,7 +8,34 @@ library(scales)
 
 # TO DO - move data and fixed parameters outside of function (lines 267-307, 14-43)
 
-f <- function(x) { # x <- 0.01
+src <- "local"   # "local" / "remote"
+
+# Data sources
+if (src == "local") {
+  dat_src   <- "./data/price_subm_2023.csv"
+  ref_src   <- "./data/reference.csv"
+  funs_src  <- "funs.R"
+  chart_src   <- "./data/chart.csv"
+  txn_src     <- "./data/txn_type.csv"
+} else {
+  dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
+  ref_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/reference.csv"
+  funs_src  <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/funs.R"
+  chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
+  txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
+}
+
+dat      <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
+ref      <- read.csv(ref_src, fileEncoding="UTF-8-BOM")
+source(funs_src)
+chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
+txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
+rownames(txn_type) <- txn_type$txn_code
+
+
+
+# Function
+f <- function(x, dat, chart, txn_type) { # x <- 0.01
 
   # Parameters --------------------------------------------------------------------------------------
   src                <- "local"   # "local" / "remote"
@@ -18,7 +45,7 @@ f <- function(x) { # x <- 0.01
                                   # price delta 2 comes into effect, a value of zero returns an even price delta for each year 
   single             <- F         # for function npv_optim_func, if true the only price delta (that of pdpar1) occurs
   pd_max_per         <- 1         # price delta max period, if single is F, specify which price delta should be higher
-  cost_of_debt_nmnl  <- 0.0456    # nominal cost of debt
+  cost_of_debt_nmnl  <- 0.0456 + rnorm(1,0,x)    # nominal cost of debt
   fcast_infltn       <- 0.03
   gearing            <- 0.6
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
@@ -28,21 +55,6 @@ f <- function(x) { # x <- 0.01
   
   
   # Data --------------------------------------------------------------------------------------------
-  if (src == "local") {
-    dat_src   <- "./data/price_subm_2023.csv"
-    ref_src   <- "./data/reference.csv"
-    funs_src  <- "funs.R"
-  } else {
-    dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
-    ref_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/reference.csv"
-    funs_src  <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/funs.R"
-  }
-  
-  dat <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
-  ref <- read.csv(ref_src, fileEncoding="UTF-8-BOM")
-  source(funs_src)
-  
-  
   capex <- dat %>%
     mutate(net_capex = case_when(
       balance_type %in% c("cust_cont","gov_cont") ~ -amount, 
@@ -279,20 +291,6 @@ f <- function(x) { # x <- 0.01
   crdtr_days_ox <- 30
   crdtr_days_cx <- 45
   
-  # Data sources
-  if (src == "local") {
-    chart_src   <- "./data/chart.csv"
-    txn_src     <- "./data/txn_type.csv"
-  } else {
-    chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
-    txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
-  }
-  
-  chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
-  txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
-  rownames(txn_type) <- txn_type$txn_code
-  
-  
   
   # Matrix ------------------------------------------------------------------------------------------
   mon <- 1:mons   # Number of months
@@ -424,14 +422,14 @@ f <- function(x) { # x <- 0.01
     # Transfer to debtors to specify desired closing balance for accrued income days parameter -------------
     trail <- 3
     t <- "incm"
-    tfer <- trgt_days(i, accrued_days, trail, bal_acnt="3050", pl_acnt="1000", txn="aidb")
+    tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt="1000", txn="aidb")
     mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
     
     
     # Cash receipt to specify desired closing balance for debtors days parameter --------------------
     trail <- 3
     t <- "cshd"
-    rcpt <- trgt_days(i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
+    rcpt <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
     mat[drcr(t, txn_type), t, i] <- c(-rcpt, rcpt)
     
     
@@ -462,7 +460,7 @@ f <- function(x) { # x <- 0.01
     
     # Cash payment re trade creditors ---------------------------------------------------------------
     trail <- 3
-    rcpt <- trgt_days(i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
+    rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
     t <- "crd1"
     mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
     
@@ -474,7 +472,7 @@ f <- function(x) { # x <- 0.01
     
     # Cash payment re capex -------------------------------------------------------------------------
     trail <- 3
-    rcpt <- trgt_days(i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
+    rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
     t <- "wipc"
     mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
     
@@ -531,18 +529,26 @@ f <- function(x) { # x <- 0.01
   return(mat)
 }
 
-res1 <- f(.01)
-res2 <- replicate(2, f(.01), simplify = "array")
+res1 <- f(.01, dat=dat, chart=chart, txn_type=txn_type)
+res2 <- replicate(2, f(.01, dat=dat, chart=chart, txn_type=txn_type), simplify = "array")
 
 n <- dim(res2)[4]
 res <- vector(mode = "list", length = n)
+act <- dimnames(res2)[[1]]
+txn <- dimnames(res2)[[2]]
+mon <- dimnames(res2)[[3]]
+
 for (i in 1:n) {
   t <- res2[,,,i]
   dim(t) <- c(prod(dim(res2)[1:3]), 1)
-  df <- expand.grid(act = dimnames(res2)[[1]], txn = dimnames(res2)[[2]], mon = dimnames(res2)[[3]])
+  df <- expand.grid(act = act, txn = txn, mon = mon)
   df$mtd <- t[,1]
   res[[i]] <- df
 }
+
+# Simulation results (equivalent to object "df" below - row 574)
+res[[1]]
+res[[2]]
 
 # Diagnostics
 z <- data.frame(mat[ , , 5])
@@ -572,6 +578,7 @@ dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
 df <- expand.grid(act = act, txn = txn, mon = mon)
 df$mtd <- mat1[,1]
 
+df <- res[[1]]
 df1 <- df
 
 # Retain opening balances only for balance sheet, remove all closing balances
