@@ -6,7 +6,19 @@ library(lubridate)
 library(kableExtra)
 library(scales)
 
-# TO DO - move data and fixed parameters outside of function (lines 267-307, 14-43)
+# Sensitivity
+# - interest rates
+# - customer usage shortfall (kl_hhold_pa in price path vs actual) 
+# - inflation wedge (that in rrr and that in actual)
+
+# Scenario
+# _ Capex & resultant increase in baseline opex
+
+# Output / assessment
+# - As below
+# - Fund From Operations / Net debt (note FFO includes interest expense)
+# - Net debt / RAB
+# - Average residential pricing
 
 src <- "local"   # "local" / "remote"
 
@@ -35,10 +47,9 @@ rownames(txn_type) <- txn_type$txn_code
 
 
 # Function
-f <- function(x, dat, chart, txn_type) { # x <- 0.01
+f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
 
   # Parameters --------------------------------------------------------------------------------------
-  src                <- "local"   # "local" / "remote"
   ent_parm           <- "CW"      # select data for specific entity
   initial_fcast_yr   <- 2024
   price_delta_yr     <- 2         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
@@ -65,7 +76,7 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
   
   c <- as.matrix(capex[, 3:(ncol(capex))])
-  colSums(c)
+  rab_n_yrs <- ncol(c)
   
   yr_int <- as.integer(colnames(capex)[-c(1:3)])
   yr_int
@@ -106,7 +117,7 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   
   
   # Total depreciation ------------------------------------------------------------------------------
-  dpn <- dpn_open[1:5] + dpn_cpx[1:5]
+  dpn <- dpn_open[1:rab_n_yrs] + dpn_cpx[1:rab_n_yrs]
   
   
   
@@ -126,15 +137,15 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   
   # RAB schedule ------------------------------------------------------------------------------------
   # Capex
-  cx <- colSums(c)[1:5]
-  unlist(colSums(c)[1:5], use.names = FALSE)
+  cx <- colSums(c)[1:rab_n_yrs]
+  unlist(colSums(c)[1:rab_n_yrs], use.names = FALSE)
   
   # Customer contributions
-  cc.t <- rep(0, 5)
-  y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
+  cc.t <- rep(0, rab_n_yrs)
+  y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
   if(sum(dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", "amount"]) != 0) {
     ccdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", ], FUN = sum)
-    cc.t[which(ccdf$year == y)] <- ccdf$amount[1:5]
+    cc.t[which(ccdf$year == y)] <- ccdf$amount[1:rab_n_yrs]
     cc <- cc.t
   } else {
     cc <- cc.t
@@ -143,11 +154,11 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   suppressWarnings(rm(cc.t, ccdf, y))
   
   # Government contributions
-  gc.t <- rep(0, 5)
-  y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
+  gc.t <- rep(0, rab_n_yrs)
+  y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
   if(sum(dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", "amount"]) != 0) {
     gcdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", ], FUN = sum)
-    gc.t[which(gcdf$year == y)] <- gcdf$amount[1:5]
+    gc.t[which(gcdf$year == y)] <- gcdf$amount[1:rab_n_yrs]
     gc <- gc.t
   } else {
     gc <- gc.t
@@ -155,11 +166,11 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   suppressWarnings(rm(gc.t, gcdf, y))
   
   # Disposals
-  dp.t <- rep(0, 5)
-  y <- seq(initial_fcast_yr, initial_fcast_yr+4, length.out = 5)
+  dp.t <- rep(0, rab_n_yrs)
+  y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
   if(sum(dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", "amount"]) != 0) {
     dpdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", ], FUN = sum)
-    dp.t[which(dpdf$year == y)] <- dpdf$amount[1:5]
+    dp.t[which(dpdf$year == y)] <- dpdf$amount[1:rab_n_yrs]
     dp <- dp.t
   } else {
     dp <- dp.t
@@ -168,21 +179,21 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   
   
   open_rab_val <- bv
-  exist_rab_detail <- matrix(rep(0, 8*5), ncol=5)
+  exist_rab_detail <- matrix(rep(0, 8*rab_n_yrs), ncol=rab_n_yrs)
   rownames(exist_rab_detail) <- c("open","capex","cust_cont","gov_cont","reg_depn","disp","close","average")
   colnames(exist_rab_detail) <- c(1:5)
   exist_rab_detail["open", 1] <- open_rab_val
   exist_rab_detail["capex", ] <- cx + cc + gc
   exist_rab_detail["cust_cont", ] <- -cc 
   exist_rab_detail["gov_cont", ] <- -gc 
-  exist_rab_detail["reg_depn", ] <- -dpn[1:5]
+  exist_rab_detail["reg_depn", ] <- -dpn[1:rab_n_yrs]
   exist_rab_detail["disp", ] <- -dp 
   exist_rab_detail["close", 1] <- sum(exist_rab_detail[1:6, 1])
-  for(i in 2:5) {
+  for(i in 2:rab_n_yrs) {
     exist_rab_detail["open", i]  <- exist_rab_detail["close", i-1]
     exist_rab_detail["close", i] <- sum(exist_rab_detail[1:6, i])
   }
-  for(i in 1:5) {
+  for(i in 1:rab_n_yrs) {
     mment <- exist_rab_detail[2:6, i]
     exist_rab_detail["average", i]  <- exist_rab_detail["open", i] + sum(mment[mment != 0])/2
   }
@@ -195,7 +206,7 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   
   
   # Revenue requirement -----------------------------------------------------------------------------
-  rev_req <- roa + opex$amount[1:5] + dpn[1:5]
+  rev_req <- roa[1:rab_n_yrs] + opex$amount[1:rab_n_yrs] + dpn[1:rab_n_yrs]
   
   
   
@@ -217,7 +228,7 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   
   # Convert p0 quantities to p1 - p5 with fixed growth rate
   # TO DO - 0.05 growth rate to be parameter
-  q <- q %*% exp( cumsum( log( 1 + rep(0.05, 5) ) ) ) 
+  q <- q %*% exp( cumsum( log( 1 + rep(q_grow, rab_n_yrs) ) ) ) 
   #q[grepl("Trade", rownames(q)), ]
   
   # Prices
@@ -228,34 +239,47 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   
   
   # Perform optimisation ----------------------------------------------------------------------------
-  optim_result <- optim(
-    
-    # Initial values for the parameters to be optimized over
-    par = c(rrr, if (pd_max_per == 1) c(0.025, 0) else c(0, 0.025)),
-    
-    # Function to be minimized, first argument being vector of 
-    # parameters over which minimization is applied
-    fn  = npv_optim_func,
-    
-    method = "L-BFGS-B",
-    
-    # Upper & lower constraints for parameters
-    lower = c(rrr - .Machine$double.eps, -0.5, -0.5),
-    upper = c(rrr + .Machine$double.eps,  0.5,  0.5),
-    
-    # ... Further arguments to be passed to fn
-    pdyr    = price_delta_yr,
-    single  = single,
-    rev_req = rev_req,
-    p0      = p0,
-    q       = q
-    
-  )
-  optim_result
+  optim_result_loop <- vector(mode = "list", length = 2)
+  counter <- 0
+  for (i in c(1,6)) {  
+    counter <- counter + 1
+    optim_result <- optim(
+      
+      # Initial values for the parameters to be optimized over
+      par = c(rrr, if (pd_max_per == 1) c(0.025, 0) else c(0, 0.025)),
+      
+      # Function to be minimized, first argument being vector of 
+      # parameters over which minimization is applied
+      fn  = npv_optim_func,
+      
+      method = "L-BFGS-B",
+      
+      # Upper & lower constraints for parameters
+      lower = c(rrr - .Machine$double.eps, -0.5, -0.5),
+      upper = c(rrr + .Machine$double.eps,  0.5,  0.5),
+      
+      # ... Further arguments to be passed to fn
+      pdyr    = price_delta_yr,
+      single  = single,
+      rev_req = rev_req[i:(i+4)],
+      p0      = p0,
+      q       = q[,i:(i+4)]
+      
+    )
+    optim_result_loop[[counter]] <- optim_result
+  }
+  #optim_result
   
-  optim_result_list <- npv_optim_func(theta=optim_result$par, pdyr=price_delta_yr, single=single, rev_req=rev_req, p0=p0, q=q, rtn="data")
-  price_delta <- optim_result_list$price_delta
-  prices <- optim_result_list$prices
+  optim_result <- vector(mode = "list", length = 2)
+  counter <- 0
+  for (i in c(1,6)) {
+    counter <- counter + 1
+    res <- npv_optim_func(theta=optim_result_loop[[counter]]$par, pdyr=price_delta_yr, single=single, rev_req=rev_req[i:(i+4)], p0=p0, q=q[,i:(i+4)], rtn="data")
+    optim_result[[counter]] <- res
+  }
+  
+  price_delta <- unlist(lapply(optim_result, function(x) x$price_delta))
+  prices <- do.call(cbind,lapply(optim_result, function(x) x$prices))
   
   rev <- prices * q
   tot_rev_real <- colSums(prices * q) / 1e6
@@ -529,8 +553,8 @@ f <- function(x, dat, chart, txn_type) { # x <- 0.01
   return(mat)
 }
 
-res1 <- f(.01, dat=dat, chart=chart, txn_type=txn_type)
-res2 <- replicate(2, f(.01, dat=dat, chart=chart, txn_type=txn_type), simplify = "array")
+res1 <- f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019)
+res2 <- replicate(2, f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019), simplify = "array")
 
 n <- dim(res2)[4]
 res <- vector(mode = "list", length = n)
