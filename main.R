@@ -20,6 +20,9 @@ library(scales)
 # - Net debt / RAB
 # - Average residential pricing
 
+value <- 3
+value + runif(20, min=-value/10, max=value/10)
+
 src <- "local"   # "local" / "remote"
 
 # Data sources
@@ -56,7 +59,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
                                   # price delta 2 comes into effect, a value of zero returns an even price delta for each year 
   single             <- F         # for function npv_optim_func, if true the only price delta (that of pdpar1) occurs
   pd_max_per         <- 1         # price delta max period, if single is F, specify which price delta should be higher
-  cost_of_debt_nmnl  <- 0.0456 + rnorm(1,0,x)    # nominal cost of debt
+  cost_of_debt_nmnl  <- 0.0456 + if (is.null(x)) 0 else rnorm(1, 0, x)    # nominal cost of debt
   fcast_infltn       <- 0.03
   gearing            <- 0.6
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
@@ -181,7 +184,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   open_rab_val <- bv
   exist_rab_detail <- matrix(rep(0, 8*rab_n_yrs), ncol=rab_n_yrs)
   rownames(exist_rab_detail) <- c("open","capex","cust_cont","gov_cont","reg_depn","disp","close","average")
-  colnames(exist_rab_detail) <- c(1:5)
+  colnames(exist_rab_detail) <- c(1:rab_n_yrs)
   exist_rab_detail["open", 1] <- open_rab_val
   exist_rab_detail["capex", ] <- cx + cc + gc
   exist_rab_detail["cust_cont", ] <- -cc 
@@ -239,7 +242,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   
   
   # Perform optimisation ----------------------------------------------------------------------------
-  optim_result_loop <- vector(mode = "list", length = 2)
+  optim_result_loop <- vector(mode = "list", length = 4)
   counter <- 0
   for (i in c(1,6)) {  
     counter <- counter + 1
@@ -272,7 +275,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   
   optim_result <- vector(mode = "list", length = 2)
   counter <- 0
-  for (i in c(1,6)) {
+  for (i in c(1,6,11,16)) {
     counter <- counter + 1
     res <- npv_optim_func(theta=optim_result_loop[[counter]]$par, pdyr=price_delta_yr, single=single, rev_req=rev_req[i:(i+4)], p0=p0, q=q[,i:(i+4)], rtn="data")
     optim_result[[counter]] <- res
@@ -554,7 +557,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
 }
 
 res1 <- f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019)
-res2 <- replicate(2, f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019), simplify = "array")
+res2 <- replicate(100, f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019), simplify = "array")
 
 n <- dim(res2)[4]
 res <- vector(mode = "list", length = n)
