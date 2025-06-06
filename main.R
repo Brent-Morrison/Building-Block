@@ -20,6 +20,7 @@ library(scales)
 # - Net debt / RAB
 # - Average residential pricing
 
+# Uniform monte carlo example
 value <- 3
 value + runif(20, min=-value/10, max=value/10)
 
@@ -47,10 +48,28 @@ chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
 txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
 rownames(txn_type) <- txn_type$txn_code
 
+# Capex and opex scenarios
+ps <- c("ps23","ps28","ps33","ps38")
+
+cx_delta <- data.frame(
+  scnr1 = c(0,1061,1205,398), 
+  scnr2 = c(0,688,690,831),
+  scnr3 = c(0,980,533,1031),
+  scnr4 = c(0,1159,1110,551),
+  row.names = ps
+  )
+
+ox_delta <- data.frame(
+  scnr1 = c(0,0,34,140), 
+  scnr2 = c(0,0,28,55),
+  scnr3 = c(0,0,19,100),
+  scnr4 = c(0,0,34,148),
+  row.names = ps
+)
 
 
 # Function
-f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
+f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario) { # x <- 0.01
 
   # Parameters --------------------------------------------------------------------------------------
   ent_parm           <- "CW"      # select data for specific entity
@@ -58,7 +77,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   price_delta_yr     <- 2         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
                                   # price delta 2 comes into effect, a value of zero returns an even price delta for each year 
   single             <- F         # for function npv_optim_func, if true the only price delta (that of pdpar1) occurs
-  pd_max_per         <- 1         # price delta max period, if single is F, specify which price delta should be higher
+  pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
   cost_of_debt_nmnl  <- 0.0456 + if (is.null(x)) 0 else rnorm(1, 0, x)    # nominal cost of debt
   fcast_infltn       <- 0.03
   gearing            <- 0.6
@@ -77,6 +96,10 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
     filter(entity == ent_parm, balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
     select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
+
+  capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * cx_delta["ps28", oxcx_scenario]
+  capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * cx_delta["ps33", oxcx_scenario]
+  capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * cx_delta["ps38", oxcx_scenario]
   
   c <- as.matrix(capex[, 3:(ncol(capex))])
   rab_n_yrs <- ncol(c)
@@ -84,7 +107,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   yr_int <- as.integer(colnames(capex)[-c(1:3)])
   yr_int
   
-  year_operational <- as.integer(sub(".*-", "", capex$year_operational))+2000
+  year_operational <- suppressWarnings(as.integer(sub(".*-", "", capex$year_operational))+2000)
   year_operational[is.na(year_operational)] <- yr_int[1]
   year_operational
   
@@ -136,7 +159,10 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
     group_by(year) %>% 
     summarise(amount = sum(amount))
   
-  
+  opex[opex$year == 2029:2033, "amount"] <- opex[opex$year == 2029:2033, "amount"] + opex[opex$year == 2029:2033, "amount"] / sum(opex[opex$year == 2029:2033, "amount"]) * ox_delta["ps28", oxcx_scenario]
+  opex[opex$year == 2034:2038, "amount"] <- opex[opex$year == 2034:2038, "amount"] + opex[opex$year == 2034:2038, "amount"] / sum(opex[opex$year == 2034:2038, "amount"]) * ox_delta["ps33", oxcx_scenario]
+  opex[opex$year == 2039:2043, "amount"] <- opex[opex$year == 2039:2043, "amount"] + opex[opex$year == 2039:2043, "amount"] / sum(opex[opex$year == 2039:2043, "amount"]) * ox_delta["ps38", oxcx_scenario]
+
   
   # RAB schedule ------------------------------------------------------------------------------------
   # Capex
@@ -200,7 +226,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
     mment <- exist_rab_detail[2:6, i]
     exist_rab_detail["average", i]  <- exist_rab_detail["open", i] + sum(mment[mment != 0])/2
   }
-  
+  colnames(exist_rab_detail) <- colnames(capex[,3:ncol(capex)])
   
   
   # Return on assets --------------------------------------------------------------------------------
@@ -226,7 +252,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   rownames(q) <- paste(q.t1[, "service"], q.t1[, "asset_category"], q.t1[, "cost_driver"], sep = ".")
   
   # Avg. annual consumption (kL per household) 
-  # TO DO - use this to flex income, ref. line 229.  kL up or down on wet, dry basis
+  # TO DO - use this to flex income, ref. line 288.  kL up or down on wet, dry basis
   kl_hhold_pa <- q["Water.Residential.Variable", 1][[1]] / q["Water.Residential.Fixed", ][[1]]
   
   # Convert p0 quantities to p1 - p5 with fixed growth rate
@@ -244,7 +270,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   # Perform optimisation ----------------------------------------------------------------------------
   optim_result_loop <- vector(mode = "list", length = 4)
   counter <- 0
-  for (i in c(1,6)) {  
+  for (i in c(1,6,11,16)) {  
     counter <- counter + 1
     optim_result <- optim(
       
@@ -285,7 +311,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   prices <- do.call(cbind,lapply(optim_result, function(x) x$prices))
   
   rev <- prices * q
-  tot_rev_real <- colSums(prices * q) / 1e6
+  tot_rev_real <- colSums(prices * q) / 1e6  # TO DO - use this to flex income, ref. line 288 (object q).  kL up or down on wet, dry basis.  Variability based on statistical model.
   
   
   # Check results
@@ -308,8 +334,8 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   # -------------------------------------------------------------------------------------------------
   
   # Parameters 
-  mons          <- 60           # months to forecast
-  open_bals_col <- "cw_23"      # column in the 'chart.csv' file representing the entities data
+  mons          <- rab_n_yrs * 12  # months to forecast
+  open_bals_col <- "cw_23"         # column in the 'chart.csv' file representing the entities data
   infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
   month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons) - 1
   days          <- as.numeric(format(month_end, "%d"))
@@ -363,9 +389,9 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   # This required to disaggregate baseline opex from pricing submission
   perc_opex_emp <- chart[chart$account_no == 2100, open_bals_col] / sum(chart[chart$account_no %in% c(2000,2100), open_bals_col])
   
-  exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * 1000 * infltn_factor * (1-perc_opex_emp)
+  exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * (1-perc_opex_emp)
   exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
-  exp2 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr + 4), "amount"], use.names = FALSE) * 1000 * infltn_factor * perc_opex_emp
+  exp2 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * perc_opex_emp
   exp2 <- round(as.vector(sapply(X = exp2, FUN = add_trend_season, s=0, a=0, p=0)), 3)
   
   
@@ -376,42 +402,42 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   # Depreciation 
   # - on opening balance
   stat_depn_bld <- depn_bv(
-    yrs=5, 
+    yrs=rab_n_yrs, 
     de=chart[chart$account_no == 2215, open_bals_col], 
     gr=chart[chart$account_no == 3510, open_bals_col], 
     ad=chart[chart$account_no == 3515, open_bals_col]
   )
   
   stat_depn_lhi <- depn_bv(
-    yrs=5, 
+    yrs=rab_n_yrs, 
     de=chart[chart$account_no == 2225, open_bals_col], 
     gr=chart[chart$account_no == 3520, open_bals_col], 
     ad=chart[chart$account_no == 3525, open_bals_col]
   )
   
   stat_depn_pae <- depn_bv(
-    yrs=5, 
+    yrs=rab_n_yrs, 
     de=chart[chart$account_no == 2235, open_bals_col], 
     gr=chart[chart$account_no == 3530, open_bals_col], 
     ad=chart[chart$account_no == 3535, open_bals_col]
   )
   
   stat_depn_inf <- depn_bv(
-    yrs=5, 
+    yrs=rab_n_yrs, 
     de=chart[chart$account_no == 2245, open_bals_col], 
     gr=chart[chart$account_no == 3540, open_bals_col], 
     ad=chart[chart$account_no == 3545, open_bals_col]
   )
   
   stat_depn_sca <- depn_bv(
-    yrs=5, 
+    yrs=rab_n_yrs, 
     de=chart[chart$account_no == 2265, open_bals_col], 
     gr=chart[chart$account_no == 3560, open_bals_col], 
     ad=chart[chart$account_no == 3565, open_bals_col]
   )
   
   stat_depn_int <- depn_bv(
-    yrs=5, 
+    yrs=rab_n_yrs, 
     de=chart[chart$account_no == 2205, open_bals_col], 
     gr=chart[chart$account_no == 3600, open_bals_col], 
     ad=chart[chart$account_no == 3605, open_bals_col]
@@ -423,7 +449,7 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
   dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re opening balances and capex, assume transfer from WIP to asset register
   dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
   dpn_cpx <- colSums(dpn_mtrix)
-  dpn_cpx <- rep(dpn_cpx / 5, each = 12)
+  dpn_cpx <- rep(dpn_cpx / 12, each = 12)
   
   
   # -------------------------------------------------------------------------------------------------
@@ -553,13 +579,25 @@ f <- function(x, dat, chart, txn_type, q_grow) { # x <- 0.01
     mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
     
   }
-  return(mat)
+  return(list(txns = mat, rab = exist_rab_detail, price_delta = price_delta, prices = prices))
 }
 
-res1 <- f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019)
-res2 <- replicate(100, f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019), simplify = "array")
+res_single <- f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4")
+res_mcs <- replicate(3, f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019), simplify = FALSE)
+res_scenario <- mapply(
+  FUN=f, 
+  x=list(.01), 
+  dat=list(dat), 
+  chart=list(chart), 
+  cx_delta=list(cx_delta), 
+  ox_delta=list(ox_delta), 
+  txn_type=list(txn_type), 
+  q_grow=list(0.019), 
+  oxcx_scenario=list("scnr1","scnr4"),
+  SIMPLIFY = FALSE
+  )
 
-n <- dim(res2)[4]
+n <- dim(res_single)[1]
 res <- vector(mode = "list", length = n)
 act <- dimnames(res2)[[1]]
 txn <- dimnames(res2)[[2]]
