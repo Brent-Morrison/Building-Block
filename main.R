@@ -583,7 +583,7 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
 }
 
 res_single <- f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4")
-res_mcs <- replicate(3, f(.01, dat=dat, chart=chart, txn_type=txn_type, q_grow=0.019), simplify = FALSE)
+res_mcs <- replicate(3, f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4"), simplify = FALSE)
 res_scenario <- mapply(
   FUN=f, 
   x=list(.01), 
