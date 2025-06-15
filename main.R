@@ -582,7 +582,7 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
   return(list(txns = mat, rab = exist_rab_detail, price_delta = price_delta, prices = prices))
 }
 
-res_single <- f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4")
+res_single <- list(f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4"))
 res_mcs <- replicate(3, f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4"), simplify = FALSE)
 res_scenario <- mapply(
   FUN=f, 
@@ -597,32 +597,37 @@ res_scenario <- mapply(
   SIMPLIFY = FALSE
   )
 
-n <- dim(res_single)[1]
+# List to df for matrix accounting data
+n <- length(res_single)
 res <- vector(mode = "list", length = n)
-act <- dimnames(res2)[[1]]
-txn <- dimnames(res2)[[2]]
-mon <- dimnames(res2)[[3]]
+act <- dimnames(res_single[[1]][[1]])[[1]]
+txn <- dimnames(res_single[[1]][[1]])[[2]]
+mon <- dimnames(res_single[[1]][[1]])[[3]]
 
 for (i in 1:n) {
-  t <- res2[,,,i]
-  dim(t) <- c(prod(dim(res2)[1:3]), 1)
-  df <- expand.grid(act = act, txn = txn, mon = mon)
+  t <- res_single[[1]][[1]]
+  dim(t) <- c(prod(dim(t)), 1)
+  df <- expand.grid(act = act, txn = txn, mon = mon, stringsAsFactors = FALSE)
+  df$mon <- as.numeric(df$mon)
+  df$act <- as.numeric(df$act)
   df$mtd <- t[,1]
   res[[i]] <- df
 }
 
+df1 <- df
+
 # Simulation results (equivalent to object "df" below - row 574)
-res[[1]]
-res[[2]]
+#res[[1]]
+#res[[2]]
 
 # Diagnostics
-z <- data.frame(mat[ , , 5])
-m1 <- mat[c("1000","2000","3000","3050","3100","3645","4000","4010","4020","4100"),c("open","aidb","incm","cshd","borr","exp1","crd1","cpx1","wipc","intp","borr","clos"), 24:26]
-m1
+#z <- data.frame(mat[ , , 5])
+#m1 <- mat[c("1000","2000","3000","3050","3100","3645","4000","4010","4020","4100"),c("open","aidb","incm","cshd","borr","exp1","crd1","cpx1","wipc","intp","borr","clos"), 24:26]
+#m1
 
 
 # Check balances
-round(colSums(mat[,,6]), 3)
+#round(colSums(mat[,,6]), 3)
 
 
 
@@ -632,19 +637,19 @@ round(colSums(mat[,,6]), 3)
 # -------------------------------------------------------------------------------------------------
 
 # Check transactions sum to nil / extract profit
-sum(mat[, !colnames(mat) %in% c("open", "clos"), 1:60])
-sum(mat[as.integer(row.names(mat)) < 3000, !colnames(mat) %in% c("open", "clos"), 49:60])
+#sum(mat[, !colnames(mat) %in% c("open", "clos"), 1:60])
+#sum(mat[as.integer(row.names(mat)) < 3000, !colnames(mat) %in% c("open", "clos"), 49:60])
 
 
 # Stack 3 dim array and unpivot
-mat1 <- mat
-dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
+#mat1 <- mat
+#dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
 
-df <- expand.grid(act = act, txn = txn, mon = mon)
-df$mtd <- mat1[,1]
+#df <- expand.grid(act = act, txn = txn, mon = mon)
+#df$mtd <- mat1[,1]
 
-df <- res[[1]]
-df1 <- df
+#df <- res[[1]]
+#df1 <- df
 
 # Retain opening balances only for balance sheet, remove all closing balances
 df2 <- rbind(df1[df1$txn == "open" & df1$act >= 3000, ], df1[df1$txn %in% txn[-c(1, length(txn))], ])
@@ -669,9 +674,9 @@ for (i in df3$act) {
 }
 
 # Insert YTD opening balances into all month opening balance
-df4 <- df2[df2$txn == "open" & df2$mon %in% (1:5*12 - 11) & df2$act >= 3000, ]  # Get annual P1 opening balance for B/S accounts
+df4 <- df2[df2$txn == "open" & df2$mon %in% (1:(max(as.numeric(mon))/12)*12 - 11) & df2$act >= 3000, ]  # Get annual P1 opening balance for B/S accounts
 for (i in unique(df4$act)) {
-  for (j in (1:(mons/12))) {
+  for (j in (1:(max(as.numeric(mon))/12)) ) {
     insert = df4[df4$act == i & df4$yr == j, "mtd"]
     df2[df2$txn == "open" & df2$act == i & df2$yr == j, "ytd"] <- insert
   }
@@ -697,18 +702,19 @@ tb1 <- slr %>%
   pivot_wider(names_from = mon, values_from = vals, values_fn = sum, values_fill = 0)
 
 re <- slr %>%
-  filter(mon %in% c(12,24,36,48,60), statement_type == 1) %>%
+  filter(mon %in% (1:(max(as.numeric(mon))/12)*12), statement_type == 1) %>%
+  #filter(mon %in% c(12,24,36,48,60), statement_type == 1) %>%
   group_by(mon) %>%
   summarise(profit = sum(ytd))
 re
 
 # Add retained earnings
 tbmat <- as.matrix(tb1[, 3:ncol(tb1)])
-tbmat <- rbind(tbmat, rep(c(0, cumsum(re$profit)), each = 12)[1:60])
+tbmat <- rbind(tbmat, rep(c(0, cumsum(re$profit)), each = 12)[1:(max(as.numeric(mon)))])
 round(colSums(tbmat), 3)
 
 tb <- data.frame(tbmat)
-names(tb) <- 1:60
+names(tb) <- 1:(max(as.numeric(mon)))
 tb <- tb %>%
   mutate(
     act = c(tb1$act, 5201),
