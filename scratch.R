@@ -88,3 +88,16 @@ unique(dat$asset_category)
 # Depreciation estimate
 depn_rate_infa <- 29560 / chart[chart$account_no == 3540, "cw_23"] # p.92 accounts
 depn_rate_infa
+
+
+
+
+
+# https://stackoverflow.com/questions/35889954/mapply-for-all-arguments-combinations-r
+toy <- function(x, y, z){
+  paste(x, y, z)
+}
+
+args <- expand.grid(x = 1:2, y = c("#", "$"), z = c("a", "b"))
+
+mapply(FUN = toy, x = args$x, y = args$y, z = args$z)

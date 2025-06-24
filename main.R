@@ -69,14 +69,32 @@ ox_delta <- data.frame(
 
 
 # Function
-f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario) { # x <- 0.01
-
+f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario) { 
+  
+  # Args:
+  #   x              - numeric, random variable for nominal cost of debt replicate function
+  #   dat            - a data frame containing the required regulatory data (TO DO - document this) 
+  #   chart          - a data frame representing the accounting chart of accounts
+  #   cx_delta       - a data frame containing multiple scenarios of 5 year capex spend for price periods 2 to n
+  #   ox_delta       - a data frame containing multiple scenarios of incremental 5 year opex spend for price periods 2 to n
+  #   txn_type       - a data frame specifying account posting for each transaction type
+  #   q_grow         - the annual growth rate for all quantities
+  #   oxcx_scenario  - the opex & capex scenario to be selected from ox_delta and cx_delta
+  #
+  # Returns:
+  #   list containing the following element, 
+  #   txns           - a matrix containing all accounting transactions
+  #   rab            - a data frame being the opening to closing reconciliation of the movement in the regulatory asset base
+  #   price_delta    - a list of each yearly real price delta
+  #   prices         - a matrix of all prices for each year
+  #   rev_req        - a data frame of the components to the revenue requirement for each year
+  
   # Parameters --------------------------------------------------------------------------------------
-  ent_parm           <- "CW"      # select data for specific entity
-  initial_fcast_yr   <- 2024
-  price_delta_yr     <- 2         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
-                                  # price delta 2 comes into effect, a value of zero returns an even price delta for each year 
-  single             <- F         # for function npv_optim_func, if true the only price delta (that of pdpar1) occurs
+  ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
+  initial_fcast_yr   <- 2024      # the first forecast year
+  price_delta_yr     <- 0         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
+                                  # price delta 2 comes into effect, a value of zero returns an equal price delta for each year 
+  single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of pdpar1) occurs
   pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
   cost_of_debt_nmnl  <- 0.0456 + if (is.null(x)) 0 else rnorm(1, 0, x)    # nominal cost of debt
   fcast_infltn       <- 0.03
@@ -236,7 +254,12 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
   
   # Revenue requirement -----------------------------------------------------------------------------
   rev_req <- roa[1:rab_n_yrs] + opex$amount[1:rab_n_yrs] + dpn[1:rab_n_yrs]
-  
+  rev_req_df <- data.frame(
+    roa = roa[1:rab_n_yrs], 
+    opx = opex$amount[1:rab_n_yrs],
+    dpn = dpn[1:rab_n_yrs],
+    row.names = seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
+  )
   
   
   # Price & quantity data ---------------------------------------------------------------------------
@@ -256,9 +279,7 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
   kl_hhold_pa <- q["Water.Residential.Variable", 1][[1]] / q["Water.Residential.Fixed", ][[1]]
   
   # Convert p0 quantities to p1 - p5 with fixed growth rate
-  # TO DO - 0.05 growth rate to be parameter
   q <- q %*% exp( cumsum( log( 1 + rep(q_grow, rab_n_yrs) ) ) ) 
-  #q[grepl("Trade", rownames(q)), ]
   
   # Prices
   pq.t1 <- pq %>% filter(entity == ent_parm, year == 2023, balance_type == 'Price')
@@ -308,24 +329,24 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
   }
   
   price_delta <- unlist(lapply(optim_result, function(x) x$price_delta))
-  prices <- do.call(cbind,lapply(optim_result, function(x) x$prices))
+  prices <- do.call(cbind, lapply(optim_result, function(x) x$prices))
   
   rev <- prices * q
   tot_rev_real <- colSums(prices * q) / 1e6  # TO DO - use this to flex income, ref. line 288 (object q).  kL up or down on wet, dry basis.  Variability based on statistical model.
   
   
   # Check results
-  sum(rev_req / (1 + rrr) ^ (1:length(rev_req)))             # NPV of revenue requirement
-  sum(tot_rev_real / (1 + rrr) ^ (1:length(tot_rev_real)))   # NPV of revenue
+  c1 <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req)))             # NPV of revenue requirement
+  c2 <- sum(tot_rev_real / (1 + rrr) ^ (1:length(tot_rev_real)))   # NPV of revenue
   
   
   # Print outcome
   cat(
-    paste0("Price delta of ", round(price_delta[price_delta != 0] * 100, 2), " percent in year ", price_delta_yr),
-    paste0("on revenue requirement of ", round(sum(rev_req), 2)),
+    #paste0("Price delta of ", round(price_delta[price_delta != 0] * 100, 2), " percent in year ", price_delta_yr),
+    paste0(c("ps23","ps28","ps33","ps38"), " revenue requirement of ", round(tapply(rev_req, rep(1:(length(rev_req)/5), each=5), sum), 2)),
+    paste0("NPV of revenue requirement less NPV of revenue (s/be nil) ", round(c1 - c2, 3)),
     sep = "\n"
   )
-  round(price_delta * 100, 2)
   
   
   
@@ -579,7 +600,7 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
     mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
     
   }
-  return(list(txns = mat, rab = exist_rab_detail, price_delta = price_delta, prices = prices))
+  return(list(txns = mat, rab = exist_rab_detail, price_delta = price_delta, prices = prices, rev_req = rev_req_df))
 }
 
 res_single <- list(f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4"))

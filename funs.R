@@ -165,7 +165,7 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
   rrr    <- theta[1]  # regulatory rate of return
   
   pdpar2 <- if (pdyr == 1) pdpar1 else pdpar2
-  pdvec  <- c(rep(pdpar1, pdyr-1), rep(pdpar2, 5-pdyr+1))
+  pdvec  <- c(rep(pdpar1, max(0, pdyr-1)), rep(pdpar2, 5-pdyr+1))
   pdvecT <- rep(pdpar1, 5)
   pdvecT[(1:5)[-pdyr]] <- 0
   pdvec  <- if (single == T) pdvecT else pdvec
