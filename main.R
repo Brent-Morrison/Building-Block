@@ -10,9 +10,11 @@ library(scales)
 # - interest rates
 # - customer usage shortfall (kl_hhold_pa in price path vs actual) 
 # - inflation wedge (that in rrr and that in actual)
+# - flex percentage of income from fixed vs variable tariffs
 
 # Scenario
-# _ Capex & resultant increase in baseline opex
+# - Capex & resultant increase in baseline opex
+# - Usage delta impact on pumping costs and treatment costs 
 
 # Output / assessment
 # - As below
@@ -618,28 +620,6 @@ res_scenario <- mapply(
   SIMPLIFY = FALSE
   )
 
-# List to df for matrix accounting data
-n <- length(res_single)
-res <- vector(mode = "list", length = n)
-act <- dimnames(res_single[[1]][[1]])[[1]]
-txn <- dimnames(res_single[[1]][[1]])[[2]]
-mon <- dimnames(res_single[[1]][[1]])[[3]]
-
-for (i in 1:n) {
-  t <- res_single[[1]][[1]]
-  dim(t) <- c(prod(dim(t)), 1)
-  df <- expand.grid(act = act, txn = txn, mon = mon, stringsAsFactors = FALSE)
-  df$mon <- as.numeric(df$mon)
-  df$act <- as.numeric(df$act)
-  df$mtd <- t[,1]
-  res[[i]] <- df
-}
-
-df1 <- df
-
-# Simulation results (equivalent to object "df" below - row 574)
-#res[[1]]
-#res[[2]]
 
 # Diagnostics
 #z <- data.frame(mat[ , , 5])
@@ -661,51 +641,11 @@ df1 <- df
 #sum(mat[, !colnames(mat) %in% c("open", "clos"), 1:60])
 #sum(mat[as.integer(row.names(mat)) < 3000, !colnames(mat) %in% c("open", "clos"), 49:60])
 
+res <- res_scenario[[1]]
+slr <- slr_fun(res, chart)
 
-# Stack 3 dim array and unpivot
-#mat1 <- mat
-#dim(mat1) <- c(length(act)*length(txn)*length(mon), 1)
+slr2 <- lapply(res_scenario, FUN = slr_fun, chart)
 
-#df <- expand.grid(act = act, txn = txn, mon = mon)
-#df$mtd <- mat1[,1]
-
-#df <- res[[1]]
-#df1 <- df
-
-# Retain opening balances only for balance sheet, remove all closing balances
-df2 <- rbind(df1[df1$txn == "open" & df1$act >= 3000, ], df1[df1$txn %in% txn[-c(1, length(txn))], ])
-
-# Remove opening balance for P&L accounts
-#df2[df2$txn == "open" , c("mtd","ytd")] <- 0
-
-# Cumulative sum
-df2$yr <- ceiling(df2$mon / 12)
-df2 <- df2[with(df2, order(mon, act, txn)), ] # order
-df2$ltd <- ave(df2$mtd, df2$act, df2$txn, FUN=cumsum)
-df2$ytd <- ave(df2$mtd, df2$act, df2$txn, df2$yr, FUN=cumsum)
-
-# Order and select columns
-df2 <- df2[with(df2, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]  
-
-# Insert LTD opening balance into all months opening balance
-df3 <- df2[df2$txn == "open" & df2$yr == 1 & df2$mon == 1, ] # Get global P1 opening balance for B/S accounts
-for (i in df3$act) {
-  insert = df3[df3$act == i, "ltd"]
-  df2[df2$txn == "open" & df2$act == i, "ltd"] <- insert
-}
-
-# Insert YTD opening balances into all month opening balance
-df4 <- df2[df2$txn == "open" & df2$mon %in% (1:(max(as.numeric(mon))/12)*12 - 11) & df2$act >= 3000, ]  # Get annual P1 opening balance for B/S accounts
-for (i in unique(df4$act)) {
-  for (j in (1:(max(as.numeric(mon))/12)) ) {
-    insert = df4[df4$act == i & df4$yr == j, "mtd"]
-    df2[df2$txn == "open" & df2$act == i & df2$yr == j, "ytd"] <- insert
-  }
-}
-
-# Remove nil balances and write to csv
-#df2 <- df2[df2$mtd != 0 & df2$ytd != 0 & df2$ltd != 0, ]
-slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
 
 # Check SLR
 slr_check1 <- slr %>%
@@ -716,7 +656,12 @@ slr_check1 <- slr %>%
 write.csv(slr, file = "slr.csv")
 
 
-# Create trial balance
+
+
+# -------------------------------------------------------------------------------------------------
+# Create trial balance 
+# -------------------------------------------------------------------------------------------------
+
 tb1 <- slr %>%
   mutate(vals = if_else(act < 3000, ytd, ltd)) %>%
   select(mon, act, account_desc, vals) %>%

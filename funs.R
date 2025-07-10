@@ -376,3 +376,66 @@ acc_num <- function(x){
 
 #x <- c(-50000, 50000, -500, -49979, 48778, 1000, -41321, 0, .01)
 #acc_num(x)
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Transaction matrix to data.frame
+# --------------------------------------------------------------------------------------------------------------------------
+
+slr_fun <- function(res, chart) {
+  
+  res_t <- res$txns
+  act <- dimnames(res_t)[[1]]
+  txn <- dimnames(res_t)[[2]]
+  mon <- dimnames(res_t)[[3]]
+  
+  dim(res_t) <- c(prod(dim(res_t)), 1)
+  df <- expand.grid(act = act, txn = txn, mon = mon, stringsAsFactors = FALSE)
+  df$mon <- as.numeric(df$mon)
+  df$act <- as.numeric(df$act)
+  df$mtd <- res_t[,1]
+  
+  df1 <- df
+  
+  # Retain opening balances only for balance sheet, remove all closing balances
+  df2 <- rbind(df1[df1$txn == "open" & df1$act >= 3000, ], df1[df1$txn %in% txn[-c(1, length(txn))], ])
+  
+  # Remove opening balance for P&L accounts
+  #df2[df2$txn == "open" , c("mtd","ytd")] <- 0
+  
+  # Cumulative sum
+  df2$yr <- ceiling(df2$mon / 12)
+  df2 <- df2[with(df2, order(mon, act, txn)), ] # order
+  df2$ltd <- ave(df2$mtd, df2$act, df2$txn, FUN=cumsum)
+  df2$ytd <- ave(df2$mtd, df2$act, df2$txn, df2$yr, FUN=cumsum)
+  
+  # Order and select columns
+  df2 <- df2[with(df2, order(mon, act, txn)), c("yr","mon","act","txn","mtd","ytd","ltd")]  
+  
+  # Insert LTD opening balance into all months opening balance
+  df3 <- df2[df2$txn == "open" & df2$yr == 1 & df2$mon == 1, ] # Get global P1 opening balance for B/S accounts
+  for (i in df3$act) {
+    insert = df3[df3$act == i, "ltd"]
+    df2[df2$txn == "open" & df2$act == i, "ltd"] <- insert
+  }
+  
+  # Insert YTD opening balances into all month opening balance
+  df4 <- df2[df2$txn == "open" & df2$mon %in% (1:(max(as.numeric(mon))/12)*12 - 11) & df2$act >= 3000, ]  # Get annual P1 opening balance for B/S accounts
+  for (i in unique(df4$act)) {
+    for (j in (1:(max(as.numeric(mon))/12)) ) {
+      insert = df4[df4$act == i & df4$yr == j, "mtd"]
+      df2[df2$txn == "open" & df2$act == i & df2$yr == j, "ytd"] <- insert
+    }
+  }
+  
+  # Remove nil balances and write to csv
+  df2 <- df2[rowSums(abs(df2[ ,5:7])) > 0, ]
+  slr <- left_join(df2, chart[1:6], by = join_by(act == account_no))
+  
+  return(slr)
+  
+}
+
+#res <- res_scenario[[1]]$txns
+#slr <- slr_fun(res, chart)
