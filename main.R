@@ -676,11 +676,11 @@ re
 
 # Add retained earnings
 tbmat <- as.matrix(tb1[, 3:ncol(tb1)])
-tbmat <- rbind(tbmat, rep(c(0, cumsum(re$profit)), each = 12)[1:(max(as.numeric(mon)))])
+tbmat <- rbind(tbmat, rep(c(0, cumsum(re$profit)), each = 12)[1:(max(as.numeric(slr$mon)))])
 round(colSums(tbmat), 3)
 
 tb <- data.frame(tbmat)
-names(tb) <- 1:(max(as.numeric(mon)))
+names(tb) <- 1:(max(as.numeric(slr$mon)))
 tb <- tb %>%
   mutate(
     act = c(tb1$act, 5201),
@@ -802,7 +802,7 @@ cust_theme2 <- theme_classic() +
 # Plot
 monthly_indicators %>%
   #filter(mon %in% (1:5*12)) %>% 
-  filter(mon %in% seq(3, mons, by = 3)) %>% 
+  filter(mon %in% seq(3, max(slr$mon), by = 3)) %>% 
   mutate(date = make_date(
     yr+2022, 
     if_else(mon > 12, mon-((yr-1)*12), mon), 
@@ -982,3 +982,7 @@ bal1 <- bind_rows(
   
 bal1[ ,3:8] <- apply(bal1[ ,3:8], 2, acc_num)
 bal1
+
+
+# Filter matrix for all income
+mat[grepl("^1", rownames(mat)),c("open","clos"),1]
