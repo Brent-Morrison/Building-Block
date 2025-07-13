@@ -101,3 +101,36 @@ toy <- function(x, y, z){
 args <- expand.grid(x = 1:2, y = c("#", "$"), z = c("a", "b"))
 
 mapply(FUN = toy, x = args$x, y = args$y, z = args$z)
+
+# Rolling sum on 3d array
+x <- array(1:24, c(4, 2, 3))
+x
+sum(x[1,1,c(1,2)])
+sum(x[1,1,c(2,3)])
+
+r <- rep(0,2)
+counter <- 0
+for (i in 2:3) {
+  counter <- counter + 1
+  t <- sum(x[1,1,c(i-1,i)])
+  print(t)
+  r[counter] <- t
+}
+r
+
+
+# Filter matrix for all income
+# https://stackoverflow.com/questions/64999483/how-to-do-rolling-sum-over-columns-in-r
+mat <- res_scenario[[1]]$txns
+mat[grepl("^1", rownames(mat)), c("open","clos") , 1]
+sum(mat[grepl("^10", rownames(mat)), c("open","clos") , 13])
+sum( mat[grepl("^1|^2", rownames(mat)), !colnames(mat) %in% c("open","clos"), 12] )
+apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(mat) %in% c("open","clos")]), simplify = TRUE)
+
+ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(mat) %in% c("open","clos")]), simplify = TRUE) # net income
+ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE) # total assets
+ta
+slide_sum(ni, before = 12) / slide_mean(ta, before = 12)
+monthly_indicators$ret_on_asset
+plot(1:240, -slide_sum(ni, before = 12) / slide_mean(ta, before = 12), type = "S")
+lines(1:240, monthly_indicators$ret_on_asset, col = "blue")

@@ -751,7 +751,7 @@ monthly_indicators <- slr %>%
     gearing          = -total_debt / total_assets,
     int_fin_ratio    = -( cf_rec_cust + cf_rec_oth + cf_pay_sup ) / cf_pay_ppe,
     current_ratio    = curr_assets / -curr_liabs,
-    ret_on_asset     = -net_income / total_assets_ttm
+    ret_on_asset     = -net_income_ttm / total_assets_ttm
     #ret_on_eqt     =
     #ebitda_mgn     =
     #average customer bill
@@ -982,7 +982,3 @@ bal1 <- bind_rows(
   
 bal1[ ,3:8] <- apply(bal1[ ,3:8], 2, acc_num)
 bal1
-
-
-# Filter matrix for all income
-mat[grepl("^1", rownames(mat)),c("open","clos"),1]
