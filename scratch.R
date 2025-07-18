@@ -135,15 +135,23 @@ monthly_indicators$ret_on_asset
 plot(1:240, -slide_sum(ni, before = 12) / slide_mean(ta, before = 12), type = "S")
 lines(1:240, monthly_indicators$ret_on_asset, col = "blue")
 
-f <- function(m) {
+ret_on_asset_fun <- function(m) {
   mat <- m$txns
-  ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(mat) %in% c("open","clos")]), simplify = TRUE) # net income
-  ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE) # total assets
+  ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)   # net income
+  ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)                                  # total assets
   return( slide_sum(ni, before = 12) / slide_mean(ta, before = 12) )
 }
-             
-z <- lapply(res_mcs, f)
+
+int_fin_ratio_fun <- function(m) {
+  #mat <- res$txns
+  mat <- m$txns
+  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)   # operating cashflows
+  capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                    # capex
+  return( slide_sum(op_cf, before = 12) / slide_sum(capex, before = 12) )
+}
+          
+z <- lapply(res_scenario, int_fin_ratio_fun)
 
 for (i in 1:length(z)) {
-  if (i ==1) plot(1:240, z[[i]], type = "S") else lines(1:240, z[[i]], col = "blue")
+  if (i == 1) plot(1:240, z[[i]], type = "l") else lines(1:240, z[[i]], col = "blue")
 }
