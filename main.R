@@ -71,16 +71,16 @@ ox_delta <- data.frame(
 
 
 # Function
-f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario) { 
+f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_scenario) { 
   
   # Args:
-  #   x              - numeric, random variable for nominal cost of debt replicate function
   #   dat            - a data frame containing the required regulatory data (TO DO - document this) 
   #   chart          - a data frame representing the accounting chart of accounts
   #   cx_delta       - a data frame containing multiple scenarios of 5 year capex spend for price periods 2 to n
   #   ox_delta       - a data frame containing multiple scenarios of incremental 5 year opex spend for price periods 2 to n
   #   txn_type       - a data frame specifying account posting for each transaction type
   #   q_grow         - the annual growth rate for all quantities
+  #   debt_sens      - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
   #   oxcx_scenario  - the opex & capex scenario to be selected from ox_delta and cx_delta
   #
   # Returns:
@@ -98,7 +98,7 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
                                   # price delta 2 comes into effect, a value of zero returns an equal price delta for each year 
   single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of pdpar1) occurs
   pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
-  cost_of_debt_nmnl  <- 0.0456 + if (is.null(x)) 0 else rnorm(1, 0, x)    # nominal cost of debt
+  cost_of_debt_nmnl  <- 0.0456    # nominal cost of debt
   fcast_infltn       <- 0.03
   gearing            <- 0.6
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
@@ -479,6 +479,9 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
   # Transaction loop
   # -------------------------------------------------------------------------------------------------
   
+  # Cost debt variance
+  cost_of_debt <- cost_of_debt_nmnl + if (is.null(debt_sens)) 0 else debt_sens  #+ if (is.null(x)) 0 else rnorm(1, 0, x)    
+  
   for (i in 1:length(mon)) {
     
     # Opening balances & debtors ageing post loop / month 1 -----------------------------------------
@@ -554,7 +557,7 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
     
     
     # Interest (accrue) -----------------------------------------------------------------------------
-    int <- round(sum(mat[c("4100","4500"), "open", i]) * cost_of_debt_nmnl / 12, 3)
+    int <- round(sum(mat[c("4100","4500"), "open", i]) * cost_of_debt / 12, 3)
     t <- "inta"
     mat[drcr(t, txn_type), t, i] <- c(-int, int)
     
@@ -605,18 +608,19 @@ f <- function(x, dat, chart, cx_delta, ox_delta, txn_type, q_grow, oxcx_scenario
   return(list(txns = mat, rab = exist_rab_detail, price_delta = price_delta, prices = prices, rev_req = rev_req_df))
 }
 
-res_single <- list(f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4"))
-res_mcs <- replicate(3, f(.01, dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, oxcx_scenario="scnr4"), simplify = FALSE)
+res_single <- list(f(dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, debt_sens=NULL, oxcx_scenario="scnr4"))
+res_mcs <- replicate(3, f(dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, debt_sens=NULL, oxcx_scenario="scnr4"), simplify = FALSE)
+args <- expand.grid(q_grow = 0.019, debt_sens = c(-0.01,0,0.01), oxcx_scenario = c("scnr1","scnr4"))
 res_scenario <- mapply(
   FUN=f, 
-  x=list(.01), 
   dat=list(dat), 
   chart=list(chart), 
   cx_delta=list(cx_delta), 
   ox_delta=list(ox_delta), 
   txn_type=list(txn_type), 
-  q_grow=list(0.019), 
-  oxcx_scenario=list("scnr1","scnr4"),
+  q_grow=args$q_grow, #list(0.019), 
+  debt_sens=args$debt_sens, #list(-0.01,0,0.01), 
+  oxcx_scenario=args$oxcx_scenario, #list("scnr1","scnr4"),
   SIMPLIFY = FALSE
   )
 
@@ -644,7 +648,7 @@ res_scenario <- mapply(
 res <- res_scenario[[1]]
 slr <- slr_fun(res, chart)
 
-slr2 <- lapply(res_scenario, FUN = slr_fun, chart)
+#slr2 <- lapply(res_scenario, FUN = slr_fun, chart)
 
 
 # Check SLR
@@ -653,7 +657,7 @@ slr_check1 <- slr %>%
   group_by(mon) %>%
   summarise(total = round(sum(mtd), 3))
 
-write.csv(slr, file = "slr.csv")
+#write.csv(slr, file = "slr.csv")
 
 
 

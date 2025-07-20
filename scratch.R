@@ -122,36 +122,60 @@ r
 # Filter matrix for all income
 # https://stackoverflow.com/questions/64999483/how-to-do-rolling-sum-over-columns-in-r
 mat <- res_scenario[[1]]$txns
-mat[grepl("^1", rownames(mat)), c("open","clos") , 1]
-sum(mat[grepl("^10", rownames(mat)), c("open","clos") , 13])
-sum( mat[grepl("^1|^2", rownames(mat)), !colnames(mat) %in% c("open","clos"), 12] )
-apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(mat) %in% c("open","clos")]), simplify = TRUE)
 
-ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(mat) %in% c("open","clos")]), simplify = TRUE) # net income
-ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE) # total assets
-ta
-slide_sum(ni, before = 12) / slide_mean(ta, before = 12)
-monthly_indicators$ret_on_asset
-plot(1:240, -slide_sum(ni, before = 12) / slide_mean(ta, before = 12), type = "S")
-lines(1:240, monthly_indicators$ret_on_asset, col = "blue")
+# Cash txns
+txn_type[(txn_type$dr == "3000" | txn_type$cr == "3000"), 1:4]
 
-ret_on_asset_fun <- function(m) {
+# KPI's (gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset)
+
+# Cash interest cover - Net operating cash flows before net interest and tax payments / Net interest payments
+cash_int_cover_fn <- function(m) {
+  mat <- m$txns
+  #g <- "^10|^11|^13|^15|^20|^235|^24"
+  #eb <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)  # ebitda_ttm
+  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)                         # operating cashflows
+  ip <- apply(mat, 3, function(x) sum(x["3000", "intp"]), simplify = TRUE)                                             # net_int_pay_ttm 
+  return( slide_sum(op_cf, before = 12) / slide_sum(ip, before = 12) )
+}  
+
+# Gearing ratio - Total debt (including finance leases) / Total assets
+gearing_fn <- function(m) {
+  mat <- m$txns
+  td <- apply(mat, 3, function(x) sum(x[c("4100","4500"), "clos"]), simplify = TRUE)              # total debt
+  ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)      # total assets
+  return( -td / ta )
+}
+
+# Internal financing ratio - Net operating cash flows less dividends / Net capital expenditure
+int_fin_ratio_fn <- function(m) {
+  mat <- m$txns
+  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1","intp")]), simplify = TRUE)   # operating cashflows
+  capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                           # capex
+  return( slide_sum(-op_cf, before = 12) / slide_sum(capex, before = 12) )
+}
+
+# Current ratio - Current assets / Current liabilities (excluding long-term employee provisions and revenue in advance)
+current_ratio_fn <- function(m) {
+  mat <- m$txns
+  g <- "^30|^31|^32|^33"
+  ca <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), "clos"]), simplify = TRUE)         # current assets
+  g <- "^40|^41|^43|^44"
+  cl <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), "clos"]), simplify = TRUE)         # current liabilities
+  return( ca / -cl )
+}
+
+ret_on_asset_fn <- function(m) {
   mat <- m$txns
   ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)   # net income
   ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)                                  # total assets
   return( slide_sum(ni, before = 12) / slide_mean(ta, before = 12) )
 }
 
-int_fin_ratio_fun <- function(m) {
-  #mat <- res$txns
-  mat <- m$txns
-  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)   # operating cashflows
-  capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                    # capex
-  return( slide_sum(op_cf, before = 12) / slide_sum(capex, before = 12) )
-}
-          
-z <- lapply(res_scenario, int_fin_ratio_fun)
 
-for (i in 1:length(z)) {
-  if (i == 1) plot(1:240, z[[i]], type = "l") else lines(1:240, z[[i]], col = "blue")
+
+
+# Plot
+dat <- lapply(res_scenario, gearing_fn)
+for (i in 1:length(dat)) {
+  if (i == 1) plot(1:240, dat[[i]], type = "l") else lines(1:240, dat[[i]], col = "blue")
 }
