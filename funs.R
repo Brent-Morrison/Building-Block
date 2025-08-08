@@ -148,17 +148,40 @@ depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
 
 npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") {
   
+  # Net Present Value Optimisation Objective Function
+  #
+  # Computes the squared difference between the net present value (NPV) of expected revenue 
+  # (based on price changes and quantities) and the regulatory revenue requirement. 
+  # This function is typically used as an objective function in optimisation routines 
+  # (e.g., to determine optimal price paths over a 5-year regulatory period).
+  #
   # Args:
-  #   theta   - a numeric vector of length 2 being regulatory rate of return and price delta
-  #   pdyr    - an integer between 0 and 5 representing the year in which price delta 2 comes into effect
-  #             , a value of zero returns an even price delta for each year 
-  #   single  - logical, if true the only price delta (that of pdpar1) occurs
-  #   rev_req - vector of revenue requirement (length 5)
-  #   p0      - matrix of initial prices, dimension n * 1 
-  #   q       - 
+  #   theta    - a numeric vector of length 3 being regulatory rate of return, initial price delta (used in early years), and 
+  #              second price delta (used in later years if applicable)
+  #   pdyr     - an integer between 0 and 5 representing the year in which the second price delta (`theta[3]`) takes effect,
+  #              a value of 0 applies the same delta evenly across all years (that of theta[2] when single = TRUE, else theta[3]). 
+  #              A value of 1 sets both deltas equal.
+  #   single   - logical, if true the only price delta (that of the first price delta `theta[2`) is used
+  #   rev_req  - numeric vector of length 5: revenue requirement over the 5-year regulatory period (in millions)
+  #   p0       - numeric matrix (n * 1), initial prices 
+  #   q        - numeric matrix (n * 5), quantities corresponding to each price and year
+  #   rtn_mode - character, if "obj" (default) returns the squared difference between NPV of revenue and required revenue (for 
+  #              use in optimisation) ,any other value returns a list with intermediate outputs including `price_delta` 
+  #              (length-5 vector of price changes) and `prices` (matrix of adjusted prices)
   #
   # Returns:
-  #   error, the difference between two net present values
+  #   see parameter "rtn_mode"
+  #
+  # Example results
+  #
+  # theta  <- c(0.025, 0.2, 0.3)
+  # pdyr <- 0 | single <- F | 0.3 0.3 0.3 0.3 0.3 0.3  ONE EXTRA!
+  # pdyr <- 0 | single <- T | 0.2 0.2 0.2 0.2 0.2
+  # pdyr <- 1 | single <- T | 0.2 0.0 0.0 0.0 0.0
+  # pdyr <- 1 | single <- F | 0.2 0.2 0.2 0.2 0.2
+  # pdyr <- 2 | single <- F | 0.2 0.3 0.3 0.3 0.3
+  # pdyr <- 2 | single <- T | 0.0 0.2 0.0 0.0 0.0
+  
   
   pdpar1 <- theta[2]  # First price delta   
   pdpar2 <- theta[3]  # Second price delta
@@ -169,17 +192,37 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
   pdvecT <- rep(pdpar1, 5)
   pdvecT[(1:5)[-pdyr]] <- 0
   pdvec  <- if (single == T) pdvecT else pdvec
+  pdvec  <- pdvec[1:5]
   
+  # TO DO - insert a parameter so that the proportion of income from usage vs service charges can be flexed
+  # see below 
   pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1
   pnew         <- p0 %*% (1 + pdcum)
   r            <- pnew * q
   
   tot_r        <- colSums(r) / 1e6
+  # Flex proportion of fixed and variable tariffs
+  f            <- c("Water.Residential.Fixed"   ,"Water.Non-residential.Fixed"   ,"Sewerage.Non-residential.Fixed"   )
+  v            <- c("Water.Residential.Variable","Water.Non-residential.Variable","Sewerage.Non-residential.Variable")
+  fix_r        <- colSums(r[f, ])
+  var_r        <- colSums(r[v, ])
+  prop_f       <- sum(fix_r) / (sum(fix_r) + sum(var_r))             # proportion fixed
+  des_f        <- 0.50                                               # desired proportion fixed
+  nfix_r       <- r[f, ] / prop_f * des_f
+  nvar_r       <- r[v, ] / (1 - prop_f) * (1 - des_f)
+  round(fix_r + var_r - colSums(nfix_r) - colSums(nvar_r), 3)        # check
+  npnew        <- pnew
+  npnew[f,]    <- nfix_r / q[f,]
+  npnew[v,]    <- nvar_r / q[v,]
+  nr           <- npnew * q
+  tot_nr       <- colSums(nr) / 1e6
+  tot_r - tot_nr                                                     # check
+  
   npv_tot_r    <- sum(tot_r / (1 + rrr) ^ (1:length(tot_r))) * (1 + rrr) ^ 0.5
   npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
   obj          <- (npv_rev_req - npv_tot_r) ^ 2
   
-  rtn_list <- list(price_delta = pdvec, prices = pnew)
+  rtn_list <- list(price_delta = pdvec, prices = npnew)
   
   ifelse(rtn_mode == "obj", return(obj), return(rtn_list))
   
@@ -300,7 +343,7 @@ drcr <- function(txn, txn_df) {
 # Target cash payment re creditors / debtors based on debtor (creditors) days
 # --------------------------------------------------------------------------------------------------------------------------
 trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
-  #
+  
   # Return the cash receipt / payment to arrive at balance required for designated debtors / creditors days
   # - assumes presence of matrix "mat" in environment
   #

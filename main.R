@@ -117,6 +117,7 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_
     select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
 
+  # Append out year capex per "cx_delta" data frame
   capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * cx_delta["ps28", oxcx_scenario]
   capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * cx_delta["ps33", oxcx_scenario]
   capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * cx_delta["ps38", oxcx_scenario]
