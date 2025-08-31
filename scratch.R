@@ -119,63 +119,62 @@ for (i in 2:3) {
 r
 
 
-# Filter matrix for all income
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Function for producing KPI's (gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset)
 # https://stackoverflow.com/questions/64999483/how-to-do-rolling-sum-over-columns-in-r
-mat <- res_scenario[[1]]$txns
+# --------------------------------------------------------------------------------------------------------------------------
 
-# Cash txns
-txn_type[(txn_type$dr == "3000" | txn_type$cr == "3000"), 1:4]
+mat <- res_scenario[[1]]
+res_scenario[[1]]$price_delta
 
-# KPI's (gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset)
-
-# Cash interest cover - Net operating cash flows before net interest and tax payments / Net interest payments
-cash_int_cover_fn <- function(m) {
-  mat <- m$txns
-  #g <- "^10|^11|^13|^15|^20|^235|^24"
-  #eb <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)  # ebitda_ttm
-  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)                         # operating cashflows
-  ip <- apply(mat, 3, function(x) sum(x["3000", "intp"]), simplify = TRUE)                                             # net_int_pay_ttm 
-  return( slide_sum(op_cf, before = 12) / slide_sum(ip, before = 12) )
-}  
-
-# Gearing ratio - Total debt (including finance leases) / Total assets
-gearing_fn <- function(m) {
-  mat <- m$txns
-  td <- apply(mat, 3, function(x) sum(x[c("4100","4500"), "clos"]), simplify = TRUE)              # total debt
-  ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)      # total assets
-  return( -td / ta )
-}
-
-# Internal financing ratio - Net operating cash flows less dividends / Net capital expenditure
-int_fin_ratio_fn <- function(m) {
-  mat <- m$txns
-  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1","intp")]), simplify = TRUE)   # operating cashflows
-  capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                           # capex
-  return( slide_sum(-op_cf, before = 12) / slide_sum(capex, before = 12) )
-}
-
-# Current ratio - Current assets / Current liabilities (excluding long-term employee provisions and revenue in advance)
-current_ratio_fn <- function(m) {
-  mat <- m$txns
-  g <- "^30|^31|^32|^33"
-  ca <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), "clos"]), simplify = TRUE)         # current assets
-  g <- "^40|^41|^43|^44"
-  cl <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), "clos"]), simplify = TRUE)         # current liabilities
-  return( ca / -cl )
-}
-
-ret_on_asset_fn <- function(m) {
+ret_on_asset_fnx <- function(m) {
   mat <- m$txns
   ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)   # net income
   ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)                                  # total assets
-  return( slide_sum(ni, before = 12) / slide_mean(ta, before = 12) )
+  return( ni )
 }
 
-
+z <- ret_on_asset_fnx(mat)
+write.csv(z, "ni.csv")
 
 
 # Plot
-dat <- lapply(res_scenario, gearing_fn)
-for (i in 1:length(dat)) {
-  if (i == 1) plot(1:240, dat[[i]], type = "l") else lines(1:240, dat[[i]], col = "blue")
+# https://plotly-r.com/improving-ggplotly
+# https://shiny.posit.co/r/gallery/application-layout/retirement-simulation/
+
+z <- bind_rows(
+  data.frame( t(do.call(rbind, lapply(res_scenario, cash_int_cover_fn))), kpi = "cash_int_cover" ),
+  data.frame( t(do.call(rbind, lapply(res_scenario, gearing_fn))), kpi = "gearing"),
+  data.frame( t(do.call(rbind, lapply(res_scenario, int_fin_ratio_fn))), kpi = "int_fin_ratio"),
+  data.frame( t(do.call(rbind, lapply(res_scenario, current_ratio_fn))), kpi = "current_ratio"),
+  data.frame( t(do.call(rbind, lapply(res_scenario, ret_on_asset_fn))), kpi = "ret_on_asset")
+  ) %>% 
+  mutate(month = rep(1:240, 5)) %>% 
+  pivot_longer(!c(kpi, month), names_to = "scenario", values_to = "value") %>% 
+  #filter(kpi == "gearing") %>% 
+  filter(month %in% seq(6, 240, by = 6)) %>% 
+  ggplot(aes(x = month, y = value, group = scenario)) +
+    geom_line(aes(linetype = scenario, colour = scenario)) + 
+    scale_colour_manual(values = c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")) +
+    facet_wrap(vars(kpi), scales = "free") + 
+    ggthemes::theme_base()
+
+colnames(z) <- paste(args$q_grow, args$debt_sens, args$oxcx_scenario, sep = ":")
+
+plot_dat <- lapply(res_scenario, gearing_fn)
+for (i in 1:length(plot_dat)) {
+  if (i == 1) plot(1:240, plot_dat[[i]], type = "l") else lines(1:240, plot_dat[[i]], col = "blue")
 }
+
+plot_dat1 <- t(do.call(rbind, plot_dat)) # 
+palette(c("black", "grey50", "grey30", "grey70", "#d9230f"))
+matplot(plot_dat1,
+  type = 'l', lwd = 0.5, lty = 1:5, col = 1:5,
+  xlab = 'Months', ylab = 'Gearing ratio', main = 'Gearing ratio'
+  )
+legend('topleft', lwd = 0.5, lty = 1:5, col = 1:5, legend = paste(args$q_grow, args$debt_sens, args$oxcx_scenario, sep = ":"), cex = 0.8, bty = "n")
+library(gridExtra)
+t <- tableGrob(args, theme=ttheme_minimal())

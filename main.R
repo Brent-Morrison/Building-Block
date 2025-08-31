@@ -50,28 +50,28 @@ chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
 txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
 rownames(txn_type) <- txn_type$txn_code
 
-# Capex and opex scenarios
-ps <- c("ps23","ps28","ps33","ps38")
+# Capex and opex scenarios.  These represent 
+ps <- c("ps23","ps28","ps33","ps38","ps43")
 
 cx_delta <- data.frame(
-  scnr1 = c(0,1061,1205,398), 
-  scnr2 = c(0,688,690,831),
-  scnr3 = c(0,980,533,1031),
-  scnr4 = c(0,1159,1110,551),
+  scnr1 = c(0,1061,1205,398,429), 
+  scnr2 = c(0,688,690,831,830),
+  scnr3 = c(0,980,533,1031,473),
+  scnr4 = c(0,1159,1110,551,629),
   row.names = ps
   )
 
 ox_delta <- data.frame(
-  scnr1 = c(0,0,34,140), 
-  scnr2 = c(0,0,28,55),
-  scnr3 = c(0,0,19,100),
-  scnr4 = c(0,0,34,148),
+  scnr1 = c(0,0,34,140,156), 
+  scnr2 = c(0,0,28,55,71),
+  scnr3 = c(0,0,19,100,131),
+  scnr4 = c(0,0,34,148,193),
   row.names = ps
 )
 
 
 # Function
-f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_scenario) { 
+f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmnl, fcast_infltn, roe, debt_sens, oxcx_scenario) { 
   
   # Args:
   #   dat            - a data frame containing the required regulatory data (TO DO - document this) 
@@ -80,6 +80,9 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_
   #   ox_delta       - a data frame containing multiple scenarios of incremental 5 year opex spend for price periods 2 to n
   #   txn_type       - a data frame specifying account posting for each transaction type
   #   q_grow         - the annual growth rate for all quantities
+  #   cost_of_debt_nmnl - nominal cost of debt (0.0456)
+  #   cast_infltn    - inflation (0.03)
+  #   roe            - allowed return on equity (0.041)
   #   debt_sens      - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
   #   oxcx_scenario  - the opex & capex scenario to be selected from ox_delta and cx_delta
   #
@@ -96,15 +99,12 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_
   initial_fcast_yr   <- 2024      # the first forecast year
   price_delta_yr     <- 0         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
                                   # price delta 2 comes into effect, a value of zero returns an equal price delta for each year 
-  single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of pdpar1) occurs
+  single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of price_delta_yr) occurs
   pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
-  cost_of_debt_nmnl  <- 0.0456    # nominal cost of debt
-  fcast_infltn       <- 0.03
-  gearing            <- 0.6
+  gearing            <- 0.6       # gearing assumption for WACC
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
-  roe                <- 0.041
   rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
-  cash_buffer        <- 10000
+  cash_buffer        <- 10000     # cash buffer for loan drawdown
   
   
   # Data --------------------------------------------------------------------------------------------
@@ -126,18 +126,14 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_
   rab_n_yrs <- ncol(c)
   
   yr_int <- as.integer(colnames(capex)[-c(1:3)])
-  yr_int
   
   year_operational <- suppressWarnings(as.integer(sub(".*-", "", capex$year_operational))+2000)
   year_operational[is.na(year_operational)] <- yr_int[1]
-  year_operational
   
   yr_op <- match(year_operational, yr_int)
-  yr_op
   
   #life <- ifelse(capex$regulatory_life == 0, 1, capex$regulatory_life)
   life <- capex$regulatory_life
-  life
   
   
   
@@ -273,7 +269,7 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_
     )
   
   # Quantities
-  q.t1 <- pq %>% filter(entity == ent_parm, year == 2023, balance_type == 'Quantity')  # Pivot wider here
+  q.t1 <- pq %>% filter(entity == ent_parm, year == initial_fcast_yr-1, balance_type == 'Quantity')  # Pivot wider here
   q <- as.matrix(q.t1[, "amount"])
   rownames(q) <- paste(q.t1[, "service"], q.t1[, "asset_category"], q.t1[, "cost_driver"], sep = ".")
   
@@ -606,23 +602,47 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, debt_sens, oxcx_
     mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
     
   }
-  return(list(txns = mat, rab = exist_rab_detail, price_delta = price_delta, prices = prices, rev_req = rev_req_df))
-}
+  
+  return(list(
+    txns         = mat, 
+    rab          = exist_rab_detail, 
+    price_delta  = price_delta, 
+    prices       = prices, 
+    rev_req      = rev_req_df, 
+    call         = list(cx_delta=cx_delta, ox_delta=ox_delta, q_grow=q_grow, 
+                        cost_of_debt_nmnl=cost_of_debt_nmnl, fcast_infltn=fcast_infltn, 
+                        roe=roe, debt_sens=debt_sens, oxcx_scenario=oxcx_scenario)
+    ))
 
-res_single <- list(f(dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, debt_sens=NULL, oxcx_scenario="scnr4"))
-res_mcs <- replicate(3, f(dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, q_grow=0.019, debt_sens=NULL, oxcx_scenario="scnr4"), simplify = FALSE)
-args <- expand.grid(q_grow = 0.019, debt_sens = c(-0.01,0,0.01), oxcx_scenario = c("scnr1","scnr4"))
+  }
+
+res_single <- list(f(
+  dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, 
+  q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens=NULL, oxcx_scenario="scnr4"))
+
+res_mcs <- replicate(
+  3, 
+  f(
+    dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, 
+    q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens=NULL, oxcx_scenario="scnr4"
+    ),
+  simplify = FALSE)
+
+args <- expand.grid(q_grow = 0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens = c(-0.01,0,0.01), oxcx_scenario = c("scnr1","scnr4"))
 res_scenario <- mapply(
-  FUN=f, 
-  dat=list(dat), 
-  chart=list(chart), 
-  cx_delta=list(cx_delta), 
-  ox_delta=list(ox_delta), 
-  txn_type=list(txn_type), 
-  q_grow=args$q_grow, #list(0.019), 
-  debt_sens=args$debt_sens, #list(-0.01,0,0.01), 
-  oxcx_scenario=args$oxcx_scenario, #list("scnr1","scnr4"),
-  SIMPLIFY = FALSE
+  FUN           = f, 
+  dat           = list(dat), 
+  chart         = list(chart), 
+  cx_delta      = list(cx_delta), 
+  ox_delta      = list(ox_delta), 
+  txn_type      = list(txn_type), 
+  q_grow        = args$q_grow,        #list(0.019), 
+  cost_of_debt_nmnl = args$cost_of_debt_nmnl, #list(0.0456), 
+  fcast_infltn  = args$fcast_infltn,  #list(0.03), 
+  roe           = args$roe,           #list(0.041), 
+  debt_sens     = args$debt_sens,     #list(-0.01,0,0.01), 
+  oxcx_scenario = args$oxcx_scenario, #list("scnr1","scnr4"),
+  SIMPLIFY      = FALSE
   )
 
 

@@ -108,6 +108,9 @@ depn_fun <- function(capex, yr_op, life) {
 
 
 
+
+
+
 # --------------------------------------------------------------------------------------------------------------------------
 # Depreciation of existing assets, estimation from depreciation charge
 # --------------------------------------------------------------------------------------------------------------------------
@@ -142,6 +145,9 @@ depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
 
 
 
+
+
+
 # --------------------------------------------------------------------------------------------------------------------------
 # Optimisation / price goal seek
 # --------------------------------------------------------------------------------------------------------------------------
@@ -161,7 +167,7 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
   #   pdyr     - an integer between 0 and 5 representing the year in which the second price delta (`theta[3]`) takes effect,
   #              a value of 0 applies the same delta evenly across all years (that of theta[2] when single = TRUE, else theta[3]). 
   #              A value of 1 sets both deltas equal.
-  #   single   - logical, if true the only price delta (that of the first price delta `theta[2`) is used
+  #   single   - logical, if true the only price delta (that of the first price delta `theta[2]`) is used
   #   rev_req  - numeric vector of length 5: revenue requirement over the 5-year regulatory period (in millions)
   #   p0       - numeric matrix (n * 1), initial prices 
   #   q        - numeric matrix (n * 5), quantities corresponding to each price and year
@@ -232,6 +238,7 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
 
 
 
+
 # --------------------------------------------------------------------------------------------------------------------------
 # ROU / lease schedule
 # --------------------------------------------------------------------------------------------------------------------------
@@ -272,6 +279,7 @@ rou_func <- function(lease_pay, periods, rate) {
 
 
 
+
 # --------------------------------------------------------------------------------------------------------------------------
 # Depreciation on opening RAB
 # --------------------------------------------------------------------------------------------------------------------------
@@ -294,6 +302,8 @@ depn_fun_opn <- function(open_rab_val, open_rab_rem) {
   
   return(depn)
 }
+
+
 
 
 
@@ -326,6 +336,10 @@ add_trend_season <- function(y, s, a, p) {
 }
 
 
+
+
+
+
 # --------------------------------------------------------------------------------------------------------------------------
 # Select DR's & Cr's
 # --------------------------------------------------------------------------------------------------------------------------
@@ -336,6 +350,9 @@ drcr <- function(txn, txn_df) {
 }
 
 #drcr(txn = "incm", txn_df = txn_type)
+
+
+
 
 
 
@@ -394,6 +411,9 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
 
 
 
+
+
+
 # --------------------------------------------------------------------------------------------------------------------------
 # Accounting numbers
 # --------------------------------------------------------------------------------------------------------------------------
@@ -419,6 +439,9 @@ acc_num <- function(x){
 
 #x <- c(-50000, 50000, -500, -49979, 48778, 1000, -41321, 0, .01)
 #acc_num(x)
+
+
+
 
 
 
@@ -482,3 +505,60 @@ slr_fun <- function(res, chart) {
 
 #res <- res_scenario[[1]]$txns
 #slr <- slr_fun(res, chart)
+
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Key performance indicators
+# --------------------------------------------------------------------------------------------------------------------------
+
+# ***Cash interest cover*** - Net operating cash flows before net interest and tax payments / Net interest payments
+cash_int_cover_fn <- function(m) {
+  mat <- m$txns
+  #g <- "^10|^11|^13|^15|^20|^235|^24"
+  #eb <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)  # ebitda_ttm
+  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)                          # operating cashflows
+  ip <- apply(mat, 3, function(x) sum(x["3000", "intp"]), simplify = TRUE)                                              # net_int_pay_ttm 
+  return( slide_sum(op_cf, before = 11) / slide_sum(ip, before = 11) )
+}  
+
+
+# ***Gearing ratio*** - Total debt (including finance leases) / Total assets
+gearing_fn <- function(m) {
+  mat <- m$txns
+  td <- apply(mat, 3, function(x) sum(x[c("4100","4500"), "clos"]), simplify = TRUE)              # total debt
+  ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)      # total assets
+  return( -td / ta )
+}
+
+
+# ***Internal financing ratio*** - Net operating cash flows less dividends / Net capital expenditure
+int_fin_ratio_fn <- function(m) {
+  mat <- m$txns
+  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1","intp")]), simplify = TRUE)   # operating cashflows
+  capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                           # capex
+  return( slide_sum(-op_cf, before = 11) / slide_sum(capex, before = 11) )
+}
+
+
+# ***Current ratio*** - Current assets / Current liabilities (excluding long-term employee provisions and revenue in advance)
+current_ratio_fn <- function(m) {
+  mat <- m$txns
+  g <- "^30|^31|^32|^33"
+  ca <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), "clos"]), simplify = TRUE)         # current assets
+  g <- "^40|^41|^43|^44"
+  cl <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), "clos"]), simplify = TRUE)         # current liabilities
+  return( ca / -cl )
+}
+
+
+# ***Return on assets***
+ret_on_asset_fn <- function(m) {
+  mat <- m$txns
+  ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)   # net income
+  ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)                                  # total assets
+  return( -slide_sum(ni, before = 11) / slide_mean(ta, before = 11) )
+}
