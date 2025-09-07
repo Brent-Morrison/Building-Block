@@ -1,90 +1,27 @@
-library(dplyr)
-library(tidyr)
-library(slider)
-library(ggplot2)
-library(lubridate)
-library(kableExtra)
-library(scales)
-
-# Sensitivity
-# - interest rates
-# - customer usage shortfall (kl_hhold_pa in price path vs actual) 
-# - inflation wedge (that in rrr and that in actual)
-# - flex percentage of income from fixed vs variable tariffs
-
-# Scenario
-# - Capex & resultant increase in baseline opex
-# - Usage delta impact on pumping costs and treatment costs 
-
-# Output / assessment
-# - As below
-# - Fund From Operations / Net debt (note FFO includes interest expense)
-# - Net debt / RAB
-# - Average residential pricing
-
-# Uniform monte carlo example
-value <- 3
-value + runif(20, min=-value/10, max=value/10)
-
-src <- "local"   # "local" / "remote"
-
-# Data sources
-if (src == "local") {
-  dat_src   <- "./data/price_subm_2023.csv"
-  ref_src   <- "./data/reference.csv"
-  funs_src  <- "funs.R"
-  chart_src   <- "./data/chart.csv"
-  txn_src     <- "./data/txn_type.csv"
-} else {
-  dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
-  ref_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/reference.csv"
-  funs_src  <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/funs.R"
-  chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
-  txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
-}
-
-dat      <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
-ref      <- read.csv(ref_src, fileEncoding="UTF-8-BOM")
-source(funs_src)
-chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
-txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
-rownames(txn_type) <- txn_type$txn_code
-
-# Capex and opex scenarios.  These represent 
-ps <- c("ps23","ps28","ps33","ps38","ps43")
-
-cx_delta <- data.frame(
-  scnr1 = c(0,1061,1205,398,429), 
-  scnr2 = c(0,688,690,831,830),
-  scnr3 = c(0,980,533,1031,473),
-  scnr4 = c(0,1159,1110,551,629),
-  row.names = ps
-  )
-
-ox_delta <- data.frame(
-  scnr1 = c(0,0,34,140,156), 
-  scnr2 = c(0,0,28,55,71),
-  scnr3 = c(0,0,19,100,131),
-  scnr4 = c(0,0,34,148,193),
-  row.names = ps
-)
-
-
 # Function
-f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmnl, fcast_infltn, roe, debt_sens, oxcx_scenario) { 
+f <- function(
+    dat=dat_df, chart=chart_df, txn_type=txn_df, cx_delta=cx_df, ox_delta=ox_df,  
+    q_grow            = 0.19, 
+    cost_of_debt_nmnl = 0.0456, 
+    fcast_infltn      = 0.03, 
+    roe               = 0.041, 
+    debt_sens         = NULL, 
+    oxcx_scenario     = "scnr1", 
+    verbose           = F
+    ) { 
   
   # Args:
-  #   dat            - a data frame containing the required regulatory data (TO DO - document this) 
-  #   chart          - a data frame representing the accounting chart of accounts
-  #   cx_delta       - a data frame containing multiple scenarios of 5 year capex spend for price periods 2 to n
-  #   ox_delta       - a data frame containing multiple scenarios of incremental 5 year opex spend for price periods 2 to n
-  #   txn_type       - a data frame specifying account posting for each transaction type
-  #   q_grow         - the annual growth rate for all quantities
+  #   dat               - a data frame containing the required regulatory data (TO DO - document this) 
+  #   chart             - a data frame representing the accounting chart of accounts
+  #   txn_type          - a data frame specifying account posting for each transaction type
+  #   cx_delta          - a data frame containing multiple scenarios of 5 year capex spend for price periods 2 to n
+  #   ox_delta          - a data frame containing multiple scenarios of incremental 5 year opex spend for price periods 2 to n
+  #   q_grow            - the annual growth rate for all quantities
   #   cost_of_debt_nmnl - nominal cost of debt (0.0456)
-  #   cast_infltn    - inflation (0.03)
-  #   roe            - allowed return on equity (0.041)
-  #   debt_sens      - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
-  #   oxcx_scenario  - the opex & capex scenario to be selected from ox_delta and cx_delta
+  #   cast_infltn       - inflation (0.03)
+  #   roe               - allowed return on equity (0.041)
+  #   debt_sens         - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
+  #   oxcx_scenario     - the opex & capex scenario to be selected from ox_delta and cx_delta
   #
   # Returns:
   #   list containing the following element, 
@@ -98,7 +35,7 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmn
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
   initial_fcast_yr   <- 2024      # the first forecast year
   price_delta_yr     <- 0         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
-                                  # price delta 2 comes into effect, a value of zero returns an equal price delta for each year 
+  # price delta 2 comes into effect, a value of zero returns an equal price delta for each year 
   single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of price_delta_yr) occurs
   pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
   gearing            <- 0.6       # gearing assumption for WACC
@@ -116,7 +53,7 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmn
     filter(entity == ent_parm, balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
     select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
-
+  
   # Append out year capex per "cx_delta" data frame
   capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * cx_delta["ps28", oxcx_scenario]
   capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * cx_delta["ps33", oxcx_scenario]
@@ -179,7 +116,7 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmn
   opex[opex$year == 2029:2033, "amount"] <- opex[opex$year == 2029:2033, "amount"] + opex[opex$year == 2029:2033, "amount"] / sum(opex[opex$year == 2029:2033, "amount"]) * ox_delta["ps28", oxcx_scenario]
   opex[opex$year == 2034:2038, "amount"] <- opex[opex$year == 2034:2038, "amount"] + opex[opex$year == 2034:2038, "amount"] / sum(opex[opex$year == 2034:2038, "amount"]) * ox_delta["ps33", oxcx_scenario]
   opex[opex$year == 2039:2043, "amount"] <- opex[opex$year == 2039:2043, "amount"] + opex[opex$year == 2039:2043, "amount"] / sum(opex[opex$year == 2039:2043, "amount"]) * ox_delta["ps38", oxcx_scenario]
-
+  
   
   # RAB schedule ------------------------------------------------------------------------------------
   # Capex
@@ -340,13 +277,15 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmn
   
   
   # Print outcome
-  cat(
-    #paste0("Price delta of ", round(price_delta[price_delta != 0] * 100, 2), " percent in year ", price_delta_yr),
-    paste0(c("ps23","ps28","ps33","ps38"), " revenue requirement of ", round(tapply(rev_req, rep(1:(length(rev_req)/5), each=5), sum), 2)),
-    paste0("NPV of revenue requirement less NPV of revenue (s/be nil) ", round(c1 - c2, 3)),
-    sep = "\n"
-  )
-  
+  if (verbose) {
+    cat(
+      #paste0("Price delta of ", round(price_delta[price_delta != 0] * 100, 2), " percent in year ", price_delta_yr),
+      paste0(c("ps23","ps28","ps33","ps38"), " revenue requirement of ", round(tapply(rev_req, rep(1:(length(rev_req)/5), each=5), sum), 2)),
+      paste0("NPV of revenue requirement less NPV of revenue (s/be nil) ", round(c1 - c2, 3)),
+      sep = "\n"
+    )
+  }
+    
   
   
   # -------------------------------------------------------------------------------------------------
@@ -529,7 +468,7 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmn
     # Expenses --------------------------------------------------------------------------------------
     t <- "exp1"
     mat[drcr(t, txn_type), t, i] <- c(exp1[i], -exp1[i])
-      
+    
     t <- "exp2"
     mat[drcr(t, txn_type), t, i] <- c(exp2[i], -exp2[i])
     
@@ -612,398 +551,6 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmn
     call         = list(cx_delta=cx_delta, ox_delta=ox_delta, q_grow=q_grow, 
                         cost_of_debt_nmnl=cost_of_debt_nmnl, fcast_infltn=fcast_infltn, 
                         roe=roe, debt_sens=debt_sens, oxcx_scenario=oxcx_scenario)
-    ))
-
-  }
-
-res_single <- list(f(
-  dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, 
-  q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens=NULL, oxcx_scenario="scnr4"))
-
-res_mcs <- replicate(
-  3, 
-  f(
-    dat=dat, chart=chart, cx_delta=cx_delta, ox_delta=ox_delta, txn_type=txn_type, 
-    q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens=NULL, oxcx_scenario="scnr4"
-    ),
-  simplify = FALSE)
-
-args <- expand.grid(q_grow = 0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens = c(-0.01,0,0.01), oxcx_scenario = c("scnr1","scnr4"))
-res_scenario <- mapply(
-  FUN           = f, 
-  dat           = list(dat), 
-  chart         = list(chart), 
-  cx_delta      = list(cx_delta), 
-  ox_delta      = list(ox_delta), 
-  txn_type      = list(txn_type), 
-  q_grow        = args$q_grow,                # list(0.019), 
-  cost_of_debt_nmnl = args$cost_of_debt_nmnl, # list(0.0456), 
-  fcast_infltn  = args$fcast_infltn,          # list(0.03), 
-  roe           = args$roe,                   # list(0.041), 
-  debt_sens     = args$debt_sens,             # list(-0.01,0,0.01), 
-  oxcx_scenario = args$oxcx_scenario,         # list("scnr1","scnr4"),
-  SIMPLIFY      = FALSE
-  )
-
-
-# Diagnostics
-#z <- data.frame(mat[ , , 5])
-#m1 <- mat[c("1000","2000","3000","3050","3100","3645","4000","4010","4020","4100"),c("open","aidb","incm","cshd","borr","exp1","crd1","cpx1","wipc","intp","borr","clos"), 24:26]
-#m1
-
-
-# Check balances
-#round(colSums(mat[,,6]), 3)
-
-
-
-
-# -------------------------------------------------------------------------------------------------
-# Accounting data (3d matrix to 2d data frame)
-# -------------------------------------------------------------------------------------------------
-
-# Check transactions sum to nil / extract profit
-#sum(mat[, !colnames(mat) %in% c("open", "clos"), 1:60])
-#sum(mat[as.integer(row.names(mat)) < 3000, !colnames(mat) %in% c("open", "clos"), 49:60])
-
-res <- res_scenario[[1]]
-slr <- slr_fun(res, chart)
-
-#slr2 <- lapply(res_scenario, FUN = slr_fun, chart)
-
-
-# Check SLR
-slr_check1 <- slr %>%
-  filter(txn != "open") %>%
-  group_by(mon) %>%
-  summarise(total = round(sum(mtd), 3))
-
-#write.csv(slr, file = "slr.csv")
-
-
-
-
-# -------------------------------------------------------------------------------------------------
-# Create trial balance 
-# -------------------------------------------------------------------------------------------------
-
-tb1 <- slr %>%
-  mutate(vals = if_else(act < 3000, ytd, ltd)) %>%
-  select(mon, act, account_desc, vals) %>%
-  pivot_wider(names_from = mon, values_from = vals, values_fn = sum, values_fill = 0)
-
-re <- slr %>%
-  filter(mon %in% (1:(max(as.numeric(mon))/12)*12), statement_type == 1) %>%
-  #filter(mon %in% c(12,24,36,48,60), statement_type == 1) %>%
-  group_by(mon) %>%
-  summarise(profit = sum(ytd))
-re
-
-# Add retained earnings
-tbmat <- as.matrix(tb1[, 3:ncol(tb1)])
-tbmat <- rbind(tbmat, rep(c(0, cumsum(re$profit)), each = 12)[1:(max(as.numeric(slr$mon)))])
-round(colSums(tbmat), 3)
-
-tb <- data.frame(tbmat)
-names(tb) <- 1:(max(as.numeric(slr$mon)))
-tb <- tb %>%
-  mutate(
-    act = c(tb1$act, 5201),
-    account_desc = c(tb1$account_desc, "Retained earnings - profit")
-  ) %>%
-  relocate(c("act", "account_desc"), .before = '1')
-
-rm(list=c("tb1","tbmat","re"))
-round(colSums(tb[, 3:ncol(tb)], 3))
-
-# Pretty number
-tb[ ,3:ncol(tb)] <- apply(tb[ ,3:ncol(tb)], 2, acc_num)
-
-
-
-
-# -------------------------------------------------------------------------------------------------
-# Financial indicators
-# -------------------------------------------------------------------------------------------------
-
-# https://www.audit.vic.gov.au/report/auditor-generals-report-annual-financial-report-state-victoria-2017-18?section=33061&show-sections=1#33059--appendix-f-water-sector-financial-sustainability-risk-indicators
-# Cash interest cover      - Net operating cash flows before net interest and tax payments / Net interest payments
-# Gearing ratio            - Total debt (including finance leases) / Total assets
-# Internal financing ratio - Net operating cash flows less dividends / Net capital expenditure
-# Current ratio            - Current assets / Current liabilities (excluding long-term employee provisions and revenue in advance)
-# Return on assets         - Earnings before net interest and tax / average assets
-# Return on equity         - Net profit after tax / average total equity
-# EBITDA margin            - Earnings before interest, tax, depreciation and amortisation / Total revenue
-
-
-monthly_indicators <- slr %>%
-  mutate(
-    net_income   = if_else(statement_type == 1, mtd, 0),
-    ebitda       = if_else(account_grp %in% c(100,110,130,150,200,210,235,240), mtd, 0),
-    net_int_pay  = if_else(act == 4020 & txn == "intp", mtd, 0),
-    curr_assets  = if_else(account_type == 30, ytd, 0),
-    total_assets = if_else(account_type %in% c(30,35), ytd, 0),
-    curr_liabs   = if_else(account_type == 40, ytd, 0),
-    total_debt   = if_else(act %in% c(4100,4500), ytd, 0),
-    cf_rec_cust  = if_else(cf_flag == "rec_cus" & txn != "open", ytd, 0),
-    cf_rec_oth   = if_else(cf_flag == "rec_oth" & txn != "open", ytd, 0),
-    cf_pay_sup   = if_else(cf_flag == "pay_sup" & txn != "open", ytd, 0),
-    cf_pay_int   = if_else(cf_flag == "pay_int" & txn != "open", ytd, 0),
-    cf_pay_ppe   = if_else(cf_flag == "pay_ppe" & txn != "open", ytd, 0)
-  ) %>%
-  group_by(yr, mon) %>%
-  summarise(
-    net_income   = round(sum(net_income), 0),
-    ebitda       = round(sum(ebitda), 0),
-    net_int_pay  = round(sum(net_int_pay), 0),
-    curr_assets  = round(sum(curr_assets), 0),
-    total_assets = round(sum(total_assets), 0),
-    curr_liabs   = round(sum(curr_liabs), 0),
-    total_debt   = round(sum(total_debt), 0),
-    cf_rec_cust  = round(sum(cf_rec_cust), 0),
-    cf_rec_oth   = round(sum(cf_rec_oth), 0),
-    cf_pay_sup   = round(sum(cf_pay_sup), 0),
-    cf_pay_int   = round(sum(cf_pay_int), 0),
-    cf_pay_ppe   = round(sum(cf_pay_ppe), 0)
-  ) %>%
-  ungroup() %>% 
-  mutate(
-    net_income_ttm   = slide_sum(net_income, before = 12),
-    total_assets_ttm = slide_mean(total_assets, before = 12),
-    ebitda_ttm       = slide_sum(ebitda, before = 12),
-    net_int_pay_ttm  = slide_sum(net_int_pay, before = 12),
-    cash_int_cover   = -ebitda_ttm / net_int_pay_ttm,
-    gearing          = -total_debt / total_assets,
-    int_fin_ratio    = -( cf_rec_cust + cf_rec_oth + cf_pay_sup ) / cf_pay_ppe,
-    current_ratio    = curr_assets / -curr_liabs,
-    ret_on_asset     = -net_income_ttm / total_assets_ttm
-    #ret_on_eqt     =
-    #ebitda_mgn     =
-    #average customer bill
-  ) 
-
-
-
-
-
-# ---------------------------------------------------------------------------------------------------------
-# Plots
-# ---------------------------------------------------------------------------------------------------------
-
-# Custom theme
-cust_theme1 <- theme_minimal() +
-  theme(
-    legend.title = element_blank(),
-    legend.position.inside = c(0.9,0.9),
-    legend.background = element_blank(),
-    legend.key = element_blank(),
-    plot.caption = element_text(size = 8, color = "grey55", face = 'italic'), 
-    axis.title.y = element_text(size = 8, color = "darkslategrey"),
-    axis.title.x = element_text(size = 8, color = "darkslategrey"),
-    axis.text.y = element_text(size = 8, color = "darkslategrey"),
-    axis.text.x = element_text(size = 8, color = "darkslategrey"),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-  )
-
-cust_theme2 <- theme_classic() +
-  theme(
-    legend.title = element_blank(),
-    legend.position.inside = c(0.9,0.9),
-    legend.background = element_blank(),
-    legend.key = element_blank(),
-    plot.caption = element_text(size = 8, color = "grey55", face = 'italic'), 
-    axis.title.y = element_text(size = 8, color = "darkslategrey"),
-    axis.title.x = element_text(size = 8, color = "darkslategrey"),
-    axis.text.y = element_text(size = 8, color = "darkslategrey"),
-    axis.text.x = element_text(size = 8, color = "darkslategrey"),
-    plot.background = element_blank(),
-    panel.grid.major = element_blank(),
-    panel.grid.minor = element_blank(),
-    panel.border = element_blank()
-  )
-
-
-# Plot
-monthly_indicators %>%
-  #filter(mon %in% (1:5*12)) %>% 
-  filter(mon %in% seq(3, max(slr$mon), by = 3)) %>% 
-  mutate(date = make_date(
-    yr+2022, 
-    if_else(mon > 12, mon-((yr-1)*12), mon), 
-    1)
-  ) %>% 
-  select(yr, mon, date, gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset) %>% 
-  pivot_longer(
-    cols = c(gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset),
-    names_to = 'indicator', 
-    values_to = 'value'
-  ) %>% 
-  ggplot(aes(x = date, y = value)) +
-  geom_line() +
-  facet_wrap(vars(indicator), scales = "free_y", ncol = 3) +
-  labs(x = '',
-       y = '',
-       title = 'Titles',
-       subtitle = 'Subtitle',
-       caption = 'Caption') +
-  #scale_y_continuous(breaks = seq(1,2,0.5)) +
-  scale_x_date(date_breaks = '1 year',
-               date_labels = '%Y') + 
-  cust_theme2
-
-
-
-# Financial statement tables (INCOME STATEMENT)
-inc1 <- bind_rows(
-    slr %>% # modelled / forward looking data
-      filter(
-        statement_type == 1,
-        mon %in% c(12, 24, 36, 48, 60)
-        ) %>% 
-      left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
-      group_by(mon, ref1, ref2) %>% 
-      summarise(amount = sum(ytd)) %>% 
-      ungroup()
-    , 
-    chart %>% # opening balances
-      filter(statement_type == 1) %>% 
-      left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
-      group_by(ref1, ref2) %>% 
-      summarise(amount = sum(cw_23)) %>% 
-      ungroup() %>% 
-      mutate(mon = 0) %>% 
-      select(mon, ref1, ref2, amount)
-  ) %>% 
-  filter(mon %in% c(0, 12, 24, 36, 48, 60)) %>% 
-  arrange(mon) %>% 
-  mutate(
-    mon = (mon / 12 ) + initial_fcast_yr - 1,
-    amount = round(amount, 0)
-  ) %>% 
-  pivot_wider(names_from = mon, values_from = amount) %>% 
-  arrange(ref2) %>% 
-  filter(!is.na(ref1))
+  ))
   
-# Total income
-tot1 <- data.table::transpose(data.frame(c(ref1 = "Total revenue from transactions", ref2 = 8, colSums(inc1[inc1$ref2 %in% 2:7, 3:8], na.rm = TRUE))))
-names(tot1) <- names(inc1)
-tot1[,2:8] <- as.numeric(tot1[,2:8])
-
-# Total expense
-tot2 <- data.table::transpose(data.frame(c(ref1 = "Total expenses from transactions", ref2 = 17, colSums(inc1[inc1$ref2 %in% 11:16, 3:8], na.rm = TRUE))))
-names(tot2) <- names(inc1)
-tot2[,2:8] <- as.numeric(tot2[,2:8])
-
-# Net result from transactions
-tot3 <- data.table::transpose(data.frame(c(ref1 = "Net result from transactions", ref2 = 18, colSums(inc1[inc1$ref2 %in% 2:17, 3:8], na.rm = TRUE))))
-names(tot3) <- names(inc1)
-tot3[,2:8] <- as.numeric(tot3[,2:8])
-
-# Net result
-tot4 <- data.table::transpose(data.frame(c(ref1 = "Net result", ref2 = 20, colSums(inc1[inc1$ref2 %in% 2:19, 3:8], na.rm = TRUE))))
-names(tot4) <- names(inc1)
-tot4[,2:8] <- as.numeric(tot4[,2:8])
-
-inc2 <- bind_rows(inc1, tot1, tot2, tot3, tot4) %>% 
-  arrange(ref2) 
-
-# Assign correct sign
-inc2[, 3:8] <- as.matrix(inc2[, 3:8]) * matrix(rep(c(rep(-1,7), rep(1,7), -1, -1, -1), 6), ncol = 6)   # , -1, rep(1,3)
-
-# Format as character
-nums <- as.matrix(inc2[, 3:8])
-nums[is.na(nums)] <- 0
-nums_new <- t(prettyNum(abs(nums), big.mark=','))
-#ifelse(nums >= 0, nums_new, paste0('(', nums_new, ')'))
-nums_new <- ifelse(nums >= 0, paste0(nums_new, ' '), paste0('(', nums_new, ')'))
-nums_new <- ifelse(nums == 0, "- ", nums_new) 
-nums_new
-inc2[, 3:8] <- nums_new
-inc2
-  
-# Add title rows
-inc3 <- inc2 %>% 
-  mutate(across(where(is.numeric), abs)) %>%
-  mutate(across(where(is.numeric), label_comma())) %>% 
-  mutate(across(everything(), \(x) replace_na(x, "- "))) %>% 
-  #mutate(across(3:8, \(x) replace(x, "0", "- "))) %>% 
-  add_row(ref1 = "Revenue from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 0) %>% 
-  add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 8) %>% 
-  add_row(ref1 = "Expenses from transactions", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 9) %>% 
-  add_row(ref1 = "x", ref2 = "",`2023` = "",`2024` = "",`2025` = "",`2026` = "",`2027` = "",`2028` = "", .after = 17)
-  
-inc3 %>% 
-  select(-ref2) %>% 
-  rename(" " = ref1) %>% 
-  kbl(
-    align = c("l",rep("r",6)),
-    caption = "Comprehensive operating statement"
-  ) %>% 
-  kable_classic(full_width = F, html_font = "Cambria") %>% 
-  column_spec(1,  width = "24em") %>%
-  column_spec(2:7,  width = "8em") %>% 
-  row_spec(1, bold = TRUE) %>%
-  row_spec(7, extra_css = "border-bottom: 1px solid") %>%
-  row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
-  row_spec(9, color = "white") %>%
-  row_spec(10, bold = TRUE) %>%
-  row_spec(16, extra_css = "border-bottom: 1px solid") %>% 
-  row_spec(17, bold = TRUE) %>% 
-  row_spec(18, color = "white", extra_css = "border-bottom: 1px solid") %>% 
-  row_spec(c(19,21), bold = TRUE)
-
-
-
-# Financial statement tables (BALANCE SHEET)
-bal1 <- bind_rows(
-  slr %>% # modelled / forward looking data
-    filter(
-      statement_type == 2,
-      mon %in% c(12, 24, 36, 48, 60)
-    ) %>% 
-    left_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
-    group_by(mon, ref1, ref2) %>% 
-    summarise(amount = sum(ytd)) %>% 
-    ungroup()
-  , 
-  chart %>% # opening balances
-    filter(statement_type == 2) %>% 
-    left_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
-    group_by(ref1, ref2) %>% 
-    summarise(amount = sum(cw_23)) %>% 
-    ungroup() %>% 
-    mutate(mon = 0) %>% 
-    select(mon, ref1, ref2, amount)
-  ,
-  slr %>% # modelled / forward looking data
-    filter(
-      statement_type == 2,
-      mon %in% c(12, 24, 36, 48, 60)
-    ) %>% 
-    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
-    group_by(mon, ref1, ref2) %>% 
-    summarise(amount = sum(ytd)) %>% 
-    ungroup()
-  , 
-  chart %>% # opening balances
-    filter(statement_type == 2) %>% 
-    left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
-    group_by(ref1, ref2) %>% 
-    summarise(amount = sum(cw_23)) %>% 
-    ungroup() %>% 
-    mutate(mon = 0) %>% 
-    select(mon, ref1, ref2, amount)
-) %>% 
-  filter(mon %in% c(0, 12, 24, 36, 48, 60)) %>% 
-  arrange(mon) %>% 
-  mutate(
-    mon = (mon / 12 ) + initial_fcast_yr - 1,
-    amount = round(amount, 0)
-  ) %>% 
-  filter(!is.na(ref1)) %>% 
-  pivot_wider(names_from = mon, values_from = amount) %>% 
-  arrange(ref2)
-  
-bal1[ ,3:8] <- apply(bal1[ ,3:8], 2, acc_num)
-bal1
+}

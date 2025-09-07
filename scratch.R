@@ -142,6 +142,7 @@ write.csv(z, "ni.csv")
 
 
 # Plot
+# https://mastering-shiny.org/scaling-packaging.html
 # https://plotly-r.com/improving-ggplotly
 # https://shiny.posit.co/r/gallery/application-layout/retirement-simulation/
 

@@ -562,3 +562,88 @@ ret_on_asset_fn <- function(m) {
   ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)                                  # total assets
   return( -slide_sum(ni, before = 11) / slide_mean(ta, before = 11) )
 }
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot function
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_kpi <- function(d) {
+  bind_rows(
+    data.frame( t(do.call(rbind, lapply(d, cash_int_cover_fn ))), kpi = "cash_int_cover" ),
+    data.frame( t(do.call(rbind, lapply(d, gearing_fn        ))), kpi = "gearing"),
+    data.frame( t(do.call(rbind, lapply(d, int_fin_ratio_fn  ))), kpi = "int_fin_ratio"),
+    data.frame( t(do.call(rbind, lapply(d, current_ratio_fn  ))), kpi = "current_ratio"),
+    data.frame( t(do.call(rbind, lapply(d, ret_on_asset_fn   ))), kpi = "ret_on_asset")
+  ) %>% 
+  mutate(month = rep(1:240, 5)) %>% 
+  pivot_longer(!c(kpi, month), names_to = "scenario", values_to = "value") %>% 
+  #filter(kpi == "gearing") %>% 
+  filter(month %in% seq(6, 240, by = 6)) %>% 
+  ggplot(aes(x = month, y = value, group = scenario)) +
+  geom_line(aes(linetype = scenario, colour = scenario)) + 
+  scale_colour_manual(values = c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")) +
+  facet_wrap(vars(kpi), scales = "free") + 
+  ggthemes::theme_base() +
+  theme(legend.position = "none")
+}
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Get data function
+# --------------------------------------------------------------------------------------------------------------------------
+
+get_data <- function(src = "local") {
+  
+  # Data sources
+  if (src == "local") {
+    dat_src   <- "./data/price_subm_2023.csv"
+    ref_src   <- "./data/reference.csv"
+    funs_src  <- "funs.R"
+    chart_src   <- "./data/chart.csv"
+    txn_src     <- "./data/txn_type.csv"
+  } else {
+    dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
+    ref_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/reference.csv"
+    funs_src  <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/funs.R"
+    chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
+    txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
+  }
+  
+  dat      <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
+  ref      <- read.csv(ref_src, fileEncoding="UTF-8-BOM")
+  chart    <- read.csv(chart_src, fileEncoding="UTF-8-BOM")
+  txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
+  rownames(txn_type) <- txn_type$txn_code
+  
+  # Capex and opex scenarios.  These represent 
+  ps <- c("ps23","ps28","ps33","ps38","ps43")
+  
+  cx_delta <- data.frame(
+    scnr1 = c(0,1061,1205,398,429), 
+    scnr2 = c(0,688,690,831,830),
+    scnr3 = c(0,980,533,1031,473),
+    scnr4 = c(0,1159,1110,551,629),
+    row.names = ps
+  )
+  
+  ox_delta <- data.frame(
+    scnr1 = c(0,0,34,140,156), 
+    scnr2 = c(0,0,28,55,71),
+    scnr3 = c(0,0,19,100,131),
+    scnr4 = c(0,0,34,148,193),
+    row.names = ps
+  )
+  
+  return(list(
+    dat          = dat, 
+    ref          = ref, 
+    chart        = chart, 
+    txn_type     = txn_type, 
+    cx_delta     = cx_delta, 
+    ox_delta     = ox_delta
+  ))
+}
