@@ -571,23 +571,42 @@ ret_on_asset_fn <- function(m) {
 # --------------------------------------------------------------------------------------------------------------------------
 
 plot_kpi <- function(d) {
+  
+  # Plot KPI's defined by individual functions
+  #
+  # Args:
+  #   d        - a list object returned from the function "f"
+  #
+  # Returns
+  #   a faceted plot of KPI's 
+  
+  mons <- dim(d[[1]]$txns)[3]
+  
   bind_rows(
-    data.frame( t(do.call(rbind, lapply(d, cash_int_cover_fn ))), kpi = "cash_int_cover" ),
-    data.frame( t(do.call(rbind, lapply(d, gearing_fn        ))), kpi = "gearing"),
-    data.frame( t(do.call(rbind, lapply(d, int_fin_ratio_fn  ))), kpi = "int_fin_ratio"),
-    data.frame( t(do.call(rbind, lapply(d, current_ratio_fn  ))), kpi = "current_ratio"),
-    data.frame( t(do.call(rbind, lapply(d, ret_on_asset_fn   ))), kpi = "ret_on_asset")
+    data.frame( t(do.call(rbind, lapply(d, cash_int_cover_fn ))), kpi = "Cash interest cover" ),
+    data.frame( t(do.call(rbind, lapply(d, gearing_fn        ))), kpi = "Gearing"),
+    data.frame( t(do.call(rbind, lapply(d, int_fin_ratio_fn  ))), kpi = "Internal financing ratio"),
+    data.frame( t(do.call(rbind, lapply(d, current_ratio_fn  ))), kpi = "Current ratio"),
+    data.frame( t(do.call(rbind, lapply(d, ret_on_asset_fn   ))), kpi = "Return on asset")
   ) %>% 
-  mutate(month = rep(1:240, 5)) %>% 
+  mutate(month = rep(1:mons, 5)) %>% 
   pivot_longer(!c(kpi, month), names_to = "scenario", values_to = "value") %>% 
   #filter(kpi == "gearing") %>% 
-  filter(month %in% seq(6, 240, by = 6)) %>% 
+  filter(month %in% seq(6, mons, by = 6)) %>% 
   ggplot(aes(x = month, y = value, group = scenario)) +
   geom_line(aes(linetype = scenario, colour = scenario)) + 
   scale_colour_manual(values = c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")) +
   facet_wrap(vars(kpi), scales = "free") + 
   ggthemes::theme_base() +
-  theme(legend.position = "none")
+  theme(
+    legend.position = "none",
+    panel.grid.major = element_line(
+      color      = "grey70",
+      linewidth  = 0.25,
+      linetype   = 2
+      ) 
+  ) +
+  labs(x = "", y = "")
 }
 
 

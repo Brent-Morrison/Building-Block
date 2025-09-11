@@ -46,7 +46,16 @@ renderInputs <- function(prefix) {
           max     = 0.07, 
           step    = 0.005, 
           value   = 0.025
-          )
+          ),
+        sliderInput(
+          inputId = paste0(prefix, "_", "roe"),
+          #inputId = "fcast_infltn", 
+          label   = "Allowable return on equity :", 
+          min     = 0.03, 
+          max     = 0.06, 
+          step    = 0.001, 
+          value   = 0.041
+        )
       ),
       column(
         6,
@@ -110,7 +119,7 @@ server <- function(input, output, session) {
        q_grow            = 0.19,
        cost_of_debt_nmnl = input$a_cost_of_debt_nmnl, 
        fcast_infltn      = input$a_fcast_infltn,
-       roe               = 0.041, 
+       roe               = input$a_roe, 
        debt_sens         = NULL, 
        oxcx_scenario     = input$a_oxcx_scenario,
        verbose           = F))
@@ -120,7 +129,7 @@ server <- function(input, output, session) {
        q_grow            = 0.19,
        cost_of_debt_nmnl = input$b_cost_of_debt_nmnl, 
        fcast_infltn      = input$b_fcast_infltn,
-       roe               = 0.041, 
+       roe               = input$b_roe, 
        debt_sens         = NULL, 
        oxcx_scenario     = input$b_oxcx_scenario,
        verbose           = F))

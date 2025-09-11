@@ -1,25 +1,31 @@
 # Building-Block
 
 ## Background
-The building block model (BBM) is a regulatory framework that ensures a firm earns a revenue stream with a present value equal to the present value of its expenditure stream[^1].
+The building block model (BBM) is a regulatory framework that ensures a firm earns a revenue stream with a present value 
+equal to the present value of its expenditure stream[^1].
 
-The Essential Services Commission (ESC) in Victoria regulates water businesses using the BBM to determine the maximum allowable revenue that a water utility can recover from customers through tariffs.
+The Essential Services Commission (ESC) in Victoria regulates water businesses using the BBM to determine the maximum 
+allowable revenue that a water utility can recover from customers through tariffs.
 
-In the context of Victorian water utilities, the BBM is a forward-looking cost-of-service framework that ensures that utilities can recover efficient costs of providing water and sewerage services (including a fair return on investment), while protecting customers from monopoly pricing.
+In the context of Victorian water utilities, the BBM is a forward-looking cost-of-service framework that ensures that 
+utilities can recover efficient costs of providing water and sewerage services (including a fair return on investment), 
+while protecting customers from monopoly pricing.
 
 ## Project
-This project prepares a regulatory financial model that implements the BBM and returns comprehensive financial projections, pricing schedules and key performance indicators.  
+This project prepares a regulatory financial model that implements the BBM and returns comprehensive financial projections, 
+pricing schedules and key performance indicators.  
 
-The model takes account of uncertainty performing Monte Carlo simulations and/or scenario analysis for numerous parameters (eg., interest rates, customer growth, capital expenditure).  
+The model enables scenario analysis across numerous parameters (eg., interest rates, customer growth, capital expenditure), 
+and can model uncertainty performing Monte Carlo simulations.  
 
 Modelling steps are as follows: 
 
 1. Load entity initial period financial statements 
-2. Process future capex and opex data with scenario adjustments
-3. Calculate asset depreciation schedules
-4. Builds a regulatory asset base (RAB) reconciliation
-5. Computes revenue requirements (return + opex + depreciation)
-6. Determines prices to match revenue requirements across 5-year periods
+2. Load forecast capex and opex data
+3. Calculate asset depreciation schedules (accounting and regulatory)
+4. Build a regulatory asset base (RAB) reconciliation
+5. Compute revenue requirements (return + opex + depreciation)
+6. Determine prices to match revenue requirements across 5-year periods
 7. Process non-regulated income and expenditure
 8. Return comprehensive financial projections, pricing schedules and KPI's
 
@@ -44,10 +50,34 @@ flowchart TD
     J -.-> L(Quantities)
 ```
 
-## Other uses
-While this project focuses on Victorian water utilities regulated by the ESC, the BBM is the standard regulatory framework used in many regulated infrastructure industries internationally. 
+## Features  
+### Scenario analysis  
 
-The table below (courtesy of ChatGPT), summarises application of the BBM across industries and jurisdictions.
+The following are inputs to the model:  
+
+- Annual capital and operating (capex & opex) expenditure
+- Interest rates and inflation
+- Allowable return on equity
+- Percentage of fixed versus variable residential tariff  
+
+### Sensitivity analysis  
+
+Designed to highlight impact of deviations in BBM inputs implicit in prices from that actually incurred.  
+
+- Deviation of water usage from that assumed in price submission / building block approach  
+- Deviation of incurred cost of debt from that assumed in price submission  
+- Deviation of incurred inflation for opex (wages, electricity & other) and capex from that assumed in price submission 
+
+Sensitivities are assessed over 5 scenarios (VH, H, M, L, VL).
+
+Opex is specified as a percentage deviation from baseline.  
+
+
+## Other uses
+While this project focuses on Victorian water utilities regulated by the ESC, the BBM is the standard regulatory framework 
+used in many regulated infrastructure industries internationally. 
+
+The table below (hat tip to ChatGPT) summarises application of the BBM across industries and jurisdictions.
 
 | **Jurisdiction / Sector**                   | **Regulator(s)**                                               | **Application of BBM**                                 | **Key Features / Differences**                                                                                                                                        |
 | ------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

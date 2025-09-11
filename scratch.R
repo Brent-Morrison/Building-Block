@@ -1,3 +1,61 @@
+# TB from matrix ----------------------------------------------------------------------------------
+m <- sim[[1]]$txns
+
+tb1 <- m[ , "clos", (1:20) * 12]
+round(colSums(tb1), 3)
+
+tb2 <- tb1
+for (i in 2:20) {
+  tb2[as.integer(row.names(tb1)) < 3000, i] <- tb1[as.integer(row.names(tb1)) < 3000, i] - tb1[as.integer(row.names(tb1)) < 3000, i-1]
+}
+round(colSums(tb2), 3)
+
+tb2["5200", ] <- tb2["5200", ] - colSums(tb2)
+
+round(colSums(tb2), 3)
+
+tb2_df <- as.data.frame(tb2)
+tb2_df$account_no <- as.numeric(rownames(tb2_df))
+
+tb <- tb2_df %>% 
+  left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
+  left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) 
+
+inc <- tb %>% 
+  group_by(ref1, ref2) %>% 
+  summarise(across(`12`:`240`, sum)) %>% 
+  arrange(ref2) %>% 
+  filter(!is.na(ref1)) %>% 
+  column_to_rownames(ref1)
+# reference row 888 in main.R
+
+ps <- c("ps23","ps28","ps33","ps38","ps43")
+cx_delta <- data.frame(
+  scnr1 = c(0,1061,1205,398,429), 
+  scnr2 = c(0,688,690,831,830),
+  scnr3 = c(0,980,533,1031,473),
+  scnr4 = c(0,1159,1110,551,629),
+  row.names = ps
+)
+
+cx_delta1 <- data.frame(
+  scnr1 = c(0,1061,1205,398,429,300), 
+  lett = c("a","b","c","d","e","f")
+)
+
+cx <- cx_delta %>% full_join(cx_delta1, by = join_by(scnr1 == scnr1))
+
+colSums(cx_delta)
+colSums(cx_delta[4:5,])
+colSums(cx_delta[c("ps38","ps43"),])
+
+
+
+
+
+
+
+
 library(tidyverse)
 
 # Capex data --------------------------------------------------------------------------------------

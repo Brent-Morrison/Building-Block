@@ -165,7 +165,7 @@ f <- function(dat, chart, cx_delta, ox_delta, txn_type, q_grow, cost_of_debt_nmn
   
   
   # Opex --------------------------------------------------------------------------------------------
-  # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages and other
+  # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity and other
   opex <- dat %>%
     filter(
       balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
@@ -666,7 +666,7 @@ res_scenario <- mapply(
 #sum(mat[, !colnames(mat) %in% c("open", "clos"), 1:60])
 #sum(mat[as.integer(row.names(mat)) < 3000, !colnames(mat) %in% c("open", "clos"), 49:60])
 
-res <- res_scenario[[1]]
+res <- sim[[1]]
 slr <- slr_fun(res, chart)
 
 #slr2 <- lapply(res_scenario, FUN = slr_fun, chart)

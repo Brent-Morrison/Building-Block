@@ -34,9 +34,9 @@ f <- function(
   # Parameters --------------------------------------------------------------------------------------
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
   initial_fcast_yr   <- 2024      # the first forecast year
-  price_delta_yr     <- 0         # for function npv_optim_func, an integer between 0 and 5 representing the year in which
-  # price delta 2 comes into effect, a value of zero returns an equal price delta for each year 
-  single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of price_delta_yr) occurs
+  price_delta_yr     <- 0         # for function npv_optim_func, parameter 'pdyr', an integer between 0 and 5 representing the year in which
+  # price delta 2 comes into effect, a value of zero returns an equal price delta for each year (refer to documentation for function 'npv_optim_func')
+  single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of the first price delta `theta[2]`) is used
   pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
   gearing            <- 0.6       # gearing assumption for WACC
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
@@ -102,7 +102,7 @@ f <- function(
   
   
   # Opex --------------------------------------------------------------------------------------------
-  # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages and other
+  # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity and other
   opex <- dat %>%
     filter(
       balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
