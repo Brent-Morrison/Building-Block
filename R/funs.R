@@ -567,7 +567,7 @@ ret_on_asset_fn <- function(m) {
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Plot function
+# Plot KPI function
 # --------------------------------------------------------------------------------------------------------------------------
 
 plot_kpi <- function(d) {
@@ -608,6 +608,112 @@ plot_kpi <- function(d) {
   ) +
   labs(x = "", y = "")
 }
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot financials function
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_fins <- function(d, chart, ref, sel) {
+  
+  # https://shiny.posit.co/r/components/inputs/select-multiple/
+  # https://stackoverflow.com/questions/39798042/r-shiny-how-to-use-multiple-inputs-from-selectinput-to-pass-onto-select-optio
+  
+  # Plot financial statements using kableextra
+  #
+  # Args:
+  #   d        - a list object returned from the function "f"
+  #
+  # Returns
+  #   a table formated P&L and B/S
+  
+  m <- d[[1]]$txns
+  #d     <- get_data()
+  #chart <- d$chart
+  #ref   <- d$ref
+  tb1   <- m[ , "clos", (1:20) * 12]
+  round(colSums(tb1), 3)
+  
+  # Year to date P&L
+  tb2 <- tb1
+  for (i in 2:20) {
+    tb2[as.integer(row.names(tb1)) < 3000, i] <- tb1[as.integer(row.names(tb1)) < 3000, i] - tb1[as.integer(row.names(tb1)) < 3000, i-1]
+  }
+  round(colSums(tb2), 3)
+  
+  # Roll P&L to retained earnings
+  tb2["5200", ] <- tb2["5200", ] - colSums(tb2)
+  
+  round(colSums(tb2), 3)
+  
+  tb2_df <- as.data.frame(tb2)
+  tb2_df$account_no <- as.numeric(rownames(tb2_df))
+  
+  # tb <- tb2_df %>% 
+  #   left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
+  #   full_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
+  #   full_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) 
+  
+  inc <- tb2_df %>% 
+    left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
+    full_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
+    group_by(ref1, ref2) %>% 
+    summarise(across(`12`:`240`, sum)) %>% 
+    arrange(ref2) %>% 
+    filter(!is.na(ref1)) 
+  
+  bal <- tb2_df %>% 
+    left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
+    full_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
+    group_by(ref1, ref2) %>% 
+    summarise(across(`12`:`240`, sum)) %>% 
+    arrange(ref2) %>% 
+    filter(!is.na(ref1)) 
+  
+  rep <- as.data.frame(bind_rows(inc, bal) %>% 
+                         arrange(ref2)) %>% 
+    mutate(ref2 = as.character(ref2))
+  
+  # Insert totals and remove NA's
+  rep[rep$ref2 == 8, 3:22] <- colSums(rep[rep$ref2 %in% 2:7, 3:22])        # Total revenue from transactions
+  rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22])     # Total expenses from transactions
+  rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22])   # Net result from operating transactions
+  rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22])  # Net result from transactions
+  rep[rep$ref2 == 27, 3:22] <- colSums(rep[rep$ref2 %in% c(25,26), 3:22])  # Total assets
+  rep[rep$ref2 == 35, 3:22] <- colSums(rep[rep$ref2 %in% c(33,34), 3:22])  # Total liabilities
+  
+  
+  
+  # Format numbers
+  rep[ ,3:22] <- apply(rep[ ,3:22], 2, acc_num)
+  rep[is.na(rep)] <- ""
+  #rep[] <- lapply(rep, gsub, pattern = is.na, replacement = "xx", fixed = TRUE)
+  #rep <- rep %>% mutate(across(everything(), \(x) gsub("NA", " ", x)))
+  #rep <- gsub("NA", " ", rep)
+  #rep <- data.frame(lapply(rep, function(x) gsub("NA", " ", x)))
+  
+  colnames(rep) <- c("ref1","ref2",paste("FY", as.numeric(colnames(rep[3:22])) / 12 + 2024 - 1, sep = ""))
+  
+  rep %>% 
+    select(-ref2) %>% 
+    select(c(ref1, all_of(sel))) %>%  # c("ref1","FY2030","FY2035")  c(ref1, all_of(sel))
+    rename(" " = ref1) %>% 
+    kbl(
+      #caption = "Comprehensive operating statement",
+      align = c("l",rep("r", 5))
+    ) %>% 
+    kable_classic(full_width = F, html_font = "Cambria") %>% 
+    column_spec(1,  width = "25em") %>%
+    column_spec(2:5,  width = "8em") %>% 
+    row_spec(c(1,8,10,17,19,22,24,27,32,35), bold = TRUE) %>%
+    row_spec(c(28,29,30,36,37), italic = TRUE) %>%
+    row_spec(c(7,16,19,26,34), extra_css = "border-bottom: 1px solid") %>%
+    row_spec(22, extra_css = "border-bottom: 2px solid") %>%
+    #row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
+    row_spec(which(rep$ref1 == "blank"), color = "white") 
+}
+
 
 
 

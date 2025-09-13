@@ -941,7 +941,7 @@ inc3 %>%
     caption = "Comprehensive operating statement"
   ) %>% 
   kable_classic(full_width = F, html_font = "Cambria") %>% 
-  column_spec(1,  width = "24em") %>%
+  column_spec(1,  width = "30em") %>%
   column_spec(2:7,  width = "8em") %>% 
   row_spec(1, bold = TRUE) %>%
   row_spec(7, extra_css = "border-bottom: 1px solid") %>%

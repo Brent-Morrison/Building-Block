@@ -1,29 +1,45 @@
 ﻿ref_type,lookup1,ref1,ref2
+account_grp,999,Revenue from transactions,1
 account_grp,100,Service charges,2
 account_grp,110,Usage charges,3
+account_grp,150,Government funding,4
 account_grp,120,Contributions & gifted assets,5
 account_grp,130,Contributions & gifted assets,5
-account_grp,150,Government funding,4
 account_grp,160,Interest income,6
 account_grp,140,Other income,7
+account_grp,170,Other income,7
+account_grp,999,Total revenue from transactions,8
+account_grp,999,blank,9
+account_grp,999,Expenses from transactions,10
 account_grp,200,Operating and administration expenses,11
 account_grp,210,Employee benefits,12
 account_grp,270,Expenditure of government funding,13
-account_grp,220,Depreciation,15
 account_grp,230,Finance costs,14
+account_grp,220,Depreciation,15
 account_grp,240,Environmental contribution,16
-account_grp,260,Other economic flows,19
-account_grp,280,Other economic flows,19
-account_grp,290,Other economic flows,19
-statement_type,1,Net Result,22
-account_type,30,Total current assets,23
-account_type,35,Total non-current assets,24
-account_grp,300,of which Cash,26
-account_grp,310,of which Receivables and contract assets,27
-account_grp,335,of which Infrastructure assets,29
-account_grp,340,of which Infrastructure assets,29
-account_grp,350,of which Infrastructure assets,29
-account_type,40,Total current liabilities,30
-account_type,45,Total non-current liabilities,31
-account_grp,400,of which Payables,32
-account_grp,450,of which Interest bearing,33
+account_grp,999,Total expenses from transactions,17
+account_grp,999,blank,18
+account_grp,999,Net result from operating transactions,19
+account_grp,999,blank,20
+account_grp,260,Other economic flows,21
+account_grp,280,Other economic flows,21
+account_grp,290,Other economic flows,21
+account_grp,999,Net result from transactions,22
+account_grp,999,blank,23
+account_grp,999,Assets,24
+account_grp,300,of which Cash,28
+account_grp,310,of which Receivables and contract assets,29
+account_grp,335,of which Infrastructure assets,30
+account_grp,340,of which Infrastructure assets,30
+account_grp,350,of which Infrastructure assets,30
+account_grp,400,of which Payables,36
+account_grp,450,of which Interest bearing,37
+account_type,30,Total current assets,25
+account_type,35,Total non-current assets,26
+account_type,99,Total assets,27
+account_type,99,blank,31
+account_type,99,Liabilities,32
+account_type,40,Total current liabilities,33
+account_type,45,Total non-current liabilities,34
+account_type,99,Total liabilities,35
+statement_type,1,Net Result,24

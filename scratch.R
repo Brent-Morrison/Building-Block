@@ -1,15 +1,19 @@
 # TB from matrix ----------------------------------------------------------------------------------
 m <- sim[[1]]$txns
-
-tb1 <- m[ , "clos", (1:20) * 12]
+d     <- get_data()
+chart <- d$chart
+ref   <- d$ref
+tb1   <- m[ , "clos", (1:20) * 12]
 round(colSums(tb1), 3)
 
+# Year to date P&L
 tb2 <- tb1
 for (i in 2:20) {
   tb2[as.integer(row.names(tb1)) < 3000, i] <- tb1[as.integer(row.names(tb1)) < 3000, i] - tb1[as.integer(row.names(tb1)) < 3000, i-1]
 }
 round(colSums(tb2), 3)
 
+# Roll P&L to retained earnings
 tb2["5200", ] <- tb2["5200", ] - colSums(tb2)
 
 round(colSums(tb2), 3)
@@ -17,42 +21,84 @@ round(colSums(tb2), 3)
 tb2_df <- as.data.frame(tb2)
 tb2_df$account_no <- as.numeric(rownames(tb2_df))
 
-tb <- tb2_df %>% 
-  left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
-  left_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) 
+# tb <- tb2_df %>% 
+#   left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
+#   full_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
+#   full_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) 
 
-inc <- tb %>% 
+inc <- tb2_df %>% 
+  left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
+  full_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
   group_by(ref1, ref2) %>% 
   summarise(across(`12`:`240`, sum)) %>% 
   arrange(ref2) %>% 
-  filter(!is.na(ref1)) %>% 
-  column_to_rownames(ref1)
-# reference row 888 in main.R
+  filter(!is.na(ref1)) 
 
-ps <- c("ps23","ps28","ps33","ps38","ps43")
-cx_delta <- data.frame(
-  scnr1 = c(0,1061,1205,398,429), 
-  scnr2 = c(0,688,690,831,830),
-  scnr3 = c(0,980,533,1031,473),
-  scnr4 = c(0,1159,1110,551,629),
-  row.names = ps
-)
+bal <- tb2_df %>% 
+  left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
+  full_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
+  group_by(ref1, ref2) %>% 
+  summarise(across(`12`:`240`, sum)) %>% 
+  arrange(ref2) %>% 
+  filter(!is.na(ref1)) 
 
-cx_delta1 <- data.frame(
-  scnr1 = c(0,1061,1205,398,429,300), 
-  lett = c("a","b","c","d","e","f")
-)
+rep <- as.data.frame(bind_rows(inc, bal) %>% 
+  arrange(ref2)) %>% 
+  mutate(ref2 = as.character(ref2))
 
-cx <- cx_delta %>% full_join(cx_delta1, by = join_by(scnr1 == scnr1))
-
-colSums(cx_delta)
-colSums(cx_delta[4:5,])
-colSums(cx_delta[c("ps38","ps43"),])
+# Insert totals and remove NA's
+rep[rep$ref2 == 8, 3:22] <- colSums(rep[rep$ref2 %in% 2:7, 3:22])        # Total revenue from transactions
+rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22])     # Total expenses from transactions
+rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22])   # Net result from operating transactions
+rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22])  # Net result from transactions
+rep[rep$ref2 == 27, 3:22] <- colSums(rep[rep$ref2 %in% c(25,26), 3:22])  # Total assets
+rep[rep$ref2 == 35, 3:22] <- colSums(rep[rep$ref2 %in% c(33,34), 3:22])  # Total liabilities
 
 
 
+# Format numbers
+rep[ ,3:22] <- apply(rep[ ,3:22], 2, acc_num)
+rep[is.na(rep)] <- ""
+#rep[] <- lapply(rep, gsub, pattern = is.na, replacement = "xx", fixed = TRUE)
+#rep <- rep %>% mutate(across(everything(), \(x) gsub("NA", " ", x)))
+#rep <- gsub("NA", " ", rep)
+#rep <- data.frame(lapply(rep, function(x) gsub("NA", " ", x)))
+
+colnames(rep) <- c("ref1","ref2",paste("FY", as.numeric(colnames(rep[3:22])) / 12 + 2024 - 1, sep = ""))
+
+rep %>% 
+  select(-ref2) %>% 
+  select(1:6) %>% 
+  rename(" " = ref1) %>% 
+  kbl(
+    #caption = "Comprehensive operating statement",
+    align = c("l",rep("r", 5))
+  ) %>% 
+  kable_classic(full_width = F, html_font = "Cambria") %>% 
+  column_spec(1,  width = "25em") %>%
+  column_spec(2:5,  width = "8em") %>% 
+  row_spec(c(1,8,10,17,19,22,24,27,32,35), bold = TRUE) %>%
+  row_spec(c(28,29,30,36,37), italic = TRUE) %>%
+  row_spec(c(7,16,19,26,34), extra_css = "border-bottom: 1px solid") %>%
+  row_spec(22, extra_css = "border-bottom: 2px solid") %>%
+  #row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
+  row_spec(which(rep$ref1 == "blank"), color = "white") 
+  
 
 
+
+
+
+
+
+
+
+
+
+zf <- function(df, sel) {
+  select(df, c(oxcx_scenario, all_of(sel)))
+}
+zf(args, c("q_grow","roe"))
 
 
 
