@@ -26,20 +26,21 @@ account_grp,280,Other economic flows,21
 account_grp,290,Other economic flows,21
 account_grp,999,Net result from transactions,22
 account_grp,999,blank,23
-account_grp,999,Assets,24
-account_grp,300,of which Cash,28
-account_grp,310,of which Receivables and contract assets,29
-account_grp,335,of which Infrastructure assets,30
-account_grp,340,of which Infrastructure assets,30
-account_grp,350,of which Infrastructure assets,30
-account_grp,400,of which Payables,36
-account_grp,450,of which Interest bearing,37
-account_type,30,Total current assets,25
-account_type,35,Total non-current assets,26
-account_type,99,Total assets,27
-account_type,99,blank,31
-account_type,99,Liabilities,32
-account_type,40,Total current liabilities,33
-account_type,45,Total non-current liabilities,34
-account_type,99,Total liabilities,35
-statement_type,1,Net Result,24
+account_grp,999,blank,24
+account_grp,999,Assets,25
+account_grp,300,of which Cash,29
+account_grp,310,of which Receivables and contract assets,30
+account_grp,335,of which Infrastructure assets,31
+account_grp,340,of which Infrastructure assets,31
+account_grp,350,of which Infrastructure assets,31
+account_grp,400,of which Payables,37
+account_grp,450,of which Interest bearing,38
+account_type,30,Total current assets,26
+account_type,35,Total non-current assets,27
+account_type,99,Total assets,28
+account_type,99,blank,32
+account_type,99,Liabilities,33
+account_type,40,Total current liabilities,34
+account_type,45,Total non-current liabilities,35
+account_type,99,Total liabilities,36
+statement_type,1,Net Result,25

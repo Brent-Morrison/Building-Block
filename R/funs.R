@@ -570,7 +570,7 @@ ret_on_asset_fn <- function(m) {
 # Plot KPI function
 # --------------------------------------------------------------------------------------------------------------------------
 
-plot_kpi <- function(d) {
+plot_kpi <- function(d, initial_fcast_yr) {
   
   # Plot KPI's defined by individual functions
   #
@@ -583,17 +583,20 @@ plot_kpi <- function(d) {
   mons <- dim(d[[1]]$txns)[3]
   
   bind_rows(
-    data.frame( t(do.call(rbind, lapply(d, cash_int_cover_fn ))), kpi = "Cash interest cover" ),
-    data.frame( t(do.call(rbind, lapply(d, gearing_fn        ))), kpi = "Gearing"),
-    data.frame( t(do.call(rbind, lapply(d, int_fin_ratio_fn  ))), kpi = "Internal financing ratio"),
-    data.frame( t(do.call(rbind, lapply(d, current_ratio_fn  ))), kpi = "Current ratio"),
-    data.frame( t(do.call(rbind, lapply(d, ret_on_asset_fn   ))), kpi = "Return on asset")
+    data.frame( X = t(do.call(rbind, lapply(d, cash_int_cover_fn ))), kpi = "Cash interest cover" ),
+    data.frame( X = t(do.call(rbind, lapply(d, gearing_fn        ))), kpi = "Gearing"),
+    data.frame( X = t(do.call(rbind, lapply(d, int_fin_ratio_fn  ))), kpi = "Internal financing ratio"),
+    data.frame( X = t(do.call(rbind, lapply(d, current_ratio_fn  ))), kpi = "Current ratio"),
+    data.frame( X = t(do.call(rbind, lapply(d, ret_on_asset_fn   ))), kpi = "Return on asset")
   ) %>% 
-  mutate(month = rep(1:mons, 5)) %>% 
-  pivot_longer(!c(kpi, month), names_to = "scenario", values_to = "value") %>% 
-  #filter(kpi == "gearing") %>% 
-  filter(month %in% seq(6, mons, by = 6)) %>% 
-  ggplot(aes(x = month, y = value, group = scenario)) +
+  mutate(
+    #month = rep(1:mons, 5), 
+    month_end = rep(seq(as.Date(paste(initial_fcast_yr-1,"07","31", sep = "-")) + 1, by = "month", length.out = mons) - 1, 5)
+  ) %>% 
+  pivot_longer(!c(kpi, month_end), names_to = "scenario", values_to = "value") %>% 
+  filter(value != Inf) %>% 
+  filter(month(month_end) %in% seq(6, mons, by = 6)) %>% 
+  ggplot(aes(x = month_end, y = value, group = scenario)) +
   geom_line(aes(linetype = scenario, colour = scenario)) + 
   scale_colour_manual(values = c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")) +
   facet_wrap(vars(kpi), scales = "free") + 
@@ -615,6 +618,49 @@ plot_kpi <- function(d) {
 # Plot financials function
 # --------------------------------------------------------------------------------------------------------------------------
 
+tb <- function(d, chart, ref) {
+  
+  # https://shiny.posit.co/r/components/inputs/select-multiple/
+  # https://stackoverflow.com/questions/39798042/r-shiny-how-to-use-multiple-inputs-from-selectinput-to-pass-onto-select-optio
+  
+  # Create a trial balance
+  #
+  # Args:
+  #   d        - a list object returned from the function "f"
+  #
+  # Returns
+  #   a dataframe containined the yearly trial balance
+  
+  m <- d[[1]]$txns
+  #d     <- get_data()
+  #chart <- d$chart
+  #ref   <- d$ref
+  tb1   <- m[ , "clos", (1:20) * 12] / 1000
+  round(colSums(tb1), 3)
+  
+  # Year to date P&L
+  tb2 <- tb1
+  for (i in 2:20) {
+    tb2[as.integer(row.names(tb1)) < 3000, i] <- tb1[as.integer(row.names(tb1)) < 3000, i] - tb1[as.integer(row.names(tb1)) < 3000, i-1]
+  }
+  round(colSums(tb2), 3)
+  
+  # Roll P&L to retained earnings
+  tb2["5200", ] <- tb2["5200", ] - colSums(tb2)
+  
+  round(colSums(tb2), 3)
+  
+  tb2_df <- as.data.frame(tb2)
+  tb2_df$account_no <- as.numeric(rownames(tb2_df))
+  return(tb2_df)
+}
+  
+  
+  
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot financials function
+# --------------------------------------------------------------------------------------------------------------------------
+
 plot_fins <- function(d, chart, ref, sel) {
   
   # https://shiny.posit.co/r/components/inputs/select-multiple/
@@ -632,7 +678,7 @@ plot_fins <- function(d, chart, ref, sel) {
   #d     <- get_data()
   #chart <- d$chart
   #ref   <- d$ref
-  tb1   <- m[ , "clos", (1:20) * 12]
+  tb1   <- m[ , "clos", (1:20) * 12] / 1000
   round(colSums(tb1), 3)
   
   # Year to date P&L
@@ -650,11 +696,7 @@ plot_fins <- function(d, chart, ref, sel) {
   tb2_df <- as.data.frame(tb2)
   tb2_df$account_no <- as.numeric(rownames(tb2_df))
   
-  # tb <- tb2_df %>% 
-  #   left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
-  #   full_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
-  #   full_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) 
-  
+  # Income statement data
   inc <- tb2_df %>% 
     left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
     full_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
@@ -663,6 +705,7 @@ plot_fins <- function(d, chart, ref, sel) {
     arrange(ref2) %>% 
     filter(!is.na(ref1)) 
   
+  # Balance sheet data
   bal <- tb2_df %>% 
     left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
     full_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
@@ -671,47 +714,47 @@ plot_fins <- function(d, chart, ref, sel) {
     arrange(ref2) %>% 
     filter(!is.na(ref1)) 
   
+  # Join Income statement and Balance sheet
   rep <- as.data.frame(bind_rows(inc, bal) %>% 
-                         arrange(ref2)) %>% 
+    arrange(ref2)) %>% 
     mutate(ref2 = as.character(ref2))
   
   # Insert totals and remove NA's
-  rep[rep$ref2 == 8, 3:22] <- colSums(rep[rep$ref2 %in% 2:7, 3:22])        # Total revenue from transactions
+  rep[rep$ref2 == 8, 3:22]  <- colSums(rep[rep$ref2 %in% 2:7, 3:22])       # Total revenue from transactions
   rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22])     # Total expenses from transactions
   rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22])   # Net result from operating transactions
   rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22])  # Net result from transactions
-  rep[rep$ref2 == 27, 3:22] <- colSums(rep[rep$ref2 %in% c(25,26), 3:22])  # Total assets
-  rep[rep$ref2 == 35, 3:22] <- colSums(rep[rep$ref2 %in% c(33,34), 3:22])  # Total liabilities
+  rep[rep$ref2 == 28, 3:22] <- colSums(rep[rep$ref2 %in% c(26,27), 3:22])  # Total assets
+  rep[rep$ref2 == 36, 3:22] <- colSums(rep[rep$ref2 %in% c(34,35), 3:22])  # Total liabilities
   
   
   
   # Format numbers
   rep[ ,3:22] <- apply(rep[ ,3:22], 2, acc_num)
   rep[is.na(rep)] <- ""
-  #rep[] <- lapply(rep, gsub, pattern = is.na, replacement = "xx", fixed = TRUE)
-  #rep <- rep %>% mutate(across(everything(), \(x) gsub("NA", " ", x)))
-  #rep <- gsub("NA", " ", rep)
-  #rep <- data.frame(lapply(rep, function(x) gsub("NA", " ", x)))
   
+  # Rename columns to financial year label
   colnames(rep) <- c("ref1","ref2",paste("FY", as.numeric(colnames(rep[3:22])) / 12 + 2024 - 1, sep = ""))
   
   rep %>% 
     select(-ref2) %>% 
-    select(c(ref1, all_of(sel))) %>%  # c("ref1","FY2030","FY2035")  c(ref1, all_of(sel))
+    select(c(ref1, all_of(sel))) %>%
     rename(" " = ref1) %>% 
     kbl(
       #caption = "Comprehensive operating statement",
-      align = c("l",rep("r", 5))
+      align = c("l", rep("r", length(all_of(sel))))  # TO DO - this needs to be dynamic
     ) %>% 
     kable_classic(full_width = F, html_font = "Cambria") %>% 
-    column_spec(1,  width = "25em") %>%
-    column_spec(2:5,  width = "8em") %>% 
-    row_spec(c(1,8,10,17,19,22,24,27,32,35), bold = TRUE) %>%
-    row_spec(c(28,29,30,36,37), italic = TRUE) %>%
-    row_spec(c(7,16,19,26,34), extra_css = "border-bottom: 1px solid") %>%
-    row_spec(22, extra_css = "border-bottom: 2px solid") %>%
+    column_spec(1, width = "25em") %>%
+    column_spec(2:(1+length(all_of(sel))), width = "8em") %>% 
+    row_spec(c(1,8,10,17,19,22,25,28,33,36), bold = TRUE) %>%
+    row_spec(c(29,30,31,37,38), italic = TRUE) %>%
+    row_spec(c(7,16,19,27,35), extra_css = "border-bottom: 1px solid") %>%
+    row_spec(c(22,38), extra_css = "border-bottom: 2px solid") %>%
     #row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
     row_spec(which(rep$ref1 == "blank"), color = "white") 
+  
+  #return(list(tbl = rep, tb = tb2_df))
 }
 
 

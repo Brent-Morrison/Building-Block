@@ -20,7 +20,7 @@ cx_df     <- d$cx_delta
 ox_df     <- d$ox_delta
 
 
-#args <- expand.grid(q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens = c(-0.01,0,0.01), oxcx_scenario = c("scnr1","scnr4"))
+#args <- expand.grid(q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens = 0, oxcx_scenario = c("scnr1","scnr4"))
 args <- expand.grid(q_grow = 0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens = 0, oxcx_scenario = "scnr1")
 
 sim <- mapply(

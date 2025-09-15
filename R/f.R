@@ -33,8 +33,8 @@ f <- function(
   
   # Parameters --------------------------------------------------------------------------------------
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
-  initial_fcast_yr   <- 2024      # the first forecast year
-  price_delta_yr     <- 0         # for function npv_optim_func, parameter 'pdyr', an integer between 0 and 5 representing the year in which
+  initial_fcast_yr   <- 2024      # the first forecast year (first financial year of the price submission)
+  price_delta_yr     <- 1         # for function npv_optim_func, parameter 'pdyr', an integer between 0 and 5 representing the year in which
   # price delta 2 comes into effect, a value of zero returns an equal price delta for each year (refer to documentation for function 'npv_optim_func')
   single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of the first price delta `theta[2]`) is used
   pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
@@ -296,7 +296,7 @@ f <- function(
   mons          <- rab_n_yrs * 12  # months to forecast
   open_bals_col <- "cw_23"         # column in the 'chart.csv' file representing the entities data
   infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
-  month_end     <- seq(as.Date("2024-01-31") + 1, by = "month", length.out = mons) - 1
+  month_end     <- seq(as.Date(paste(initial_fcast_yr-1,"07","31", sep = "-")) + 1, by = "month", length.out = mons) - 1
   days          <- as.numeric(format(month_end, "%d"))
   accrued_days  <- 60
   debtors_days  <- 45
@@ -307,7 +307,7 @@ f <- function(
   # Matrix ------------------------------------------------------------------------------------------
   mon <- 1:mons   # Number of months
   txn <- unlist(txn_type[,"txn_code"], use.names = FALSE)  # Transaction types
-  act <- unlist(chart[,"account_no"], use.names = FALSE)  # GL accounts
+  act <- unlist(chart[,"account_no"], use.names = FALSE)   # GL accounts
   
   
   # Create matrix and assign names 

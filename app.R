@@ -21,7 +21,7 @@ ref_df    <- d$ref
 txn_df    <- d$txn_type
 cx_df     <- d$cx_delta 
 ox_df     <- d$ox_delta
-
+initial_fcast_yr <- min(dat_df[dat_df$entity == "CW", ]$year)
 
 
 # Function to specify UI inputs for rendering
@@ -86,32 +86,32 @@ ui <- navbarPage(
         type="text/css",
         "label {font-size: 12px;}",
         ".recalculating {opacity: 1.0;}"
-      ),
+        ),
       
       # Application title
       tags$h2("Regulatory price path model: scenario based KPI simulation"),
       p("Refer to the ",
         tags$a(href="https://www.audit.vic.gov.au/report/auditor-generals-report-annual-financial-report-state-victoria-2017-18?section=33061&show-sections=1#33059--appendix-f-water-sector-financial-sustainability-risk-indicators", "Long-term financial sustainability indicators"),
         "from the Victorial Auditor-Generals report."
-      ),
+        ),
       hr(),
       
       fluidRow(
         column(6, tags$h3("Scenario A")),
         column(6, tags$h3("Scenario B"))
-      ),
+        ),
       
       # Renders the data input sliders
       fluidRow(
         column(6, renderInputs("a")),
         column(6, renderInputs("b"))
-      ),
+        ),
       
       # Renders the plots 
       fluidRow(
         column(6, plotOutput("a_plot", height = "600px")),
         column(6, plotOutput("b_plot", height = "600px"))
-      )
+        )
       )
     ),
   tabPanel(
@@ -122,19 +122,21 @@ ui <- navbarPage(
         type="text/css",
         "label {font-size: 12px;}",
         ".recalculating {opacity: 1.0;}"
-      ),
+        ),
       sidebarLayout(
         selectInput(
-        "fy_select", "Select financial years to display below:",  
-        list("FY2027" = "FY2027", "FY2035" = "FY2035", "FY2036" = "FY2036"), 
-        multiple = TRUE
-        ),
+          inputId  = "fy_select", 
+          label    = "Select financial years to display below:",  
+          choices  = c(paste("FY", 2024:2040, sep = "")), 
+          selected = c("FY2024","FY2025","FY2026","FY2027","FY2028"),
+          multiple = TRUE
+          ),
         mainPanel(tableOutput("fins_kable"))
+        )
       )
-    )
-  ),
-  tabPanel("Tab3", p("Random text for tab3"))
-)
+    ),
+  tabPanel("Downloads", downloadButton("tb_dload", "Download simulation TB .csv"))  # p("Random text for tab3")
+  )
 
 
 
@@ -162,9 +164,13 @@ server <- function(input, output, session) {
        verbose           = F))
     )
   
-  output$a_plot     <- renderPlot( {plot_kpi( simA() )} )
-  output$b_plot     <- renderPlot( {plot_kpi( simB() )} )
-  output$fins_kable <- renderPlot( {plot_fins(d=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
+  output$a_plot     <- renderPlot( {plot_kpi( simA(), initial_fcast_yr )} )
+  output$b_plot     <- renderPlot( {plot_kpi( simB(), initial_fcast_yr )} )
+  output$fins_kable <- renderText( {plot_fins(d=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
+  output$tb_dload   <- downloadHandler(
+    filename = function() {"trial_balance.csv"},
+    content = function(file) {write.csv(tb(d=simA(), chart=chart_df, ref=ref_df), file, quote = FALSE)}
+    )
   
 }
 
