@@ -1,46 +1,68 @@
-﻿ref_type,lookup1,ref1,ref2
-account_grp,999,Revenue from transactions,1
-account_grp,100,Service charges,2
-account_grp,110,Usage charges,3
-account_grp,150,Government funding,4
-account_grp,120,Contributions & gifted assets,5
-account_grp,130,Contributions & gifted assets,5
-account_grp,160,Interest income,6
-account_grp,140,Other income,7
-account_grp,170,Other income,7
-account_grp,999,Total revenue from transactions,8
-account_grp,999,blank,9
-account_grp,999,Expenses from transactions,10
-account_grp,200,Operating and administration expenses,11
-account_grp,210,Employee benefits,12
-account_grp,270,Expenditure of government funding,13
-account_grp,230,Finance costs,14
-account_grp,220,Depreciation,15
-account_grp,240,Environmental contribution,16
-account_grp,999,Total expenses from transactions,17
-account_grp,999,blank,18
-account_grp,999,Net result from operating transactions,19
-account_grp,999,blank,20
-account_grp,260,Other economic flows,21
-account_grp,280,Other economic flows,21
-account_grp,290,Other economic flows,21
-account_grp,999,Net result from transactions,22
-account_grp,999,blank,23
-account_grp,999,blank,24
-account_grp,999,Assets,25
-account_grp,300,of which Cash,29
-account_grp,310,of which Receivables and contract assets,30
-account_grp,335,of which Infrastructure assets,31
-account_grp,340,of which Infrastructure assets,31
-account_grp,350,of which Infrastructure assets,31
-account_grp,400,of which Payables,37
-account_grp,450,of which Interest bearing,38
-account_type,30,Total current assets,26
-account_type,35,Total non-current assets,27
-account_type,99,Total assets,28
-account_type,99,blank,32
-account_type,99,Liabilities,33
-account_type,40,Total current liabilities,34
-account_type,45,Total non-current liabilities,35
-account_type,99,Total liabilities,36
-statement_type,1,Net Result,25
+﻿ref_type,lookup1,lookup2,ref1,ref2,ref3
+account_grp,999,xxxx,Revenue from transactions,1,b
+account_grp,100,xxxx,Service charges,2,x
+account_grp,110,xxxx,Usage charges,3,x
+account_grp,150,xxxx,Government funding,4,x
+account_grp,120,xxxx,Contributions & gifted assets,5,x
+account_grp,130,xxxx,Contributions & gifted assets,5,x
+account_grp,160,xxxx,Interest income,6,x
+account_grp,140,xxxx,Other income,7,s
+account_grp,170,xxxx,Other income,7,x
+account_grp,999,xxxx,Total revenue from transactions,8,b
+account_grp,999,xxxx,blank,9,x
+account_grp,999,xxxx,Expenses from transactions,10,b
+account_grp,200,xxxx,Operating and administration expenses,11,x
+account_grp,210,xxxx,Employee benefits,12,x
+account_grp,270,xxxx,Expenditure of government funding,13,x
+account_grp,230,xxxx,Finance costs,14,x
+account_grp,220,xxxx,Depreciation,15,x
+account_grp,240,xxxx,Environmental contribution,16,s
+account_grp,999,xxxx,Total expenses from transactions,17,b
+account_grp,999,xxxx,blank,18,x
+account_grp,999,xxxx,Net result from operating transactions,19,bs
+account_grp,999,xxxx,blank,20,x
+account_grp,260,xxxx,Other economic flows,21,x
+account_grp,280,xxxx,Other economic flows,21,x
+account_grp,290,xxxx,Other economic flows,21,x
+account_grp,999,xxxx,Net result from transactions,22,b
+account_grp,999,xxxx,blank,23,x
+account_grp,999,xxxx,blank,24,x
+account_grp,999,xxxx,Assets,25,b
+account_grp,300,xxxx,of which Cash,29,i
+account_grp,310,xxxx,of which Receivables and contract assets,30,i
+account_grp,335,xxxx,of which Infrastructure assets,31,i
+account_grp,340,xxxx,of which Infrastructure assets,31,x
+account_grp,350,xxxx,of which Infrastructure assets,31,x
+account_grp,400,xxxx,of which Payables,37,i
+account_grp,450,xxxx,of which Interest bearing,38,i
+account_type,30,xxxx,Total current assets,26,x
+account_type,35,xxxx,Total non-current assets,27,s
+account_type,99,xxxx,Total assets,28,b
+account_type,99,xxxx,blank,32,x
+account_type,99,xxxx,Liabilities,33,b
+account_type,40,xxxx,Total current liabilities,34,x
+account_type,45,xxxx,Total non-current liabilities,35,s
+account_type,99,xxxx,Total liabilities,36,b
+statement_type,1,xxxx,Net Result,25,x
+cash_flow,999,xxxx,blank,39,x
+cash_flow,999,xxxx,blank,40,x
+cash_flow,999,xxxx,Cash flows from operating activities,41,b
+cash_flow,999,cshd,Receipts from customers,42,x
+cash_flow,999,crd1,Payments to suppliers and employees ,43,x
+cash_flow,999,exp2,Payments to suppliers and employees ,43,x
+cash_flow,999,intp,Interest and other cost of finance paid,44,s
+cash_flow,999,xxxx,Net cash flows from/(used in) operating activities,45,b
+cash_flow,999,xxxx,blank,46,x
+cash_flow,999,xxxx,Cash flows from investing activities,47,b
+cash_flow,999,wipc,"Payments for infrastructure, PP&E",48,x
+cash_flow,999,saca,"Proceeds from sale of infrastructure, PP&E",49,s
+cash_flow,999,xxxx,Net cash flows from/(used in) investing activities,50,b
+cash_flow,999,xxxx,blank,51,x
+cash_flow,999,xxxx,Cash flows from financing activities,52,b
+cash_flow,999,borr,Proceeds from borrowings ,53,x
+cash_flow,999,leas,Principal payments of lease liabilities,54,s
+cash_flow,999,xxxx,Net cash flows from/(used in) financing activities,55,b
+cash_flow,999,xxxx,blank,56,x
+cash_flow,999,xxxx,Net increase/(decrease) in cash,57,bs
+cash_flow,999,xxxx,Cash at the beginning of the financial year ,58,x
+cash_flow,999,xxxx,Cash at the end of the financial year ,59,b

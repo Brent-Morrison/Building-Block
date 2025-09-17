@@ -127,7 +127,7 @@ ui <- navbarPage(
         selectInput(
           inputId  = "fy_select", 
           label    = "Select financial years to display below:",  
-          choices  = c(paste("FY", 2024:2040, sep = "")), 
+          choices  = c(paste("FY", 2024:2043, sep = "")), 
           selected = c("FY2024","FY2025","FY2026","FY2027","FY2028"),
           multiple = TRUE
           ),

@@ -196,7 +196,7 @@ depn_rate_infa
 
 
 
-
+# Mapply
 # https://stackoverflow.com/questions/35889954/mapply-for-all-arguments-combinations-r
 toy <- function(x, y, z){
   paste(x, y, z)
@@ -227,59 +227,27 @@ r
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Function for producing KPI's (gearing, cash_int_cover, int_fin_ratio, current_ratio, ret_on_asset)
-# https://stackoverflow.com/questions/64999483/how-to-do-rolling-sum-over-columns-in-r
+# Cashflow
 # --------------------------------------------------------------------------------------------------------------------------
 
-mat <- res_scenario[[1]]
-res_scenario[[1]]$price_delta
-
-ret_on_asset_fnx <- function(m) {
-  mat <- m$txns
-  ni <- apply(mat, 3, function(x) sum(x[grepl("^1|^2", rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)   # net income
-  ta <- apply(mat, 3, function(x) sum(x[grepl("^3", rownames(x)), "clos"]), simplify = TRUE)                                  # total assets
-  return( ni )
+d <- sim[[1]]$txns
+ref <- ref_df
+cf1 <- list()
+for (i in ((1:20) * 12)) {
+  #print(c(i-11, i))
+  cf1[[i]] <- rowSums(d["3000", c("cshd","exp2","crd1","wipc","intp","borr"), (i-11):i])
 }
+cf2 <- do.call(rbind, cf1)
+cf <- data.frame(t(cf2))
+colnames(cf) <- seq(from = 12, by = 12, length.out = 20)  # column names consistent with other tables for rbind
+#colnames(cf) <- paste("FY", 1:20 + 2023, sep = "")
+cf$txn_type <- rownames(cf)
+cf <- cf %>% 
+  full_join(ref[ref$ref_type == "cash_flow",], by = join_by(txn_type == lookup2)) %>% 
+  group_by(ref1, ref2) %>% 
+  summarise(across(`12`:`240`, sum)) %>% 
+  arrange(ref2)
 
-z <- ret_on_asset_fnx(mat)
-write.csv(z, "ni.csv")
 
-
-# Plot
-# https://mastering-shiny.org/scaling-packaging.html
-# https://plotly-r.com/improving-ggplotly
-# https://shiny.posit.co/r/gallery/application-layout/retirement-simulation/
-
-z <- bind_rows(
-  data.frame( t(do.call(rbind, lapply(res_scenario, cash_int_cover_fn))), kpi = "cash_int_cover" ),
-  data.frame( t(do.call(rbind, lapply(res_scenario, gearing_fn))), kpi = "gearing"),
-  data.frame( t(do.call(rbind, lapply(res_scenario, int_fin_ratio_fn))), kpi = "int_fin_ratio"),
-  data.frame( t(do.call(rbind, lapply(res_scenario, current_ratio_fn))), kpi = "current_ratio"),
-  data.frame( t(do.call(rbind, lapply(res_scenario, ret_on_asset_fn))), kpi = "ret_on_asset")
-  ) %>% 
-  mutate(month = rep(1:240, 5)) %>% 
-  pivot_longer(!c(kpi, month), names_to = "scenario", values_to = "value") %>% 
-  #filter(kpi == "gearing") %>% 
-  filter(month %in% seq(6, 240, by = 6)) %>% 
-  ggplot(aes(x = month, y = value, group = scenario)) +
-    geom_line(aes(linetype = scenario, colour = scenario)) + 
-    scale_colour_manual(values = c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")) +
-    facet_wrap(vars(kpi), scales = "free") + 
-    ggthemes::theme_base()
-
-colnames(z) <- paste(args$q_grow, args$debt_sens, args$oxcx_scenario, sep = ":")
-
-plot_dat <- lapply(res_scenario, gearing_fn)
-for (i in 1:length(plot_dat)) {
-  if (i == 1) plot(1:240, plot_dat[[i]], type = "l") else lines(1:240, plot_dat[[i]], col = "blue")
-}
-
-plot_dat1 <- t(do.call(rbind, plot_dat)) # 
-palette(c("black", "grey50", "grey30", "grey70", "#d9230f"))
-matplot(plot_dat1,
-  type = 'l', lwd = 0.5, lty = 1:5, col = 1:5,
-  xlab = 'Months', ylab = 'Gearing ratio', main = 'Gearing ratio'
-  )
-legend('topleft', lwd = 0.5, lty = 1:5, col = 1:5, legend = paste(args$q_grow, args$debt_sens, args$oxcx_scenario, sep = ":"), cex = 0.8, bty = "n")
-library(gridExtra)
-t <- tableGrob(args, theme=ttheme_minimal())
+a <- unique(ref[grepl("b",ref$ref3), "ref2"])
+b <- c(1,8,10,17,19,22,25,28,33,36,40,44,46,49,51,54,56,58)

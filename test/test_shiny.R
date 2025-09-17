@@ -39,7 +39,7 @@ sim <- mapply(
   SIMPLIFY          = FALSE
 )
 
-plot_kpi(sim)
-plot_fins(sim, chart=chart_df, ref=ref_df, sel=c("FY2027","FY2028","FY2035","FY2036","FY2037"))
+plot_kpi(sim, initial_fcast_yr = 2024)
+plot_fins(sim, chart=chart_df, ref=ref_df, sel=c("FY2024","FY2025","FY2026","FY2027","FY2028","FY2035","FY2036","FY2037"))
 
 

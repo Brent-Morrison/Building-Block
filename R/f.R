@@ -537,6 +537,7 @@ f <- function(
     #cat(c(i, ": Cash balance - ", cash_bal, "\n"))
     #cat(c(i, ": Borrowing requirement - ", borrow_amt, "\n"))
     
+    
     # Update closing balance
     mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
     

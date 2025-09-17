@@ -674,6 +674,8 @@ plot_fins <- function(d, chart, ref, sel) {
   # Returns
   #   a table formated P&L and B/S
   
+  # sel <- c("FY2024","FY2025","FY2026") for testing
+  
   m <- d[[1]]$txns
   #d     <- get_data()
   #chart <- d$chart
@@ -714,19 +716,44 @@ plot_fins <- function(d, chart, ref, sel) {
     arrange(ref2) %>% 
     filter(!is.na(ref1)) 
   
+  # Cashflow
+  cf1 <- list()
+  for (i in ((1:20) * 12)) {
+    #print(c(i-11, i))
+    cf1[[i]] <- rowSums(m["3000", c("cshd","exp2","crd1","wipc","intp","borr"), (i-11):i])
+  }
+  cf2 <- do.call(rbind, cf1)
+  cf2 <- cf2 / 1000
+  cf <- data.frame(t(cf2))
+  colnames(cf) <- seq(from = 12, by = 12, length.out = 20)  # column names consistent with other tables for rbind
+  #colnames(cf) <- paste("FY", 1:20 + 2023, sep = "")
+  cf$txn_type <- rownames(cf)
+  cf <- cf %>% 
+    full_join(ref[ref$ref_type == "cash_flow",], by = join_by(txn_type == lookup2)) %>% 
+    group_by(ref1, ref2) %>% 
+    summarise(across(`12`:`240`, sum)) %>% 
+    arrange(ref2)
+  
+  op_cash <- m["3000", "open", 1]  # Opening cash
+  
   # Join Income statement and Balance sheet
-  rep <- as.data.frame(bind_rows(inc, bal) %>% 
-    arrange(ref2)) %>% 
+  rep <- as.data.frame(bind_rows(inc, bal, cf)) %>% 
+    arrange(ref2) %>% 
     mutate(ref2 = as.character(ref2))
   
   # Insert totals and remove NA's
-  rep[rep$ref2 == 8, 3:22]  <- colSums(rep[rep$ref2 %in% 2:7, 3:22])       # Total revenue from transactions
-  rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22])     # Total expenses from transactions
-  rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22])   # Net result from operating transactions
-  rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22])  # Net result from transactions
-  rep[rep$ref2 == 28, 3:22] <- colSums(rep[rep$ref2 %in% c(26,27), 3:22])  # Total assets
-  rep[rep$ref2 == 36, 3:22] <- colSums(rep[rep$ref2 %in% c(34,35), 3:22])  # Total liabilities
-  
+  rep[rep$ref2 == 8, 3:22]  <- colSums(rep[rep$ref2 %in% 2:7, 3:22], na.rm = T)       # Total revenue from transactions
+  rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22], na.rm = T)     # Total expenses from transactions
+  rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22], na.rm = T)   # Net result from operating transactions
+  rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22], na.rm = T)  # Net result from transactions
+  rep[rep$ref2 == 28, 3:22] <- colSums(rep[rep$ref2 %in% c(26,27), 3:22], na.rm = T)  # Total assets
+  rep[rep$ref2 == 36, 3:22] <- colSums(rep[rep$ref2 %in% c(34,35), 3:22], na.rm = T)  # Total liabilities
+  rep[rep$ref2 == 45, 3:22] <- colSums(rep[rep$ref2 %in% c(42,43,44), 3:22], na.rm = T)  # Operating CF
+  rep[rep$ref2 == 50, 3:22] <- colSums(rep[rep$ref2 %in% c(48,49), 3:22], na.rm = T)  # Investing CF
+  rep[rep$ref2 == 55, 3:22] <- colSums(rep[rep$ref2 %in% c(53,54), 3:22], na.rm = T)  # Operating CF
+  rep[rep$ref2 == 57, 3:22] <- colSums(rep[rep$ref2 %in% c(45,50,55), 3:22], na.rm = T)  # Net increase/(decrease) in cash
+  rep[rep$ref2 == 58, 3:22] <- c(m["3000", "open", 1], m["3000", "clos", ((1:20) * 12 - 12)[-1]])  # Beginning cash
+  rep[rep$ref2 == 59, 3:22] <- colSums(rep[rep$ref2 %in% c(57,58), 3:22], na.rm = T)  # End
   
   
   # Format numbers
@@ -734,24 +761,27 @@ plot_fins <- function(d, chart, ref, sel) {
   rep[is.na(rep)] <- ""
   
   # Rename columns to financial year label
-  colnames(rep) <- c("ref1","ref2",paste("FY", as.numeric(colnames(rep[3:22])) / 12 + 2024 - 1, sep = ""))
+  colnames(rep) <- c("ref1","ref2", paste("FY", as.numeric(colnames(rep[3:22])) / 12 + 2024 - 1, sep = ""))
+  
+  b <- unique(ref[grepl("b",ref$ref3), "ref2"]) #bold
+  s <- unique(ref[grepl("s",ref$ref3), "ref2"]) # extra_css = "border-bottom: 1px solid"
+  i <- unique(ref[grepl("i",ref$ref3), "ref2"]) # italic
   
   rep %>% 
     select(-ref2) %>% 
     select(c(ref1, all_of(sel))) %>%
     rename(" " = ref1) %>% 
-    kbl(
+    kbl(align = c("l", rep("r", length(sel)))
       #caption = "Comprehensive operating statement",
-      align = c("l", rep("r", length(all_of(sel))))  # TO DO - this needs to be dynamic
+      #align = c("l", rep("r", length(all_of(sel))))  # TO DO - this needs to be dynamic
     ) %>% 
     kable_classic(full_width = F, html_font = "Cambria") %>% 
     column_spec(1, width = "25em") %>%
-    column_spec(2:(1+length(all_of(sel))), width = "8em") %>% 
-    row_spec(c(1,8,10,17,19,22,25,28,33,36), bold = TRUE) %>%
-    row_spec(c(29,30,31,37,38), italic = TRUE) %>%
-    row_spec(c(7,16,19,27,35), extra_css = "border-bottom: 1px solid") %>%
-    row_spec(c(22,38), extra_css = "border-bottom: 2px solid") %>%
-    #row_spec(8, bold = TRUE) %>% #, extra_css = "padding: 10px") %>% 
+    column_spec(2:(1+length(sel)), width = "8em") %>% 
+    row_spec(b, bold = TRUE) %>% # c(1,8,10,17,19,22,25,28,33,36,40,44,46,49,51,54,56,58)
+    row_spec(i, italic = TRUE) %>%  # c(29,30,31,37,38)
+    row_spec(s, extra_css = "border-bottom: 1px solid") %>%  # c(7,16,19,27,35,43,48,53,56)
+    row_spec(c(22,38,59), extra_css = "border-bottom: 2px solid") %>%
     row_spec(which(rep$ref1 == "blank"), color = "white") 
   
   #return(list(tbl = rep, tb = tb2_df))
