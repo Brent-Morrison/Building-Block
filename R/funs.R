@@ -191,7 +191,7 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
   
   pdpar1 <- theta[2]  # First price delta   
   pdpar2 <- theta[3]  # Second price delta
-  rrr    <- theta[1]  # regulatory rate of return
+  rrr    <- theta[1]  # Regulatory rate of return
   
   pdpar2 <- if (pdyr == 1) pdpar1 else pdpar2
   pdvec  <- c(rep(pdpar1, max(0, pdyr-1)), rep(pdpar2, 5-pdyr+1))
@@ -515,6 +515,16 @@ slr_fun <- function(res, chart) {
 # Key performance indicators
 # --------------------------------------------------------------------------------------------------------------------------
 
+# https://www.audit.vic.gov.au/report/auditor-generals-report-annual-financial-report-state-victoria-2017-18?section=33061&show-sections=1#33059--appendix-f-water-sector-financial-sustainability-risk-indicators
+# Cash interest cover      - Net operating cash flows before net interest and tax payments / Net interest payments
+# Gearing ratio            - Total debt (including finance leases) / Total assets
+# Internal financing ratio - Net operating cash flows less dividends / Net capital expenditure
+# Current ratio            - Current assets / Current liabilities (excluding long-term employee provisions and revenue in advance)
+# Return on assets         - Earnings before net interest and tax / average assets
+# Return on equity         - Net profit after tax / average total equity
+# EBITDA margin            - Earnings before interest, tax, depreciation and amortisation / Total revenue
+
+
 # ***Cash interest cover*** - Net operating cash flows before net interest and tax payments / Net interest payments
 cash_int_cover_fn <- function(m) {
   mat <- m$txns
@@ -615,7 +625,7 @@ plot_kpi <- function(d, initial_fcast_yr) {
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Plot financials function
+# Return trial balance function
 # --------------------------------------------------------------------------------------------------------------------------
 
 tb <- function(d, chart, ref) {
@@ -629,7 +639,7 @@ tb <- function(d, chart, ref) {
   #   d        - a list object returned from the function "f"
   #
   # Returns
-  #   a dataframe containined the yearly trial balance
+  #   a dataframe containing the yearly trial balance
   
   m <- d[[1]]$txns
   #d     <- get_data()
@@ -654,7 +664,33 @@ tb <- function(d, chart, ref) {
   tb2_df$account_no <- as.numeric(rownames(tb2_df))
   return(tb2_df)
 }
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Return rab function
+# --------------------------------------------------------------------------------------------------------------------------
+
+rab <- function(d) {
   
+  # Return the RAB
+  #
+  # Args:
+  #   d        - a list object returned from the function "f"
+  #
+  # Returns
+  #   a dataframe containing the RAB for each pricing period
+  
+  r <- d[[1]]$rab
+  
+
+  return(data.frame(r))
+}
+
+
+
   
   
 # --------------------------------------------------------------------------------------------------------------------------

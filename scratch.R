@@ -226,28 +226,3 @@ r
 
 
 
-# --------------------------------------------------------------------------------------------------------------------------
-# Cashflow
-# --------------------------------------------------------------------------------------------------------------------------
-
-d <- sim[[1]]$txns
-ref <- ref_df
-cf1 <- list()
-for (i in ((1:20) * 12)) {
-  #print(c(i-11, i))
-  cf1[[i]] <- rowSums(d["3000", c("cshd","exp2","crd1","wipc","intp","borr"), (i-11):i])
-}
-cf2 <- do.call(rbind, cf1)
-cf <- data.frame(t(cf2))
-colnames(cf) <- seq(from = 12, by = 12, length.out = 20)  # column names consistent with other tables for rbind
-#colnames(cf) <- paste("FY", 1:20 + 2023, sep = "")
-cf$txn_type <- rownames(cf)
-cf <- cf %>% 
-  full_join(ref[ref$ref_type == "cash_flow",], by = join_by(txn_type == lookup2)) %>% 
-  group_by(ref1, ref2) %>% 
-  summarise(across(`12`:`240`, sum)) %>% 
-  arrange(ref2)
-
-
-a <- unique(ref[grepl("b",ref$ref3), "ref2"])
-b <- c(1,8,10,17,19,22,25,28,33,36,40,44,46,49,51,54,56,58)

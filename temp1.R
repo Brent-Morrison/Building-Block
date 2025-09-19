@@ -1,41 +1,117 @@
 library(shiny)
+#rm(ui) ; rm(server)
 
 ui <- fluidPage(
-
-  # Application title
-  titlePanel("mtcars"),
-
-  sidebarLayout(
-    sidebarPanel(
-      sliderInput(
-        "mpg", "mpg Limit", min = 11, max = 33, value = 20)
+  br(),
+  #sliderInput(inputId = "range", label = "range", min = -3, max = 3, step = 0.5, value = c(-2, 2)),
+  dateRangeInput(
+    inputId = "range1", 
+    label = "Date range:",
+     start  = "2001-01-01",
+     end    = "2010-12-31",
+     min    = "2001-01-01",
+     max    = "2012-12-21",
+     format = "M-yyyy",
+     separator = " to "
     ),
+  br(),
+  sliderInput(
+    inputId = "range2",
+    label = "Date range 2:",
+    min = as.Date("2021-01-01"),
+    max = as.Date("2021-12-31"),
+    value = c(as.Date("2021-02-02"), as.Date("2021-03-03")),
+    timeFormat = "%Y-%b"
+  ),
+  br(),
+  sliderInput(
+    inputId = "range3",
+    label = "Date range 3:",
+    min = 2024,
+    max = 2043,
+    sep = "", pre = "FY",
+    value = c(2028, 2032)
+  ),
+  br(),
+  numericInput(
+    inputId = "range4",
+    label = "Input 4",
+    value = 2025,
+    min = 2024,
+    max = 2043,
+    step = 1,
+    width = "100px"
+  ),
+  
+  br(),
+  div( verbatimTextOutput("out1"), style = "width: 300px;" ),
+  br(),
+  div( verbatimTextOutput("out2"), style = "width: 300px;" ),
+  br(),
+  div( verbatimTextOutput("out3"), style = "width: 300px;" ),
+  br(),
+  div( verbatimTextOutput("out4"), style = "width: 100px;" )
 
-    mainPanel(
-      tableOutput("mtcars_kable")
-    )
-  )
 )
 
-server <- function(input, output) {
-  library(dplyr)
-  library(kableExtra)
-  output$mtcars_kable <- function() {
-    req(input$mpg)
-    mtcars %>%
-      mutate(car = rownames(.)) %>%
-      select(car, everything()) %>%
-      filter(mpg <= input$mpg) %>%
-      knitr::kable("html") %>%
-      kable_classic(full_width = F, html_font = "Cambria") %>%
-      #kable_styling("striped", full_width = F) %>%
-      row_spec(10, bold = TRUE) %>%  #, italic = TRUE
-      add_header_above(c(" ", "Group 1" = 5, "Group 2" = 7))
-  }
+server <- function(input, output) { 
+  
+  output$out1 <- renderText({ input$range1 })
+  output$out2 <- renderText({ input$range2 })
+  output$out3 <- renderText({ input$range3 })
+  output$out4 <- renderText({ input$range4 })
+  
 }
+shinyApp(ui, server)
 
-# Run the application
-shinyApp(ui = ui, server = server)
+
+
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+
+
+
+# library(shiny)
+# 
+# ui <- fluidPage(
+# 
+#   # Application title
+#   titlePanel("mtcars"),
+# 
+#   sidebarLayout(
+#     sidebarPanel(
+#       sliderInput(
+#         "mpg", "mpg Limit", min = 11, max = 33, value = 20)
+#     ),
+# 
+#     mainPanel(
+#       tableOutput("mtcars_kable")
+#     )
+#   )
+# )
+# 
+# server <- function(input, output) {
+#   library(dplyr)
+#   library(kableExtra)
+#   output$mtcars_kable <- function() {
+#     req(input$mpg)
+#     mtcars %>%
+#       mutate(car = rownames(.)) %>%
+#       select(car, everything()) %>%
+#       filter(mpg <= input$mpg) %>%
+#       knitr::kable("html") %>%
+#       kable_classic(full_width = F, html_font = "Cambria") %>%
+#       #kable_styling("striped", full_width = F) %>%
+#       row_spec(10, bold = TRUE) %>%  #, italic = TRUE
+#       add_header_above(c(" ", "Group 1" = 5, "Group 2" = 7))
+#   }
+# }
+# 
+# # Run the application
+# shinyApp(ui = ui, server = server)
 
 
 

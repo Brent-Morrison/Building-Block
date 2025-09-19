@@ -1,13 +1,14 @@
 # Function
 f <- function(
     dat=dat_df, chart=chart_df, txn_type=txn_df, cx_delta=cx_df, ox_delta=ox_df,  
-    q_grow            = 0.19, 
-    cost_of_debt_nmnl = 0.0456, 
-    fcast_infltn      = 0.03, 
-    roe               = 0.041, 
-    debt_sens         = NULL, 
-    oxcx_scenario     = "scnr1", 
-    verbose           = F
+    q_grow             = 0.019, 
+    cost_of_debt_nmnl  = 0.0456, 
+    fcast_infltn       = 0.03, 
+    roe                = 0.041, 
+    single_price_delta = T,
+    debt_sens          = 0, 
+    oxcx_scenario      = "scnr1", 
+    verbose            = F
     ) { 
   
   # Args:
@@ -20,6 +21,7 @@ f <- function(
   #   cost_of_debt_nmnl - nominal cost of debt (0.0456)
   #   cast_infltn       - inflation (0.03)
   #   roe               - allowed return on equity (0.041)
+  #   single_price_delta- for function npv_optim_func, logical, if true the only price delta (that of the first price delta `theta[2]`) is used
   #   debt_sens         - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
   #   oxcx_scenario     - the opex & capex scenario to be selected from ox_delta and cx_delta
   #
@@ -36,7 +38,6 @@ f <- function(
   initial_fcast_yr   <- 2024      # the first forecast year (first financial year of the price submission)
   price_delta_yr     <- 1         # for function npv_optim_func, parameter 'pdyr', an integer between 0 and 5 representing the year in which
   # price delta 2 comes into effect, a value of zero returns an equal price delta for each year (refer to documentation for function 'npv_optim_func')
-  single             <- T         # for function npv_optim_func, logical, if true the only price delta (that of the first price delta `theta[2]`) is used
   pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
   gearing            <- 0.6       # gearing assumption for WACC
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
@@ -246,7 +247,7 @@ f <- function(
       
       # ... Further arguments to be passed to fn
       pdyr    = price_delta_yr,
-      single  = single,
+      single  = single_price_delta,
       rev_req = rev_req[i:(i+4)],
       p0      = p0,
       q       = q[,i:(i+4)]
@@ -260,7 +261,7 @@ f <- function(
   counter <- 0
   for (i in c(1,6,11,16)) {
     counter <- counter + 1
-    res <- npv_optim_func(theta=optim_result_loop[[counter]]$par, pdyr=price_delta_yr, single=single, rev_req=rev_req[i:(i+4)], p0=p0, q=q[,i:(i+4)], rtn="data")
+    res <- npv_optim_func(theta=optim_result_loop[[counter]]$par, pdyr=price_delta_yr, single=single_price_delta, rev_req=rev_req[i:(i+4)], p0=p0, q=q[,i:(i+4)], rtn="data")
     optim_result[[counter]] <- res
   }
   

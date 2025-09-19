@@ -26,13 +26,12 @@ initial_fcast_yr <- min(dat_df[dat_df$entity == "CW", ]$year)
 
 # Function to specify UI inputs for rendering
 renderInputs <- function(prefix) {
-  wellPanel(
+  wellPanel(  # Creates a panel with a slightly inset border and grey background.
     fluidRow(
       column(
         6,
         sliderInput(
           inputId = paste0(prefix, "_", "cost_of_debt_nmnl"), 
-          #inputId = "cost_of_debt_nmnl", 
           label   = "Nominal cost of debt :", 
           min     = 0.01, 
           max     = 0.10, 
@@ -41,7 +40,6 @@ renderInputs <- function(prefix) {
           ),
         sliderInput(
           inputId = paste0(prefix, "_", "fcast_infltn"),
-          #inputId = "fcast_infltn", 
           label   = "Forecast inflation :", 
           min     = 0.01, 
           max     = 0.07, 
@@ -65,7 +63,9 @@ renderInputs <- function(prefix) {
           #inputId = "oxcx_scenario", 
           label   = "Scenario:", 
           choices = c("scnr1","scnr2","scnr3","scnr4")
-          )
+          ),
+        br(),
+        checkboxInput(paste0(prefix, "_", "single_price_delta"), "Price adjustment to occur in first year only", FALSE)
       )
     ),
     p(actionButton(inputId = "recalc", label = "Re-run simulation", icon = icon("random"))
@@ -79,7 +79,7 @@ renderInputs <- function(prefix) {
 ui <- navbarPage(
   "App Title",
   tabPanel(
-    "Input",
+    title="Scenario input",
     fluidPage(
       theme="simplex.min.css",
       tags$style(
@@ -115,7 +115,7 @@ ui <- navbarPage(
       )
     ),
   tabPanel(
-    "Financial", 
+    title="Financials", 
     fluidPage(
       theme="simplex.min.css",
       tags$style(
@@ -128,15 +128,21 @@ ui <- navbarPage(
           inputId  = "fy_select", 
           label    = "Select financial years to display below:",  
           choices  = c(paste("FY", 2024:2043, sep = "")), 
-          selected = c("FY2024","FY2025","FY2026","FY2027","FY2028"),
+          selected = c("FY2024","FY2025","FY2028","FY2033","FY2038","FY2043"),
           multiple = TRUE
           ),
         mainPanel(tableOutput("fins_kable"))
         )
       )
     ),
-  tabPanel("Downloads", downloadButton("tb_dload", "Download simulation TB .csv"))  # p("Random text for tab3")
+  tabPanel(
+    title="Downloads", 
+    fluidRow(
+      column(3, downloadButton("tb_dload" , "Download simulation TB .csv")),
+      column(3, downloadButton("rab_dload", "Download RAB .csv"))
+    )
   )
+)
 
 
 
@@ -145,20 +151,22 @@ server <- function(input, output, session) {
   
   simA <- reactive(list(
     f( dat=dat_df, chart=chart_df, txn_type=txn_df, cx_delta=cx_df, ox_delta=ox_df,  
-       q_grow            = 0.19,
+       q_grow            = 0.019,
        cost_of_debt_nmnl = input$a_cost_of_debt_nmnl, 
        fcast_infltn      = input$a_fcast_infltn,
        roe               = input$a_roe, 
+       single_price_delta= input$a_single_price_delta,
        debt_sens         = NULL, 
        oxcx_scenario     = input$a_oxcx_scenario,
        verbose           = F))
     )
   simB <- reactive(list(
     f( dat=dat_df, chart=chart_df, txn_type=txn_df, cx_delta=cx_df, ox_delta=ox_df,  
-       q_grow            = 0.19,
+       q_grow            = 0.019,
        cost_of_debt_nmnl = input$b_cost_of_debt_nmnl, 
        fcast_infltn      = input$b_fcast_infltn,
        roe               = input$b_roe, 
+       single_price_delta= input$b_single_price_delta,
        debt_sens         = NULL, 
        oxcx_scenario     = input$b_oxcx_scenario,
        verbose           = F))
@@ -171,6 +179,10 @@ server <- function(input, output, session) {
     filename = function() {"trial_balance.csv"},
     content = function(file) {write.csv(tb(d=simA(), chart=chart_df, ref=ref_df), file, quote = FALSE)}
     )
+  output$rab_dload   <- downloadHandler(
+    filename = function() {"rab_balance.csv"},
+    content = function(file) {write.csv(rab(simA()), file, quote = FALSE)}
+  )
   
 }
 
