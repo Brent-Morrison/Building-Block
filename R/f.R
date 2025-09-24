@@ -219,7 +219,7 @@ f <- function(
   q <- q %*% exp( cumsum( log( 1 + rep(q_grow, rab_n_yrs) ) ) ) 
   
   # Prices
-  pq.t1 <- pq %>% filter(entity == ent_parm, year == 2023, balance_type == 'Price')
+  pq.t1 <- pq %>% filter(entity == ent_parm, year == initial_fcast_yr-1, balance_type == 'Price')
   p0 <- as.matrix(pq.t1[, "amount"])
   rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "cost_driver"], sep = ".")
   
@@ -339,8 +339,17 @@ f <- function(
   # -------------------------------------------------------------------------------------------------
   
   # Income 
-  tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
-  incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
+  #tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
+  tot_rev_nmnl <- rev * infltn_factor * 1e3
+  #incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
+  incm <- t( apply( tot_rev_nmnl, 1, function(x) round( as.vector( sapply(X = x, FUN = add_trend_season, s=0, a=1, p=1.5) ), 3 ) ) )
+  income_map <- ref[ref$ref_type == "income_map", c("lookup2","ref2")]  
+  # TO DO - MAP INCOME TYPE TO GL ACCOUNT
+  incm <- left_join(
+    mutate(data.frame(incm), income_type = rownames(incm)), 
+    income_map, 
+    by = c("income_type" = "lookup2")
+    )
   gift <- round(rep(cc / 12, each = 12), 3) * 1000
   
   
@@ -513,7 +522,7 @@ f <- function(
       stat_depn_bld[i], -stat_depn_bld[i],
       stat_depn_lhi[i], -stat_depn_lhi[i],
       stat_depn_pae[i], -stat_depn_pae[i],
-      stat_depn_inf[i]+dpn_cpx[i], -stat_depn_inf[i]-dpn_cpx[i], # assumes all capex is infrastructure
+      stat_depn_inf[i]+dpn_cpx[i], -stat_depn_inf[i]-dpn_cpx[i], # TO DO - assumes all capex is infrastructure
       stat_depn_pae[i], -stat_depn_pae[i],
       stat_depn_sca[i], -stat_depn_sca[i]
     )
@@ -521,7 +530,7 @@ f <- function(
     if (sum(p) == 0 & length(p) == length(a)) {
       mat[a, t, i] <- p
     } else if (sum(p) != 0) {
-      print("Depreciation not posted, accounting entries do not balance to nil")
+      print("Depreciation not posted, accounting entries do not balance")
     } else if (length(p) != length(a)) {
       print(paste0("Depreciation not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
     }

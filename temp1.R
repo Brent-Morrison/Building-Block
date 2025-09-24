@@ -1,69 +1,88 @@
+# library(shiny)
+# #rm(ui) ; rm(server)
+# 
+# ui <- fluidPage(
+#   br(),
+#   #sliderInput(inputId = "range", label = "range", min = -3, max = 3, step = 0.5, value = c(-2, 2)),
+#   dateRangeInput(
+#     inputId = "range1", 
+#     label = "Date range:",
+#      start  = "2001-01-01",
+#      end    = "2010-12-31",
+#      min    = "2001-01-01",
+#      max    = "2012-12-21",
+#      format = "M-yyyy",
+#      separator = " to "
+#     ),
+#   br(),
+#   sliderInput(
+#     inputId = "range2",
+#     label = "Date range 2:",
+#     min = as.Date("2021-01-01"),
+#     max = as.Date("2021-12-31"),
+#     value = c(as.Date("2021-02-02"), as.Date("2021-03-03")),
+#     timeFormat = "%Y-%b"
+#   ),
+#   br(),
+#   sliderInput(
+#     inputId = "range3",
+#     label = "Date range 3:",
+#     min = 2024,
+#     max = 2043,
+#     sep = "", pre = "FY",
+#     value = c(2028, 2032)
+#   ),
+#   br(),
+#   numericInput(
+#     inputId = "range4",
+#     label = "Input 4",
+#     value = 2025,
+#     min = 2024,
+#     max = 2043,
+#     step = 1,
+#     width = "100px"
+#   ),
+#   
+#   br(),
+#   div( verbatimTextOutput("out1"), style = "width: 300px;" ),
+#   br(),
+#   div( verbatimTextOutput("out2"), style = "width: 300px;" ),
+#   br(),
+#   div( verbatimTextOutput("out3"), style = "width: 300px;" ),
+#   br(),
+#   div( verbatimTextOutput("out4"), style = "width: 100px;" )
+# 
+# )
+# 
+# server <- function(input, output) { 
+#   
+#   output$out1 <- renderText({ input$range1 })
+#   output$out2 <- renderText({ input$range2 })
+#   output$out3 <- renderText({ input$range3 })
+#   output$out4 <- renderText({ input$range4 })
+#   
+# }
+# shinyApp(ui, server)
+
+
+
+# -------------------------------------------------------------------------------------------------
+
+
+
 library(shiny)
-#rm(ui) ; rm(server)
+library(shinyBS)
 
 ui <- fluidPage(
-  br(),
-  #sliderInput(inputId = "range", label = "range", min = -3, max = 3, step = 0.5, value = c(-2, 2)),
-  dateRangeInput(
-    inputId = "range1", 
-    label = "Date range:",
-     start  = "2001-01-01",
-     end    = "2010-12-31",
-     min    = "2001-01-01",
-     max    = "2012-12-21",
-     format = "M-yyyy",
-     separator = " to "
-    ),
-  br(),
-  sliderInput(
-    inputId = "range2",
-    label = "Date range 2:",
-    min = as.Date("2021-01-01"),
-    max = as.Date("2021-12-31"),
-    value = c(as.Date("2021-02-02"), as.Date("2021-03-03")),
-    timeFormat = "%Y-%b"
-  ),
-  br(),
-  sliderInput(
-    inputId = "range3",
-    label = "Date range 3:",
-    min = 2024,
-    max = 2043,
-    sep = "", pre = "FY",
-    value = c(2028, 2032)
-  ),
-  br(),
-  numericInput(
-    inputId = "range4",
-    label = "Input 4",
-    value = 2025,
-    min = 2024,
-    max = 2043,
-    step = 1,
-    width = "100px"
-  ),
-  
-  br(),
-  div( verbatimTextOutput("out1"), style = "width: 300px;" ),
-  br(),
-  div( verbatimTextOutput("out2"), style = "width: 300px;" ),
-  br(),
-  div( verbatimTextOutput("out3"), style = "width: 300px;" ),
-  br(),
-  div( verbatimTextOutput("out4"), style = "width: 100px;" )
-
+  selectInput("input1", "Select input", c("choice1", "choice2")),
+  bsTooltip(id = "input1", 
+            title = "Here is some text with your instructions")
 )
 
-server <- function(input, output) { 
-  
-  output$out1 <- renderText({ input$range1 })
-  output$out2 <- renderText({ input$range2 })
-  output$out3 <- renderText({ input$range3 })
-  output$out4 <- renderText({ input$range4 })
-  
+server <- function(input, output) {
 }
-shinyApp(ui, server)
 
+shinyApp(ui = ui, server = server)
 
 
 

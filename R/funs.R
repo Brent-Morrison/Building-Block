@@ -202,33 +202,34 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
   
   # TO DO - insert a parameter so that the proportion of income from usage vs service charges can be flexed
   # see below 
-  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1
-  pnew         <- p0 %*% (1 + pdcum)
-  r            <- pnew * q
+  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1   # cumulative vector of yearly price changes  
+  pnew         <- p0 %*% (1 + pdcum)                  # apply cumulative price changes to p0 tariffs 
+  r            <- pnew * q                            # revenue: prices * quantity by tariff
+  tot_r        <- colSums(r) / 1e6                    # total revenue by year
   
-  tot_r        <- colSums(r) / 1e6
-  # Flex proportion of fixed and variable tariffs
+  # Return desired proportion of fixed and variable tariffs
   f            <- c("Water.Residential.Fixed"   ,"Water.Non-residential.Fixed"   ,"Sewerage.Non-residential.Fixed"   )
   v            <- c("Water.Residential.Variable","Water.Non-residential.Variable","Sewerage.Non-residential.Variable")
-  fix_r        <- colSums(r[f, ])
-  var_r        <- colSums(r[v, ])
-  prop_f       <- sum(fix_r) / (sum(fix_r) + sum(var_r))             # proportion fixed
-  des_f        <- 0.50                                               # desired proportion fixed
-  nfix_r       <- r[f, ] / prop_f * des_f
-  nvar_r       <- r[v, ] / (1 - prop_f) * (1 - des_f)
+  fix_r        <- colSums(r[f, ])                                    # current fixed revenue
+  var_r        <- colSums(r[v, ])                                    # current variable revenue
+  prop_f       <- sum(fix_r) / (sum(fix_r) + sum(var_r))             # current proportion fixed 
+  des_f        <- 0.40                                               # desired proportion fixed
+  nfix_r       <- r[f, ] / prop_f * des_f                            # desired fixed revenue  
+  nvar_r       <- r[v, ] / (1 - prop_f) * (1 - des_f)                # desired variable revenue
   round(fix_r + var_r - colSums(nfix_r) - colSums(nvar_r), 3)        # check
-  npnew        <- pnew
-  npnew[f,]    <- nfix_r / q[f,]
-  npnew[v,]    <- nvar_r / q[v,]
+  npnew        <- pnew                                               # copy prices matrix
+  npnew[f,]    <- nfix_r / q[f,]                                     # assign new fixed prices
+  npnew[v,]    <- nvar_r / q[v,]                                     # assign new variable prices
   nr           <- npnew * q
   tot_nr       <- colSums(nr) / 1e6
-  tot_r - tot_nr                                                     # check
+  stopifnot("Total revenue unmatched" = max(abs(round(tot_r, 3) - round(tot_nr, 3))) == 0) # check
   
-  npv_tot_r    <- sum(tot_r / (1 + rrr) ^ (1:length(tot_r))) * (1 + rrr) ^ 0.5
+  npv_tot_r    <- sum(tot_r   / (1 + rrr) ^ (1:length(tot_r))  ) * (1 + rrr) ^ 0.5  # CHANGE THIS TO USE TOT_NR
   npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
+  
   obj          <- (npv_rev_req - npv_tot_r) ^ 2
   
-  rtn_list <- list(price_delta = pdvec, prices = npnew)
+  rtn_list     <- list(price_delta = pdvec, prices = npnew)
   
   ifelse(rtn_mode == "obj", return(obj), return(rtn_list))
   

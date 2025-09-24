@@ -66,3 +66,21 @@ cash_flow,999,xxxx,blank,56,x
 cash_flow,999,xxxx,Net increase/(decrease) in cash,57,bs
 cash_flow,999,xxxx,Cash at the beginning of the financial year ,58,x
 cash_flow,999,xxxx,Cash at the end of the financial year ,59,b
+income_map,999,Recycled Water.Non-residential.Fixed,Recycled water-Service,1003,NA
+income_map,999,Recycled Water.Non-residential.Variable,Recycled water-Usage,1103,NA
+income_map,999,Recycled Water.Residential.Fixed,Recycled water-Service,1003,NA
+income_map,999,Recycled Water.Residential.Variable,Recycled water-Usage,1103,NA
+income_map,999,Recycled Water.Service fees.Fixed,Recycled water-Service,1003,NA
+income_map,999,Rural Water.Rural.Fixed,Rural water-Service,1104,NA
+income_map,999,Rural Water.Rural.Variable,Rural water-Usage,1104,NA
+income_map,999,Sewerage.Non-residential.Fixed,Sewerage-Service,1001,NA
+income_map,999,Sewerage.Non-residential.Variable,Sewerage-Usage,1101,NA
+income_map,999,Sewerage.Residential.Fixed,Sewerage-Service,1001,NA
+income_map,999,Trade Waste.Non-residential.Fixed,Trade waste-Service,1002,NA
+income_map,999,Trade Waste.Trade Waste.Variable,Trade waste-Usage,1102,NA
+income_map,999,Water.Miscellaneous.Fixed,Temp water sales-Usage,1105,NA
+income_map,999,Water.Non-residential.Fixed,Water-Service,1000,NA
+income_map,999,Water.Non-residential.Variable,Sewerage-Usage,1101,NA
+income_map,999,Water.Residential.Fixed,Water-Service,1000,NA
+income_map,999,Water.Residential.Variable,Sewerage-Usage,1101,NA
+income_map,999,Water.Service fees.Fixed,Temp water sales-Usage,1105,NA
