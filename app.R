@@ -150,7 +150,7 @@ ui <- navbarPage(
 server <- function(input, output, session) {
   
   simA <- reactive(list(
-    f( dat=dat_df, chart=chart_df, txn_type=txn_df, cx_delta=cx_df, ox_delta=ox_df,  
+    f( dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
        q_grow            = 0.019,
        cost_of_debt_nmnl = input$a_cost_of_debt_nmnl, 
        fcast_infltn      = input$a_fcast_infltn,
@@ -161,7 +161,7 @@ server <- function(input, output, session) {
        verbose           = F))
     )
   simB <- reactive(list(
-    f( dat=dat_df, chart=chart_df, txn_type=txn_df, cx_delta=cx_df, ox_delta=ox_df,  
+    f( dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
        q_grow            = 0.019,
        cost_of_debt_nmnl = input$b_cost_of_debt_nmnl, 
        fcast_infltn      = input$b_fcast_infltn,

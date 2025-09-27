@@ -1,7 +1,7 @@
 txn_code,txn_desc,dr,cr,dr1,cr1,dr2,cr2,dr3,cr3,dr4,cr4,dr5,cr5,dr6,cr6,dr7,cr7,dr8,cr8,dr9,cr9
 open,opening balances,9999,9999,,,,,,,,,,,,,,,,,,
 aged,re-allocate debtors ageing at month start,9999,9999,,,,,,,,,,,,,,,,,,
-aidb,accrued income,3050,1000,3050,1001,3050,1002,3050,1003,3050,1101,3050,1102,3050,1103,3050,1104,3050,1105,3050,
+aidb,accrued income,3050,1000,3050,1001,3050,1002,3050,1003,3050,1101,3050,1102,3050,1103,3050,1104,3050,1105,,
 incm,accrued income to debtors,3100,3050,,,,,,,,,,,,,,,,,,
 cshd,cash receipts from debtors,3000,3100,,,,,,,,,,,,,,,,,,
 prdd,provision for doubtful debts,2350,3110,,,,,,,,,,,,,,,,,,

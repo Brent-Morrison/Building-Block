@@ -1,11 +1,12 @@
 # Function
 f <- function(
-    dat=dat_df, chart=chart_df, txn_type=txn_df, cx_delta=cx_df, ox_delta=ox_df,  
+    dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
     q_grow             = 0.019, 
     cost_of_debt_nmnl  = 0.0456, 
     fcast_infltn       = 0.03, 
     roe                = 0.041, 
     single_price_delta = T,
+    desired_fixed      = 0.40,
     debt_sens          = 0, 
     oxcx_scenario      = "scnr1", 
     verbose            = F
@@ -32,6 +33,7 @@ f <- function(
   #   price_delta    - a list of each yearly real price delta
   #   prices         - a matrix of all prices for each year
   #   rev_req        - a data frame of the components to the revenue requirement for each year
+  #   tariff_rev     - a matrix tariff revenue for each year
   
   # Parameters --------------------------------------------------------------------------------------
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
@@ -248,6 +250,7 @@ f <- function(
       # ... Further arguments to be passed to fn
       pdyr    = price_delta_yr,
       single  = single_price_delta,
+      des_f   = desired_fixed,
       rev_req = rev_req[i:(i+4)],
       p0      = p0,
       q       = q[,i:(i+4)]
@@ -255,22 +258,29 @@ f <- function(
     )
     optim_result_loop[[counter]] <- optim_result
   }
-  #optim_result
+  
   
   optim_result <- vector(mode = "list", length = 2)
   counter <- 0
   for (i in c(1,6,11,16)) {
     counter <- counter + 1
-    res <- npv_optim_func(theta=optim_result_loop[[counter]]$par, pdyr=price_delta_yr, single=single_price_delta, rev_req=rev_req[i:(i+4)], p0=p0, q=q[,i:(i+4)], rtn="data")
+    res <- npv_optim_func(
+      theta      = optim_result_loop[[counter]]$par, 
+      pdyr       = price_delta_yr, 
+      single     = single_price_delta, 
+      des_f      = desired_fixed ,
+      rev_req    = rev_req[i:(i+4)], 
+      p0         = p0, 
+      q          = q[,i:(i+4)], 
+      rtn        = "data"
+      )
     optim_result[[counter]] <- res
   }
   
   price_delta <- unlist(lapply(optim_result, function(x) x$price_delta))
   prices <- do.call(cbind, lapply(optim_result, function(x) x$prices))
-  
-  rev <- prices * q
-  tot_rev_real <- colSums(prices * q) / 1e6  # TO DO - use this to flex income, ref. line 288 (object q).  kL up or down on wet, dry basis.  Variability based on statistical model.
-  
+  tot_rev_real <- prices * q / 1e6  # TO DO - use this to flex income, ref. line 288 (object q).  kL up or down on wet, dry basis.  Variability based on statistical model.
+  # TO DO - what is "Water.Service fees.Fixed"
   
   # Check results
   c1 <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req)))             # NPV of revenue requirement
@@ -339,17 +349,22 @@ f <- function(
   # -------------------------------------------------------------------------------------------------
   
   # Income 
-  #tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
-  tot_rev_nmnl <- rev * infltn_factor * 1e3
-  #incm <- round(as.vector(sapply(X = tot_rev_nmnl, FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
-  incm <- t( apply( tot_rev_nmnl, 1, function(x) round( as.vector( sapply(X = x, FUN = add_trend_season, s=0, a=1, p=1.5) ), 3 ) ) )
+  tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
+  incm2 <- t( apply( tot_rev_nmnl, 1, function(x) round( as.vector( sapply(X = x, FUN = add_trend_season, s=0, a=1, p=1.5) ), 3 ) ) )
   income_map <- ref[ref$ref_type == "income_map", c("lookup2","ref2")]  
-  # TO DO - MAP INCOME TYPE TO GL ACCOUNT
-  incm <- left_join(
-    mutate(data.frame(incm), income_type = rownames(incm)), 
+  # Map income types to GL accoutnts
+  incm1 <- left_join(
+    mutate(data.frame(incm2), income_type = rownames(incm2)), 
     income_map, 
     by = c("income_type" = "lookup2")
-    )
+    ) %>% 
+    group_by(ref2) %>% 
+    summarise(across(where(is.numeric), sum)) %>% 
+    mutate(ref2 = as.character(ref2))
+  incm <- as.matrix(incm1[-1])
+  rownames(incm) <- incm1$ref2
+  colnames(incm) <- as.character(substr(month_end, 1, 7))
+  
   gift <- round(rep(cc / 12, each = 12), 3) * 1000
   
   
@@ -441,13 +456,34 @@ f <- function(
     
     # Post income (DR accrued income / CR income) ---------------------------------------------------
     t <- "aidb"
-    mat[drcr(t, txn_type), t, i] <- c(incm[i], -incm[i])
+    p <- c(
+      incm["1000",i], -incm["1000",i],
+      incm["1001",i], -incm["1001",i],
+      incm["1002",i], -incm["1002",i],
+      incm["1003",i], -incm["1003",i],
+      incm["1101",i], -incm["1101",i],
+      incm["1102",i], -incm["1102",i],
+      incm["1103",i], -incm["1103",i],
+      incm["1104",i], -incm["1104",i],
+      incm["1105",i], -incm["1105",i]
+    )
+    a <- drcr(t, txn_type)
+    
+    if (sum(p) == 0 & length(p) == length(a)) {
+     mat[a, t, i] <- p
+    } else if (sum(p) != 0) {
+     print("Income not posted, accounting entries do not balance")
+    } else if (length(p) != length(a)) {
+     print(paste0("Income not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
+    }
     
     
     # Transfer to debtors to specify desired closing balance for accrued income days parameter -------------
     trail <- 3
     t <- "incm"
-    tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt="1000", txn="aidb")
+    pl_acs <- c("1000","1001","1002","1003","1101","1102","1103","1104","1105")
+    #if (i == 5) browser()
+    tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt=pl_acs, txn="aidb") 
     mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
     
     
@@ -559,6 +595,7 @@ f <- function(
     price_delta  = price_delta, 
     prices       = prices, 
     rev_req      = rev_req_df, 
+    tariff_rev   = tot_rev_nmnl,
     call         = list(cx_delta=cx_delta, ox_delta=ox_delta, q_grow=q_grow, 
                         cost_of_debt_nmnl=cost_of_debt_nmnl, fcast_infltn=fcast_infltn, 
                         roe=roe, debt_sens=debt_sens, oxcx_scenario=oxcx_scenario)

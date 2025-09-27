@@ -152,7 +152,7 @@ depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
 # Optimisation / price goal seek
 # --------------------------------------------------------------------------------------------------------------------------
 
-npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") {
+npv_optim_func <- function(theta, pdyr, single, des_f, rev_req, p0, q, rtn_mode="obj") {
   
   # Net Present Value Optimisation Objective Function
   #
@@ -168,6 +168,7 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
   #              a value of 0 applies the same delta evenly across all years (that of theta[2] when single = TRUE, else theta[3]). 
   #              A value of 1 sets both deltas equal.
   #   single   - logical, if true the only price delta (that of the first price delta `theta[2]`) is used
+  #   des_f    - desired proportion of fixed income.  Default NULL does not change existing proportion
   #   rev_req  - numeric vector of length 5: revenue requirement over the 5-year regulatory period (in millions)
   #   p0       - numeric matrix (n * 1), initial prices 
   #   q        - numeric matrix (n * 5), quantities corresponding to each price and year
@@ -208,22 +209,24 @@ npv_optim_func <- function(theta, pdyr, single, rev_req, p0, q, rtn_mode="obj") 
   tot_r        <- colSums(r) / 1e6                    # total revenue by year
   
   # Return desired proportion of fixed and variable tariffs
-  f            <- c("Water.Residential.Fixed"   ,"Water.Non-residential.Fixed"   ,"Sewerage.Non-residential.Fixed"   )
+  f            <- c("Water.Residential.Fixed"   ,"Water.Non-residential.Fixed"   ,"Sewerage.Non-residential.Fixed"   ,"Sewerage.Residential.Fixed")
   v            <- c("Water.Residential.Variable","Water.Non-residential.Variable","Sewerage.Non-residential.Variable")
   fix_r        <- colSums(r[f, ])                                    # current fixed revenue
   var_r        <- colSums(r[v, ])                                    # current variable revenue
   prop_f       <- sum(fix_r) / (sum(fix_r) + sum(var_r))             # current proportion fixed 
-  des_f        <- 0.40                                               # desired proportion fixed
+  #des_f        <- 0.40                                               # desired proportion fixed
   nfix_r       <- r[f, ] / prop_f * des_f                            # desired fixed revenue  
   nvar_r       <- r[v, ] / (1 - prop_f) * (1 - des_f)                # desired variable revenue
-  round(fix_r + var_r - colSums(nfix_r) - colSums(nvar_r), 3)        # check
+  #round(fix_r + var_r - colSums(nfix_r) - colSums(nvar_r), 3)        # check
   npnew        <- pnew                                               # copy prices matrix
   npnew[f,]    <- nfix_r / q[f,]                                     # assign new fixed prices
   npnew[v,]    <- nvar_r / q[v,]                                     # assign new variable prices
   nr           <- npnew * q
   tot_nr       <- colSums(nr) / 1e6
-  stopifnot("Total revenue unmatched" = max(abs(round(tot_r, 3) - round(tot_nr, 3))) == 0) # check
   
+  stopifnot("Total revenue unmatched" = max(abs(round(tot_r, 3) - round(tot_nr, 3))) == 0) # check
+  tot_r <- if (des_f == 99) tot_r else tot_nr
+
   npv_tot_r    <- sum(tot_r   / (1 + rrr) ^ (1:length(tot_r))  ) * (1 + rrr) ^ 0.5  # CHANGE THIS TO USE TOT_NR
   npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
   
@@ -345,8 +348,9 @@ add_trend_season <- function(y, s, a, p) {
 # Select DR's & Cr's
 # --------------------------------------------------------------------------------------------------------------------------
 drcr <- function(txn, txn_df) {
+  trns <- c("dr","cr","dr1","cr1","dr2","cr2","dr3","cr3","dr4","cr4","dr5","cr5","dr6","cr6","dr7","cr7","dr8","cr8","dr9","cr9")
   txn_type_parm = txn_df
-  dc <- as.character(na.omit(unname(unlist(txn_type_parm[txn, c("dr", "cr","dr1", "cr1","dr2", "cr2","dr3", "cr3","dr4", "cr4","dr5", "cr5")]))))
+  dc <- as.character(na.omit(unname(unlist(txn_type_parm[txn, trns]))))
   return(dc)
 }
 
@@ -366,6 +370,7 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
   # - assumes presence of matrix "mat" in environment
   #
   # Args:
+  #   days     - days in each month being looped over
   #   i        - the iteration of the loop passing over "mat"
   #   d        - the target debtors (creditors) days, integer
   #   trail    - number of period to calculate over, integer
@@ -377,7 +382,7 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
   #   the cash payment / receipt to arrive at balance required for designated debtors / creditors days 
   
   if (i < trail) s <- 1 else s <- i - (trail - 1)
-  trail_exp <- -mean(mat[pl_acnt, txn, s:i]) * trail
+  trail_exp <- if ( length(pl_acnt) == 1 | i == 1) -mean(mat[pl_acnt, txn, s:i]) * trail else -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
   sum_days <- mean(days[s:i]) * trail
   prior_bals <- mean(mat[bal_acnt, "clos", s:(i-1)]) * (trail-1)
   desired_bal <- d * trail_exp / sum_days * trail - prior_bals
@@ -679,10 +684,10 @@ rab <- function(d) {
   # Return the RAB
   #
   # Args:
-  #   d        - a list object returned from the function "f"
+  #   d - a list object returned from the function "f"
   #
   # Returns
-  #   a dataframe containing the RAB for each pricing period
+  #   a data frame containing the RAB for each price period
   
   r <- d[[1]]$rab
   

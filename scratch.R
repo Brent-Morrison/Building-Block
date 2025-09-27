@@ -226,4 +226,30 @@ r
 
 # --------------------------------------------------------------------------------------------------------------------------
 
+
+
+colSums(tariff_rev)[1] - sum(txns[c("1000","1001","1002","1003","1101","1102","1103","1104","1105"),"clos",12])
+
+colSums(tariff_rev[c("Water.Residential.Fixed","Sewerage.Residential.Fixed","Water.Residential.Variable"),]) / colSums(tariff_rev)
+
+z <- data.frame(
+  Fixed = colSums(tariff_rev[c("Water.Residential.Fixed","Sewerage.Residential.Fixed"),]),
+  Variable = tariff_rev["Water.Residential.Variable", ]
+  )
+
+
 prices <- sim[[1]]$prices
+txns <- sim[[1]]$txns
+tariff_rev <- sim[[1]]$tariff_rev
+
+data.frame(
+  income_type = c( rep("Fixed", 20), rep("Variable", 20) ),
+  year = rep(2024:2043, 2),
+  income = c(colSums(tariff_rev[c("Water.Residential.Fixed","Sewerage.Residential.Fixed"),]), tariff_rev["Water.Residential.Variable", ] )
+  ) %>% 
+  ggplot(aes(fill=income_type, y=income, x=year)) + 
+  geom_bar(position="fill", stat="identity") +
+  scale_fill_manual(values = c("grey70", "grey30")) + # c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")
+  ggthemes::theme_base() +
+  labs(x = "", y = "")
+
