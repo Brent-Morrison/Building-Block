@@ -242,14 +242,60 @@ prices <- sim[[1]]$prices
 txns <- sim[[1]]$txns
 tariff_rev <- sim[[1]]$tariff_rev
 
-data.frame(
-  income_type = c( rep("Fixed", 20), rep("Variable", 20) ),
-  year = rep(2024:2043, 2),
-  income = c(colSums(tariff_rev[c("Water.Residential.Fixed","Sewerage.Residential.Fixed"),]), tariff_rev["Water.Residential.Variable", ] )
-  ) %>% 
-  ggplot(aes(fill=income_type, y=income, x=year)) + 
-  geom_bar(position="fill", stat="identity") +
-  scale_fill_manual(values = c("grey70", "grey30")) + # c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")
-  ggthemes::theme_base() +
-  labs(x = "", y = "")
+cust_theme_1 <- theme(
+  legend.title = element_blank(),
+  legend.position = c(0.9,0.9),
+  legend.background = element_blank(),
+  legend.key = element_blank(),
+  plot.caption = element_text(size = 8, color = "grey55", face = 'italic'), 
+  axis.title.y = element_text(size = 8, color = "darkslategrey"),
+  axis.title.x = element_text(size = 8, color = "darkslategrey"),
+  axis.text.y = element_text(size = 7, color = "darkslategrey"),
+  axis.text.x = element_text(size = 7, color = "darkslategrey")
+  )
 
+data.frame(
+  year = 2024:2043,
+  perc_fixed = colSums( tariff_rev[grepl("Fixed", rownames(tariff_rev)),] ) / colSums(tariff_rev)
+  ) 
+
+
+plot_tariffs <- function(d){
+  
+  tariff_rev <- d[[1]]$tariff_rev
+  
+  # Plot tariff revenue
+  ggplot() +
+    geom_bar(
+      data = data.frame(
+        income_type = c( rep("Fixed", 20), rep("Variable", 20) ),
+        year = rep(2024:2043, 2),
+        income = c(colSums(tariff_rev[grepl("Fixed", rownames(tariff_rev)),]), colSums(tariff_rev[grepl("Variable", rownames(tariff_rev)),]) ) /1e3
+      ),
+      aes(fill=forcats::fct_rev(income_type), y=income, x=year), position="stack", stat="identity", colour="black"
+    ) +
+    scale_fill_manual(values = c("grey60", "grey30")) +
+    geom_point(
+      data = data.frame(
+        year = 2024:2043,
+        perc_fixed = colSums( tariff_rev[grepl("Fixed", rownames(tariff_rev)),] ) / colSums(tariff_rev) * max(colSums(tariff_rev)) / 1e3
+      ),
+      aes(x = year, y = perc_fixed), colour="black", shape = 15, size = 3
+    ) +
+    scale_y_continuous("", sec.axis = sec_axis(~ . / (max(colSums(tariff_rev)) / 1e3), name = "")) +
+    scale_x_continuous(breaks = c(2028,2033,2038,2043)) +
+    ggthemes::theme_base() +
+    labs(
+      x = "",
+      y = "",
+      title = "Tariff revenue - fixed vs variable (left axis, $m)",
+      subtitle = "Proportion of fixed tariff revenue (right axis, square points)"
+    ) + 
+    theme(
+      plot.subtitle = element_text(size = 11.5, face = 'italic'),
+      legend.title = element_blank(),
+      #legend.position = c(0.1,0.9),
+      legend.background = element_blank(),
+      legend.key = element_blank(),
+    )
+}

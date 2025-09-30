@@ -482,7 +482,6 @@ f <- function(
     trail <- 3
     t <- "incm"
     pl_acs <- c("1000","1001","1002","1003","1101","1102","1103","1104","1105")
-    #if (i == 5) browser()
     tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt=pl_acs, txn="aidb") 
     mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
     

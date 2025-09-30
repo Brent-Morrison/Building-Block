@@ -128,13 +128,19 @@ ui <- navbarPage(
           inputId  = "fy_select", 
           label    = "Select financial years to display below:",  
           choices  = c(paste("FY", 2024:2043, sep = "")), 
-          selected = c("FY2024","FY2025","FY2028","FY2033","FY2038","FY2043"),
+          selected = c("FY2024","FY2025","FY2026","FY2027","FY2028","FY2033","FY2038","FY2043"),
           multiple = TRUE
           ),
         mainPanel(tableOutput("fins_kable"))
         )
       )
     ),
+  tabPanel(
+    title="Tariffs", 
+    mainPanel(
+      plotOutput("tariff_plot", height = "600px")
+    )
+  ),
   tabPanel(
     title="Downloads", 
     fluidRow(
@@ -175,6 +181,7 @@ server <- function(input, output, session) {
   output$a_plot     <- renderPlot( {plot_kpi( simA(), initial_fcast_yr )} )
   output$b_plot     <- renderPlot( {plot_kpi( simB(), initial_fcast_yr )} )
   output$fins_kable <- renderText( {plot_fins(d=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
+  output$tariff_plot<- renderPlot( {plot_tariffs( simA() )} )
   output$tb_dload   <- downloadHandler(
     filename = function() {"trial_balance.csv"},
     content = function(file) {write.csv(tb(d=simA(), chart=chart_df, ref=ref_df), file, quote = FALSE)}

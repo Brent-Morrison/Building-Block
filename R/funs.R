@@ -203,7 +203,7 @@ npv_optim_func <- function(theta, pdyr, single, des_f, rev_req, p0, q, rtn_mode=
   
   # TO DO - insert a parameter so that the proportion of income from usage vs service charges can be flexed
   # see below 
-  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1   # cumulative vector of yearly price changes  
+  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1   # vector cumulative of yearly price changes  
   pnew         <- p0 %*% (1 + pdcum)                  # apply cumulative price changes to p0 tariffs 
   r            <- pnew * q                            # revenue: prices * quantity by tariff
   tot_r        <- colSums(r) / 1e6                    # total revenue by year
@@ -214,25 +214,26 @@ npv_optim_func <- function(theta, pdyr, single, des_f, rev_req, p0, q, rtn_mode=
   fix_r        <- colSums(r[f, ])                                    # current fixed revenue
   var_r        <- colSums(r[v, ])                                    # current variable revenue
   prop_f       <- sum(fix_r) / (sum(fix_r) + sum(var_r))             # current proportion fixed 
-  #des_f        <- 0.40                                               # desired proportion fixed
   nfix_r       <- r[f, ] / prop_f * des_f                            # desired fixed revenue  
   nvar_r       <- r[v, ] / (1 - prop_f) * (1 - des_f)                # desired variable revenue
-  #round(fix_r + var_r - colSums(nfix_r) - colSums(nvar_r), 3)        # check
+  
   npnew        <- pnew                                               # copy prices matrix
   npnew[f,]    <- nfix_r / q[f,]                                     # assign new fixed prices
   npnew[v,]    <- nvar_r / q[v,]                                     # assign new variable prices
-  nr           <- npnew * q
-  tot_nr       <- colSums(nr) / 1e6
+  nr           <- npnew * q                                          # new revenue: prices * quantity by tariff
+  tot_nr       <- colSums(nr) / 1e6                                  # total new revenue by year
   
   stopifnot("Total revenue unmatched" = max(abs(round(tot_r, 3) - round(tot_nr, 3))) == 0) # check
-  tot_r <- if (des_f == 99) tot_r else tot_nr
-
-  npv_tot_r    <- sum(tot_r   / (1 + rrr) ^ (1:length(tot_r))  ) * (1 + rrr) ^ 0.5  # CHANGE THIS TO USE TOT_NR
+  
+  r_rtn <- if (des_f == 99) tot_r else tot_nr
+  p_rtn <- if (des_f == 99) pnew else npnew
+  
+  npv_tot_r    <- sum(r_rtn   / (1 + rrr) ^ (1:length(r_rtn))  ) * (1 + rrr) ^ 0.5  
   npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
   
   obj          <- (npv_rev_req - npv_tot_r) ^ 2
   
-  rtn_list     <- list(price_delta = pdvec, prices = npnew)
+  rtn_list     <- list(price_delta = pdvec, prices = p_rtn)
   
   ifelse(rtn_mode == "obj", return(obj), return(rtn_list))
   
@@ -828,6 +829,55 @@ plot_fins <- function(d, chart, ref, sel) {
   
   #return(list(tbl = rep, tb = tb2_df))
 }
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot tariffs
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_tariffs <- function(d){
+  
+  tariff_rev <- d[[1]]$tariff_rev
+  
+  # Plot tariff revenue
+  ggplot() +
+    geom_bar(
+      data = data.frame(
+        income_type = c( rep("Fixed", 20), rep("Variable", 20) ),
+        year = rep(2024:2043, 2),
+        income = c(colSums(tariff_rev[grepl("Fixed", rownames(tariff_rev)),]), colSums(tariff_rev[grepl("Variable", rownames(tariff_rev)),]) ) /1e3
+      ),
+      aes(fill=forcats::fct_rev(income_type), y=income, x=year), position="stack", stat="identity", colour="black"
+    ) +
+    scale_fill_manual(values = c("grey60", "grey30")) +
+    geom_point(
+      data = data.frame(
+        year = 2024:2043,
+        perc_fixed = colSums( tariff_rev[grepl("Fixed", rownames(tariff_rev)),] ) / colSums(tariff_rev) * max(colSums(tariff_rev)) / 1e3
+      ),
+      aes(x = year, y = perc_fixed), colour="black", shape = 15, size = 3
+    ) +
+    scale_y_continuous("", sec.axis = sec_axis(~ . / (max(colSums(tariff_rev)) / 1e3), name = "")) +
+    scale_x_continuous(breaks = c(2028,2033,2038,2043)) +
+    ggthemes::theme_base() +
+    labs(
+      x = "",
+      y = "",
+      title = "Tariff revenue - fixed vs variable (left axis, $m)",
+      subtitle = "Proportion of fixed tariff revenue (right axis, square points)"
+    ) + 
+    theme(
+      plot.subtitle = element_text(size = 11.5, face = 'italic'),
+      legend.title = element_blank(),
+      legend.position = c(0.1,0.9),
+      legend.background = element_blank(),
+      legend.key = element_blank(),
+    )
+}
+
 
 
 

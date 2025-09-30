@@ -104,8 +104,8 @@ The table below (hat tip to ChatGPT) summarises application of the BBM across in
 ## References
 [AER Financeability guideline (1)](https://www.aer.gov.au/system/files/2024-11/AER%20-%20Financeability%20guideline%20-%20Final%20decision%20-%20November%202024.pdf)  
 [AER Financeability guideline (2)](https://www.aer.gov.au/system/files/2024-11/AER%20-%20Financeability%20guideline%20-%20November%202024_0.pdf)  
-[Assessing the Financeability of Regulated Water Service Providers](https://www.esc.vic.gov.au/sites/default/files/documents/9460b29d-8e62-46aa-8eb4-ff3091683fde.pdf)
-[Assessing Funding Models for Water Services Provision](https://www.nerinstitute.net/sites/default/files/events/downloads/2025/neri_seminar_assessing_funding_models_for_water_services_provision.pdf)
-[Reforming the economic regulation of Australian electricity distribution networks](https://ieefa.org/sites/default/files/2024-05/Reforming%20the%20economic%20regulation%20of%20Australian%20electricity%20distribution%20networks_May24.pdf)
+[Assessing the Financeability of Regulated Water Service Providers](https://www.esc.vic.gov.au/sites/default/files/documents/9460b29d-8e62-46aa-8eb4-ff3091683fde.pdf)  
+[Assessing Funding Models for Water Services Provision](https://www.nerinstitute.net/sites/default/files/events/downloads/2025/neri_seminar_assessing_funding_models_for_water_services_provision.pdf)  
+[Reforming the economic regulation of Australian electricity distribution networks](https://ieefa.org/sites/default/files/2024-05/Reforming%20the%20economic%20regulation%20of%20Australian%20electricity%20distribution%20networks_May24.pdf)  
 
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Building_block_model#Basis)

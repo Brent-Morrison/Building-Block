@@ -51,6 +51,46 @@ sim <- mapply(
   SIMPLIFY          = FALSE
 )
 
+prices     <- sim[[1]]$prices
+txns       <- sim[[1]]$txns
+tariff_rev <- sim[[1]]$tariff_rev
+
+# Plot tariff revenue
+ggplot() +
+  geom_bar(
+    data = data.frame(
+      income_type = c( rep("Fixed", 20), rep("Variable", 20) ),
+      year = rep(2024:2043, 2),
+      income = c(colSums(tariff_rev[grepl("Fixed", rownames(tariff_rev)),]), colSums(tariff_rev[grepl("Variable", rownames(tariff_rev)),]) ) /1e3
+    ),
+    aes(fill=forcats::fct_rev(income_type), y=income, x=year), position="stack", stat="identity", colour="black"
+  ) +
+  scale_fill_manual(values = c("grey60", "grey30")) +
+  geom_point(
+    data = data.frame(
+      year = 2024:2043,
+      perc_fixed = colSums( tariff_rev[grepl("Fixed", rownames(tariff_rev)),] ) / colSums(tariff_rev) * max(colSums(tariff_rev)) / 1e3
+    ),
+    aes(x = year, y = perc_fixed), colour="black", shape = 15, size = 3
+  ) +
+  scale_y_continuous("", sec.axis = sec_axis(~ . / (max(colSums(tariff_rev)) / 1e3), name = "")) +
+  scale_x_continuous(breaks = c(2028,2033,2038,2043)) +
+  ggthemes::theme_base() +
+  labs(
+    x = "",
+    y = "",
+    title = "Tariff revenue - fixed vs variable (left axis, $m)",
+    subtitle = "Proportion of fixed tariff revenue (right axis, square points)"
+  ) + 
+  theme(
+    plot.subtitle = element_text(size = 11.5, face = 'italic'),
+    legend.title = element_blank(),
+    #legend.position = c(0.1,0.9),
+    legend.background = element_blank(),
+    legend.key = element_blank(),
+  )
+
+plot_tariffs(sim)
 plot_kpi(sim, initial_fcast_yr = 2024)
 plot_fins(sim, chart=chart_df, ref=ref_df, sel=c("FY2024","FY2025","FY2028","FY2033","FY2038","FY2043"))
 trial_balance <- round( tb(sim, chart_df, ref_df) / 1, 3 )
