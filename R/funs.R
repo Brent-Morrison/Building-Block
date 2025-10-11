@@ -152,7 +152,7 @@ depn_bv <- function(yrs=20, de, gr, ad, monthly=TRUE) {
 # Optimisation / price goal seek
 # --------------------------------------------------------------------------------------------------------------------------
 
-npv_optim_func <- function(theta, pdyr, single, des_f, rev_req, p0, q, rtn_mode="obj") {
+npv_optim_func <- function(theta, pdyr, single, des_f=99, rev_req, p0, q, rtn_mode="obj") {
   
   # Net Present Value Optimisation Objective Function
   #
@@ -168,7 +168,7 @@ npv_optim_func <- function(theta, pdyr, single, des_f, rev_req, p0, q, rtn_mode=
   #              a value of 0 applies the same delta evenly across all years (that of theta[2] when single = TRUE, else theta[3]). 
   #              A value of 1 sets both deltas equal.
   #   single   - logical, if true the only price delta (that of the first price delta `theta[2]`) is used
-  #   des_f    - desired proportion of fixed income.  Default NULL does not change existing proportion
+  #   des_f    - desired proportion of fixed income.  Default 99 does not change existing proportion
   #   rev_req  - numeric vector of length 5: revenue requirement over the 5-year regulatory period (in millions)
   #   p0       - numeric matrix (n * 1), initial prices 
   #   q        - numeric matrix (n * 5), quantities corresponding to each price and year
@@ -214,8 +214,8 @@ npv_optim_func <- function(theta, pdyr, single, des_f, rev_req, p0, q, rtn_mode=
   fix_r        <- colSums(r[f, ])                                    # current fixed revenue
   var_r        <- colSums(r[v, ])                                    # current variable revenue
   prop_f       <- sum(fix_r) / (sum(fix_r) + sum(var_r))             # current proportion fixed 
-  nfix_r       <- r[f, ] / prop_f * des_f                            # desired fixed revenue  
-  nvar_r       <- r[v, ] / (1 - prop_f) * (1 - des_f)                # desired variable revenue
+  nfix_r       <- r[f, ] / prop_f * (des_f /100)                     # desired fixed revenue  
+  nvar_r       <- r[v, ] / (1 - prop_f) * (1 - (des_f /100))         # desired variable revenue
   
   npnew        <- pnew                                               # copy prices matrix
   npnew[f,]    <- nfix_r / q[f,]                                     # assign new fixed prices
@@ -386,8 +386,8 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
   trail_exp <- if ( length(pl_acnt) == 1 | i == 1) -mean(mat[pl_acnt, txn, s:i]) * trail else -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
   sum_days <- mean(days[s:i]) * trail
   prior_bals <- mean(mat[bal_acnt, "clos", s:(i-1)]) * (trail-1)
-  desired_bal <- d * trail_exp / sum_days * trail - prior_bals
-  bal_pre <- mat[bal_acnt, "open", i] + mat[pl_acnt, txn, i]  # Account balance pre cash transaction
+  desired_bal <- d * trail_exp / sum_days * trail - prior_bals          # Desired closing balance
+  bal_pre <- mat[bal_acnt, "open", i] + abs(sum(mat[pl_acnt, txn, i]))  # Account balance pre cash transaction (opening + accrued)
   
   if ( sign(prior_bals) == 1 ) {
     rcpt0 <- min( 
@@ -537,9 +537,9 @@ cash_int_cover_fn <- function(m) {
   mat <- m$txns
   #g <- "^10|^11|^13|^15|^20|^235|^24"
   #eb <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)  # ebitda_ttm
-  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)                          # operating cashflows
+  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)                          # operating cashflows ex interest
   ip <- apply(mat, 3, function(x) sum(x["3000", "intp"]), simplify = TRUE)                                              # net_int_pay_ttm 
-  return( slide_sum(op_cf, before = 11) / slide_sum(ip, before = 11) )
+  return( slide_sum(op_cf, before = 11) / -slide_sum(ip, before = 11) )
 }  
 
 
@@ -585,6 +585,7 @@ ret_on_asset_fn <- function(m) {
 
 # --------------------------------------------------------------------------------------------------------------------------
 # Plot KPI function
+# https://aosmith.rbind.io/2019/10/14/background-color_gradient/
 # --------------------------------------------------------------------------------------------------------------------------
 
 plot_kpi <- function(d, initial_fcast_yr) {
@@ -615,8 +616,13 @@ plot_kpi <- function(d, initial_fcast_yr) {
   filter(month(month_end) %in% seq(6, mons, by = 6)) %>% 
   ggplot(aes(x = month_end, y = value, group = scenario)) +
   geom_line(aes(linetype = scenario, colour = scenario)) + 
-  scale_colour_manual(values = c("black", "grey50", "grey30", "grey70", "#d9230f", "#6b1107")) +
+  scale_colour_manual(values = c("grey70","grey50","grey30","black","#d9230f","#6b1107")) +
   facet_wrap(vars(kpi), scales = "free") + 
+  geom_abline(data = data.frame(
+    kpi=c("Cash interest cover","Current ratio","Gearing","Internal financing ratio","Return on asset"),
+    bench=c(1.5,1.2,0.3,0.35,0.01) 
+    ), 
+    aes(intercept = bench, slope = 0), color = "red", linetype = "dotdash", linewidth = 1) +
   ggthemes::theme_base() +
   theme(
     legend.position = "none",
@@ -717,12 +723,7 @@ plot_fins <- function(d, chart, ref, sel) {
   # Returns
   #   a table formated P&L and B/S
   
-  # sel <- c("FY2024","FY2025","FY2026") for testing
-  
   m <- d[[1]]$txns
-  #d     <- get_data()
-  #chart <- d$chart
-  #ref   <- d$ref
   tb1   <- m[ , "clos", (1:20) * 12] / 1000
   round(colSums(tb1), 3)
   
@@ -777,7 +778,6 @@ plot_fins <- function(d, chart, ref, sel) {
     summarise(across(`12`:`240`, sum)) %>% 
     arrange(ref2)
   
-  op_cash <- m["3000", "open", 1]  # Opening cash
   
   # Join Income statement and Balance sheet
   rep <- as.data.frame(bind_rows(inc, bal, cf)) %>% 
@@ -785,18 +785,18 @@ plot_fins <- function(d, chart, ref, sel) {
     mutate(ref2 = as.character(ref2))
   
   # Insert totals and remove NA's
-  rep[rep$ref2 == 8, 3:22]  <- colSums(rep[rep$ref2 %in% 2:7, 3:22], na.rm = T)       # Total revenue from transactions
-  rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22], na.rm = T)     # Total expenses from transactions
-  rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22], na.rm = T)   # Net result from operating transactions
-  rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22], na.rm = T)  # Net result from transactions
-  rep[rep$ref2 == 28, 3:22] <- colSums(rep[rep$ref2 %in% c(26,27), 3:22], na.rm = T)  # Total assets
-  rep[rep$ref2 == 36, 3:22] <- colSums(rep[rep$ref2 %in% c(34,35), 3:22], na.rm = T)  # Total liabilities
-  rep[rep$ref2 == 45, 3:22] <- colSums(rep[rep$ref2 %in% c(42,43,44), 3:22], na.rm = T)  # Operating CF
-  rep[rep$ref2 == 50, 3:22] <- colSums(rep[rep$ref2 %in% c(48,49), 3:22], na.rm = T)  # Investing CF
-  rep[rep$ref2 == 55, 3:22] <- colSums(rep[rep$ref2 %in% c(53,54), 3:22], na.rm = T)  # Operating CF
-  rep[rep$ref2 == 57, 3:22] <- colSums(rep[rep$ref2 %in% c(45,50,55), 3:22], na.rm = T)  # Net increase/(decrease) in cash
-  rep[rep$ref2 == 58, 3:22] <- c(m["3000", "open", 1], m["3000", "clos", ((1:20) * 12 - 12)[-1]])  # Beginning cash
-  rep[rep$ref2 == 59, 3:22] <- colSums(rep[rep$ref2 %in% c(57,58), 3:22], na.rm = T)  # End
+  rep[rep$ref2 == 8, 3:22]  <- colSums(rep[rep$ref2 %in% 2:7, 3:22], na.rm = T)         # Total revenue from transactions
+  rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22], na.rm = T)       # Total expenses from transactions
+  rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22], na.rm = T)     # Net result from operating transactions
+  rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22], na.rm = T)    # Net result from transactions
+  rep[rep$ref2 == 28, 3:22] <- colSums(rep[rep$ref2 %in% c(26,27), 3:22], na.rm = T)    # Total assets
+  rep[rep$ref2 == 36, 3:22] <- colSums(rep[rep$ref2 %in% c(34,35), 3:22], na.rm = T)    # Total liabilities
+  rep[rep$ref2 == 45, 3:22] <- colSums(rep[rep$ref2 %in% c(42,43,44), 3:22], na.rm = T) # Operating CF
+  rep[rep$ref2 == 50, 3:22] <- colSums(rep[rep$ref2 %in% c(48,49), 3:22], na.rm = T)    # Investing CF
+  rep[rep$ref2 == 55, 3:22] <- colSums(rep[rep$ref2 %in% c(53,54), 3:22], na.rm = T)    # Operating CF
+  rep[rep$ref2 == 57, 3:22] <- colSums(rep[rep$ref2 %in% c(45,50,55), 3:22], na.rm = T) # Net increase/(decrease) in cash
+  rep[rep$ref2 == 58, 3:22] <- m["3000", "open", (1+(1:20) * 12 - 12)] / 1000           # Beginning cash
+  rep[rep$ref2 == 59, 3:22] <- colSums(rep[rep$ref2 %in% c(57,58), 3:22], na.rm = T)    # End
   
   
   # Format numbers
@@ -806,7 +806,7 @@ plot_fins <- function(d, chart, ref, sel) {
   # Rename columns to financial year label
   colnames(rep) <- c("ref1","ref2", paste("FY", as.numeric(colnames(rep[3:22])) / 12 + 2024 - 1, sep = ""))
   
-  b <- unique(ref[grepl("b",ref$ref3), "ref2"]) #bold
+  b <- unique(ref[grepl("b",ref$ref3), "ref2"]) # bold
   s <- unique(ref[grepl("s",ref$ref3), "ref2"]) # extra_css = "border-bottom: 1px solid"
   i <- unique(ref[grepl("i",ref$ref3), "ref2"]) # italic
   
@@ -821,15 +821,36 @@ plot_fins <- function(d, chart, ref, sel) {
     kable_classic(full_width = F, html_font = "Cambria") %>% 
     column_spec(1, width = "25em") %>%
     column_spec(2:(1+length(sel)), width = "8em") %>% 
-    row_spec(b, bold = TRUE) %>% # c(1,8,10,17,19,22,25,28,33,36,40,44,46,49,51,54,56,58)
-    row_spec(i, italic = TRUE) %>%  # c(29,30,31,37,38)
-    row_spec(s, extra_css = "border-bottom: 1px solid") %>%  # c(7,16,19,27,35,43,48,53,56)
+    row_spec(b, bold = TRUE) %>% 
+    row_spec(i, italic = TRUE) %>% 
+    row_spec(s, extra_css = "border-bottom: 1px solid") %>% 
     row_spec(c(22,38,59), extra_css = "border-bottom: 2px solid") %>%
     row_spec(which(rep$ref1 == "blank"), color = "white") 
   
-  #return(list(tbl = rep, tb = tb2_df))
 }
 
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Opex & capex plots
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_opex_capex <- function(d) {
+  rab        <- sim[[1]]$rab
+  rev_req    <- sim[[1]]$rev_req
+  
+  data.frame(
+    year = rep(rownames(rev_req), 2),
+    exp  = c( rep("opex", 20), rep("capex", 20) ),
+    nmnl = c( rev_req$opx, colSums(rab[c("capex","cust_cont"), ]) )
+    ) %>% 
+    ggplot(aes(x=year, y=nmnl, fill=exp)) + 
+    geom_bar(stat="identity", position="stack") + scale_fill_grey() + #position=position_dodge()
+    ggthemes::theme_base()
+} 
 
 
 

@@ -9,6 +9,9 @@ f <- function(
     desired_fixed      = 0.40,
     debt_sens          = 0, 
     oxcx_scenario      = "scnr1", 
+    capex_ps2          = 500,
+    capex_ps3          = 500,
+    capex_ps4          = 500,
     verbose            = F
     ) { 
   
@@ -58,9 +61,9 @@ f <- function(
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
   
   # Append out year capex per "cx_delta" data frame
-  capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * cx_delta["ps28", oxcx_scenario]
-  capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * cx_delta["ps33", oxcx_scenario]
-  capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * cx_delta["ps38", oxcx_scenario]
+  capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * capex_ps2#cx_delta["ps28", oxcx_scenario]
+  capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * capex_ps3#cx_delta["ps33", oxcx_scenario]
+  capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * capex_ps4#cx_delta["ps38", oxcx_scenario]
   
   c <- as.matrix(capex[, 3:(ncol(capex))])
   rab_n_yrs <- ncol(c)
@@ -105,7 +108,7 @@ f <- function(
   
   
   # Opex --------------------------------------------------------------------------------------------
-  # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity and other
+  # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity, chemicals and other
   opex <- dat %>%
     filter(
       balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
@@ -215,7 +218,8 @@ f <- function(
   
   # Avg. annual consumption (kL per household) 
   # TO DO - use this to flex income, ref. line 288.  kL up or down on wet, dry basis
-  kl_hhold_pa <- q["Water.Residential.Variable", 1][[1]] / q["Water.Residential.Fixed", ][[1]]
+  kl_pa_hhold <- q["Water.Residential.Variable", 1][[1]] / q["Water.Residential.Fixed", ][[1]]
+  kl_pa_bus <- q["Water.Non-residential.Variable", 1][[1]] / q["Water.Non-residential.Fixed", ][[1]]
   
   # Convert p0 quantities to p1 - p5 with fixed growth rate
   q <- q %*% exp( cumsum( log( 1 + rep(q_grow, rab_n_yrs) ) ) ) 
@@ -457,32 +461,29 @@ f <- function(
     # Post income (DR accrued income / CR income) ---------------------------------------------------
     t <- "aidb"
     p <- c(
-      incm["1000",i], -incm["1000",i],
-      incm["1001",i], -incm["1001",i],
-      incm["1002",i], -incm["1002",i],
-      incm["1003",i], -incm["1003",i],
-      incm["1101",i], -incm["1101",i],
-      incm["1102",i], -incm["1102",i],
-      incm["1103",i], -incm["1103",i],
-      incm["1104",i], -incm["1104",i],
-      incm["1105",i], -incm["1105",i]
-    )
-    a <- drcr(t, txn_type)
+      sum(incm[c("1000","1001","1002","1003","1101","1102","1103","1104","1105"),i]), 
+      -incm["1000",i], -incm["1001",i], -incm["1002",i], -incm["1003",i], -incm["1101",i],
+      -incm["1102",i], -incm["1103",i], -incm["1104",i], -incm["1105",i]
+      )
+    a <- unique(drcr(t, txn_type))
     
-    if (sum(p) == 0 & length(p) == length(a)) {
+    if ( round(sum(p),3) == 0 & length(p) == length(a) ) {
      mat[a, t, i] <- p
     } else if (sum(p) != 0) {
      print("Income not posted, accounting entries do not balance")
     } else if (length(p) != length(a)) {
      print(paste0("Income not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
     }
-    
+    #if (i == 12) browser()
     
     # Transfer to debtors to specify desired closing balance for accrued income days parameter -------------
     trail <- 3
     t <- "incm"
     pl_acs <- c("1000","1001","1002","1003","1101","1102","1103","1104","1105")
+    
     tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt=pl_acs, txn="aidb") 
+    #if (i == 200) browser()
+    #print(paste("Txn 'incm', tfer accrued income to debtors. Loop no.", i, round(-tfer,1)))
     mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
     
     
@@ -574,7 +575,7 @@ f <- function(
     # Determine if borrowings required --------------------------------------------------------------
     # TO DO - determine amount to borrow dynamically
     cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])  # cash balance after all transactions
-    borrow_amt <- -cash_bal + cash_buffer
+    borrow_amt <- round(-cash_bal + cash_buffer, -3)
     if (cash_bal < 0) {
       t <- "borr"
       mat[drcr(t, txn_type), t, i] <- c(borrow_amt,-borrow_amt)

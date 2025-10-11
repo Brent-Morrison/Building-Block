@@ -1,3 +1,5 @@
+# https://sscc.wisc.edu/shiny/users/jstruck2/layouts/
+
 # library(shiny)
 # #rm(ui) ; rm(server)
 # 
@@ -70,20 +72,92 @@
 
 
 
-library(shiny)
-library(shinyBS)
+# library(shiny)
+# library(shinyBS)
+# 
+# ui <- fluidPage(
+#   selectInput("input1", "Select input", c("choice1", "choice2")),
+#   bsTooltip(id = "input1", 
+#             title = "Here is some text with your instructions")
+# )
+# 
+# server <- function(input, output) {
+# }
+# 
+# shinyApp(ui = ui, server = server)
 
-ui <- fluidPage(
-  selectInput("input1", "Select input", c("choice1", "choice2")),
-  bsTooltip(id = "input1", 
-            title = "Here is some text with your instructions")
+
+
+
+# -------------------------------------------------------------------------------------------------
+#https://dreamrs.github.io/shinyWidgets/reference/noUiSliderInput.html
+
+library( shiny )
+library( shinyWidgets )
+
+ui <- (
+  fluidPage(
+    # theme="simplex.min.css",
+    # tags$style(
+    #   type="text/css",
+    #   "label {font-size: 12px;}",
+    #   ".recalculating {opacity: 1.0;}"
+    #   ),
+    column(6,
+      splitLayout(
+        noUiSliderInput(
+          inputId = "cpx24", label = "FY2024:",
+          min = 0, max = 250, step = 25, value = 100, 
+          orientation = "vertical", direction = "rtl", color = "#428BCA",
+          width = "100px", height = "300px", format = wNumbFormat(decimals = 0)
+        ),
+        noUiSliderInput(
+          inputId = "cpx25", label = "FY2025:",
+          min = 0, max = 250, step = 25, value = 100,
+          orientation = "vertical", direction = "rtl", color = "#3498db",
+          width = "100px", height = "300px", format = wNumbFormat(decimals = 0)
+        ),
+        noUiSliderInput(
+          inputId = "cpx26", label = "FY2026:",
+          min = 0, max = 250, step = 25, value = 100,
+          orientation = "vertical", direction = "rtl", color = "#000",
+          width = "100px", height = "300px", format = wNumbFormat(decimals = 0)
+        ),
+        noUiSliderInput(
+          inputId = "cpx27", label = "FY2027:",
+          min = 0, max = 250, step = 25, value = 100, 
+          orientation = "vertical", direction = "rtl", color = "#ff0",
+          width = "100px", height = "300px", format = wNumbFormat(decimals = 0)
+        ),
+        noUiSliderInput(
+          inputId = "cpx28", label = "FY2028:",
+          min = 0, max = 250, step = 25, value = 100, 
+          orientation = "vertical", direction = "rtl",
+          width = "100px", height = "300px", format = wNumbFormat(decimals = 0)
+        )
+      ),
+      splitLayout(
+        verbatimTextOutput(outputId = "res1"),
+        verbatimTextOutput(outputId = "res2"),
+        verbatimTextOutput(outputId = "res3"),
+        verbatimTextOutput(outputId = "res4"),
+        verbatimTextOutput(outputId = "res5")
+    )
+    )
+  )
 )
 
-server <- function(input, output) {
+server <- function(input, output, session) {
+
+  output$res1 <- renderPrint(input$cpx24)
+  output$res2 <- renderPrint(input$cpx25)
+  output$res3 <- renderPrint(input$cpx26)
+  output$res4 <- renderPrint(input$cpx27)
+  output$res5 <- renderPrint(input$cpx28)
+
 }
 
-shinyApp(ui = ui, server = server)
-
+shinyApp(ui, server)
 
 
 

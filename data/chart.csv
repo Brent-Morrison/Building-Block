@@ -16,7 +16,9 @@
 1,10,150,1500,Government funding,rec_oth,0,0,-6057,-1998
 1,10,160,1600,Interest income,rec_oth,-117,-62,-406,-31
 1,10,170,1700,Other income,rec_oth,0,0,0,0
-1,10,200,2000,Operating expenses ,pay_sup,638432,639341,66220,57951
+1,10,200,2000,Operating expenses ,pay_sup,631892,633921,59922,51323
+1,10,200,2010,Chemicals,pay_sup,1460,1150,2408,2598
+1,10,200,2020,Electricity,pay_sup,5080,4270,3890,4030
 1,10,210,2100,Employee benefits,pay_emp,69514,59624,23441,20987
 1,20,220,2200,Depreciation and amortisation,pay_ppe,123684,122917,0,37328
 1,20,220,2215,Depreciation - buildings,pay_ppe,0,0,143,0

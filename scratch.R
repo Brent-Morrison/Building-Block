@@ -196,32 +196,26 @@ depn_rate_infa
 
 
 
-# Mapply
-# https://stackoverflow.com/questions/35889954/mapply-for-all-arguments-combinations-r
-toy <- function(x, y, z){
-  paste(x, y, z)
-}
+# Growth components
+q0       <- matrix(rep(100,5), ncol = 1)
+q_grow   <- rep(0, 5)
+q_grow_f <- exp( cumsum( log( 1 + q_grow ) ) )
+q        <- q0 %*% q_grow_f
 
-args <- expand.grid(x = 1:2, y = c("#", "$"), z = c("a", "b"))
+p0       <- matrix(c(2,3,4,5,5), ncol = 1)
+infltn   <- rep(0.02, 4)
+ni_pc    <- c(0.005,0.005,0.01,0.01)
+p_grow   <- infltn + ni_pc
+p_grow_f <- exp( cumsum( log( 1 + p_grow ) ) )
+p        <- p0 %*% p_grow_f
+p
 
-mapply(FUN = toy, x = args$x, y = args$y, z = args$z)
 
-# Rolling sum on 3d array
-x <- array(1:24, c(4, 2, 3))
-x
-sum(x[1,1,c(1,2)])
-sum(x[1,1,c(2,3)])
 
-r <- rep(0,2)
-counter <- 0
-for (i in 2:3) {
-  counter <- counter + 1
-  t <- sum(x[1,1,c(i-1,i)])
-  print(t)
-  r[counter] <- t
-}
-r
-
+infltn_factor <- exp( cumsum( log( 1 + infltn ) ) )
+ni_pc_factor  <- rep(0.01, 4)
+p_grow  <- infltn_factor + ni_pc_factor
+p <- p0 %*% p_grow
 
 
 # --------------------------------------------------------------------------------------------------------------------------
@@ -260,42 +254,3 @@ data.frame(
   ) 
 
 
-plot_tariffs <- function(d){
-  
-  tariff_rev <- d[[1]]$tariff_rev
-  
-  # Plot tariff revenue
-  ggplot() +
-    geom_bar(
-      data = data.frame(
-        income_type = c( rep("Fixed", 20), rep("Variable", 20) ),
-        year = rep(2024:2043, 2),
-        income = c(colSums(tariff_rev[grepl("Fixed", rownames(tariff_rev)),]), colSums(tariff_rev[grepl("Variable", rownames(tariff_rev)),]) ) /1e3
-      ),
-      aes(fill=forcats::fct_rev(income_type), y=income, x=year), position="stack", stat="identity", colour="black"
-    ) +
-    scale_fill_manual(values = c("grey60", "grey30")) +
-    geom_point(
-      data = data.frame(
-        year = 2024:2043,
-        perc_fixed = colSums( tariff_rev[grepl("Fixed", rownames(tariff_rev)),] ) / colSums(tariff_rev) * max(colSums(tariff_rev)) / 1e3
-      ),
-      aes(x = year, y = perc_fixed), colour="black", shape = 15, size = 3
-    ) +
-    scale_y_continuous("", sec.axis = sec_axis(~ . / (max(colSums(tariff_rev)) / 1e3), name = "")) +
-    scale_x_continuous(breaks = c(2028,2033,2038,2043)) +
-    ggthemes::theme_base() +
-    labs(
-      x = "",
-      y = "",
-      title = "Tariff revenue - fixed vs variable (left axis, $m)",
-      subtitle = "Proportion of fixed tariff revenue (right axis, square points)"
-    ) + 
-    theme(
-      plot.subtitle = element_text(size = 11.5, face = 'italic'),
-      legend.title = element_blank(),
-      #legend.position = c(0.1,0.9),
-      legend.background = element_blank(),
-      legend.key = element_blank(),
-    )
-}

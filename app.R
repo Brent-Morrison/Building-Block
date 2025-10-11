@@ -24,52 +24,31 @@ ox_df     <- d$ox_delta
 initial_fcast_yr <- min(dat_df[dat_df$entity == "CW", ]$year)
 
 
-# Function to specify UI inputs for rendering
+
+
+# Function to specify UI inputs for rendering ------------------------------------------------------------------------------
+
 renderInputs <- function(prefix) {
   wellPanel(  # Creates a panel with a slightly inset border and grey background.
     fluidRow(
-      column(
-        6,
-        sliderInput(
-          inputId = paste0(prefix, "_", "cost_of_debt_nmnl"), 
-          label   = "Nominal cost of debt :", 
-          min     = 0.01, 
-          max     = 0.10, 
-          step    = 0.01, 
-          value   = 0.04
-          ),
-        sliderInput(
-          inputId = paste0(prefix, "_", "fcast_infltn"),
-          label   = "Forecast inflation :", 
-          min     = 0.01, 
-          max     = 0.07, 
-          step    = 0.005, 
-          value   = 0.025
-          ),
-        sliderInput(
-          inputId = paste0(prefix, "_", "roe"),
-          #inputId = "fcast_infltn", 
-          label   = "Allowable return on equity :", 
-          min     = 0.03, 
-          max     = 0.06, 
-          step    = 0.001, 
-          value   = 0.041
-        )
+      column( # 1st column
+        4,
+        sliderInput(inputId = paste0(prefix, "_", "cost_of_debt_nmnl"), label = "Nominal cost of debt :", min = 0.01, max = 0.10, step = 0.01, value = 0.04),
+        sliderInput(inputId = paste0(prefix, "_", "fcast_infltn"), label = "Forecast inflation :", post = "%", min = 1, max = 7, step = 0.5, value = 2.5),
+        sliderInput(inputId = paste0(prefix, "_", "roe"), label = "Allowable return on equity :", min = 0.03, max = 0.06, step = 0.001, value = 0.041),
+        numericInput(inputId = paste0(prefix, "_", "desired_fixed"), label = "Stipulated fixed % tariff :", value = 99, min = 30, max = 99)
       ),
-      column(
-        6,
-        selectInput(
-          inputId = paste0(prefix, "_", "oxcx_scenario"), 
-          #inputId = "oxcx_scenario", 
-          label   = "Scenario:", 
-          choices = c("scnr1","scnr2","scnr3","scnr4")
-          ),
+      column( # 2nd column
+        4,
+        sliderInput(inputId = paste0(prefix, "_", "capex_ps2"), label = "Capex (FY29-33) :", min = 250, max = 1250, step = 250, value = 500), 
+        sliderInput(inputId = paste0(prefix, "_", "capex_ps3"), label = "Capex (FY34-38) :", min = 250, max = 1250, step = 250, value = 500),
+        sliderInput(inputId = paste0(prefix, "_", "capex_ps4"), label = "Capex (FY39-43) :", min = 250, max = 1250, step = 250, value = 500),
+        selectInput(inputId = paste0(prefix, "_", "oxcx_scenario"), label = "Scenario:", choices = c("scnr1","scnr2","scnr3","scnr4")),
         br(),
         checkboxInput(paste0(prefix, "_", "single_price_delta"), "Price adjustment to occur in first year only", FALSE)
       )
-    ),
-    p(actionButton(inputId = "recalc", label = "Re-run simulation", icon = icon("random"))
-    )
+    ) # end fluidRow
+    #p(actionButton(inputId = "recalc", label = "Re-run simulation", icon = icon("random")))
   )
 }
 
@@ -95,7 +74,7 @@ ui <- navbarPage(
         "from the Victorial Auditor-Generals report."
         ),
       hr(),
-      
+
       fluidRow(
         column(6, tags$h3("Scenario A")),
         column(6, tags$h3("Scenario B"))
@@ -137,9 +116,17 @@ ui <- navbarPage(
     ),
   tabPanel(
     title="Tariffs", 
-    mainPanel(
-      plotOutput("tariff_plot", height = "600px")
+    fluidRow(
+      column(6, tags$h3("Scenario A")),
+      column(6, tags$h3("Scenario B"))
+    ),
+    fluidRow(
+      column(6, plotOutput("a_tariff_plot", height = "600px")),
+      column(6, plotOutput("b_tariff_plot", height = "600px"))
     )
+    # mainPanel(
+    #   plotOutput("tariff_plot", height = "600px")
+    # )
   ),
   tabPanel(
     title="Downloads", 
@@ -152,37 +139,46 @@ ui <- navbarPage(
 
 
 
-# Server function
+# Server function ----------------------------------------------------------------------------------------------------------
 server <- function(input, output, session) {
   
   simA <- reactive(list(
     f( dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
        q_grow            = 0.019,
        cost_of_debt_nmnl = input$a_cost_of_debt_nmnl, 
-       fcast_infltn      = input$a_fcast_infltn,
+       fcast_infltn      = input$a_fcast_infltn/100,
        roe               = input$a_roe, 
        single_price_delta= input$a_single_price_delta,
+       desired_fixed     = input$a_desired_fixed,
        debt_sens         = NULL, 
        oxcx_scenario     = input$a_oxcx_scenario,
+       capex_ps2         = input$a_capex_ps2,
+       capex_ps3         = input$a_capex_ps3,
+       capex_ps4         = input$a_capex_ps4,
        verbose           = F))
     )
   simB <- reactive(list(
     f( dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
        q_grow            = 0.019,
        cost_of_debt_nmnl = input$b_cost_of_debt_nmnl, 
-       fcast_infltn      = input$b_fcast_infltn,
+       fcast_infltn      = input$b_fcast_infltn/100,
        roe               = input$b_roe, 
        single_price_delta= input$b_single_price_delta,
+       desired_fixed     = input$b_desired_fixed,
        debt_sens         = NULL, 
        oxcx_scenario     = input$b_oxcx_scenario,
+       capex_ps2         = input$b_capex_ps2,
+       capex_ps3         = input$b_capex_ps3,
+       capex_ps4         = input$b_capex_ps4,
        verbose           = F))
     )
   
-  output$a_plot     <- renderPlot( {plot_kpi( simA(), initial_fcast_yr )} )
-  output$b_plot     <- renderPlot( {plot_kpi( simB(), initial_fcast_yr )} )
-  output$fins_kable <- renderText( {plot_fins(d=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
-  output$tariff_plot<- renderPlot( {plot_tariffs( simA() )} )
-  output$tb_dload   <- downloadHandler(
+  output$a_plot        <- renderPlot( {plot_kpi( simA(), initial_fcast_yr )} )
+  output$b_plot        <- renderPlot( {plot_kpi( simB(), initial_fcast_yr )} )
+  output$fins_kable    <- renderText( {plot_fins(d=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
+  output$a_tariff_plot <- renderPlot( {plot_tariffs( simA() )} )
+  output$b_tariff_plot <- renderPlot( {plot_tariffs( simB() )} )
+  output$tb_dload      <- downloadHandler(
     filename = function() {"trial_balance.csv"},
     content = function(file) {write.csv(tb(d=simA(), chart=chart_df, ref=ref_df), file, quote = FALSE)}
     )
