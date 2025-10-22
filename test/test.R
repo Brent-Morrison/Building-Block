@@ -154,6 +154,9 @@ y <- add_trend_season(y=100, s=0, a=1, p=1.5)
 plot(1:12, y ,type="l", main = "trend")
 sum(y)
 
+y <- round(as.vector(sapply(X = c(100,110,120), FUN = add_trend_season, s=0, a=1, p=1.5)), 3)
+plot(1:36, y ,type="l", main = "trend")
+sum(y)
 
 
 

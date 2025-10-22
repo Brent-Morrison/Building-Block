@@ -29,18 +29,19 @@ args <- expand.grid(
   single_price_delta = T, 
   desired_fixed      = 99,
   debt_sens          = 0, 
-  oxcx_scenario      = "scnr1",
+  #oxcx_scenario      = "scnr1",
   capex_ps2          = 500,
   capex_ps3          = 500,
-  capex_ps4          = 500
+  capex_ps4          = 500,
+  opex_ps2           = 250,
+  opex_ps3           = 250,
+  opex_ps4           = 250
   )
 
 sim <- mapply(
   FUN               = f, 
   dat               = list(dat_df), 
   chart             = list(chart_df), 
-  cx_delta          = list(cx_df), 
-  ox_delta          = list(ox_df), 
   txn_type          = list(txn_df), 
   ref               = list(ref_df),
   q_grow            = args$q_grow,                # list(0.019), 
@@ -50,10 +51,13 @@ sim <- mapply(
   single_price_delta= args$single_price_delta,
   desired_fixed     = args$desired_fixed,
   debt_sens         = args$debt_sens,             # list(-0.01,0,0.01), 
-  oxcx_scenario     = args$oxcx_scenario,         # list("scnr1","scnr4"),
+  #oxcx_scenario     = args$oxcx_scenario,         # list("scnr1","scnr4"),
   capex_ps2         = args$capex_ps2,
   capex_ps3         = args$capex_ps3,
   capex_ps4         = args$capex_ps4,
+  opex_ps2          = args$opex_ps2,
+  opex_ps3          = args$opex_ps3,
+  opex_ps4          = args$opex_ps4,
   SIMPLIFY          = FALSE
 )
 

@@ -254,3 +254,49 @@ data.frame(
   ) 
 
 
+# --------------------------------------------------------------------------------------------------------------------------
+# Create annual financial data series
+# --------------------------------------------------------------------------------------------------------------------------
+
+nmnl_series <- function(q, p, q_grow, ps2, ps3, ps4) {
+  
+  # Create annual financial data series (revenue, cost, capex, etc) from price, quantity and an uplift factor
+  # - price and quantity data is multiplied to construct annual amounts for years 1 through 5 (ps1)
+  # - price period specific uplift amount are applied to incrementally escalation ps1 amounts for ps2 through ps4
+  #
+  # Args:
+  #   q        - baseline quantities for year 1 of price submission 1
+  #   p        - baseline prices for year 1 of price submission 1
+  #   ps2      - uplift for price period 2
+  #   ps3      - uplift for price period 3
+  #   ps4      - uplift for price period 4
+  #
+  # Returns
+  #   a series 
+  
+  ps1.1 <- q * p
+  ps1.2 <- ps1.1 * growth_fctr(esc_rate = q_grow, len = 5)
+  ps1.3 <- tail(ps1.2, 1)
+  nmnl <- c(ps1.2, ps1.3 + rep(ps2, 5), ps1.3 + rep(ps3, 5), ps1.3 + rep(ps4, 5))
+  nmnl
+}
+
+opex1 <- data.frame(
+  year = initial_fcast_yr:(initial_fcast_yr+19), 
+  amount = nmnl_series(q = 200, p = 100, q_grow = 0.03, ps2 = 0, ps3 = 110, ps4 = 120)
+  )
+
+
+
+
+
+nmnl_labour <- c(rep(fte * cost_fte, 5), rep(opex_ps2, 5), rep(opex_ps3, 5), rep(opex_ps4, 5))
+nmnl_labour
+
+infl_fctr_fte <- exp(cumsum( log(1 + rep( (q_grow_fte + ni_cost_fte) / 100 , 5)) ))
+infl_fctr_fte <- real_nmnl_fctr(esc_rate = (q_grow_fte + ni_cost_fte) /100, len = 5)
+real_labour <- nmnl_labour * infl_fctr_fte
+nmnl_labour
+real_labour
+
+

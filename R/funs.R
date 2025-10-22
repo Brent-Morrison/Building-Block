@@ -958,3 +958,45 @@ get_data <- function(src = "local") {
     ox_delta     = ox_delta
   ))
 }
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Create inflation factor
+# --------------------------------------------------------------------------------------------------------------------------
+
+growth_fctr <- function(esc_rate = c(0.025, 0.01), len = c(5,3)) {
+  if (length(len) == 1) r <- rep(esc_rate, each = len) else r <- rep(esc_rate, times = len)
+  cumprod(1 + r)
+}
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Create annual financial data series
+# --------------------------------------------------------------------------------------------------------------------------
+
+nmnl_series <- function(q, p, q_grow) {
+  
+  # Create annual financial data series (revenue, cost, capex, etc) from price, quantity and an uplift factor
+  # - price and quantity data is multiplied to construct annual amounts for years 1 through 5 (ps1)
+  # - this is escalated by the growth in quantities
+  #
+  # Args:
+  #   q        - baseline quantities for year 1 of price submission 1
+  #   p        - baseline prices for year 1 of price submission 1
+  #   q_grow   - growth rate in quantities
+  #
+  # Returns
+  #   a series 
+  
+  ps1.1 <- q * p
+  ps1.2 <- ps1.1 * growth_fctr(esc_rate = q_grow, len = 5)
+  ps1.3 <- tail(ps1.2, 1)
+  nmnl <- c(ps1.2, rep(ps1.3, 15)) 
+  nmnl
+}

@@ -1,3 +1,4 @@
+# To DO - check if the real to nominal uplift via inflation factors is being reset each price period
 # Function
 f <- function(
     dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
@@ -8,10 +9,17 @@ f <- function(
     single_price_delta = T,
     desired_fixed      = 0.40,
     debt_sens          = 0, 
-    oxcx_scenario      = "scnr1", 
+    #oxcx_scenario      = "scnr1", 
+    ml                 = 22,
+    cost_ml            = 120,
+    q_grow_ml          = 0.02,
+    ni_cost_ml         = 0.02,
     capex_ps2          = 500,
     capex_ps3          = 500,
     capex_ps4          = 500,
+    opex_ps2           = 250,
+    opex_ps3           = 250,
+    opex_ps4           = 250,
     verbose            = F
     ) { 
   
@@ -19,8 +27,6 @@ f <- function(
   #   dat               - a data frame containing the required regulatory data (TO DO - document this) 
   #   chart             - a data frame representing the accounting chart of accounts
   #   txn_type          - a data frame specifying account posting for each transaction type
-  #   cx_delta          - a data frame containing multiple scenarios of 5 year capex spend for price periods 2 to n
-  #   ox_delta          - a data frame containing multiple scenarios of incremental 5 year opex spend for price periods 2 to n
   #   q_grow            - the annual growth rate for all quantities
   #   cost_of_debt_nmnl - nominal cost of debt (0.0456)
   #   cast_infltn       - inflation (0.03)
@@ -37,6 +43,12 @@ f <- function(
   #   prices         - a matrix of all prices for each year
   #   rev_req        - a data frame of the components to the revenue requirement for each year
   #   tariff_rev     - a matrix tariff revenue for each year
+  #
+  # Documentation TO DO
+  #   use GoldSim website as a guide to explain model functionality
+  #   - https://www.goldsim.com/Web/Applications/ExampleApplications/BusinessExamples/CityofMelbournesPopulationForecasts/PopulationModelDescription/
+  #   - https://www.goldsim.com/Web/Products/Modules/Financial/Overview/
+  #   - https://www.goldsim.com/Web/Products/GoldSim/Comparison/Spreadsheets/
   
   # Parameters --------------------------------------------------------------------------------------
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
@@ -119,9 +131,9 @@ f <- function(
     group_by(year) %>% 
     summarise(amount = sum(amount))
   
-  opex[opex$year == 2029:2033, "amount"] <- opex[opex$year == 2029:2033, "amount"] + opex[opex$year == 2029:2033, "amount"] / sum(opex[opex$year == 2029:2033, "amount"]) * ox_delta["ps28", oxcx_scenario]
-  opex[opex$year == 2034:2038, "amount"] <- opex[opex$year == 2034:2038, "amount"] + opex[opex$year == 2034:2038, "amount"] / sum(opex[opex$year == 2034:2038, "amount"]) * ox_delta["ps33", oxcx_scenario]
-  opex[opex$year == 2039:2043, "amount"] <- opex[opex$year == 2039:2043, "amount"] + opex[opex$year == 2039:2043, "amount"] / sum(opex[opex$year == 2039:2043, "amount"]) * ox_delta["ps38", oxcx_scenario]
+  opex[opex$year == 2029:2033, "amount"] <- opex[opex$year == 2029:2033, "amount"] + opex[opex$year == 2029:2033, "amount"] / sum(opex[opex$year == 2029:2033, "amount"]) * opex_ps2 #ox_delta["ps28", oxcx_scenario]
+  opex[opex$year == 2034:2038, "amount"] <- opex[opex$year == 2034:2038, "amount"] + opex[opex$year == 2034:2038, "amount"] / sum(opex[opex$year == 2034:2038, "amount"]) * opex_ps3 # ox_delta["ps33", oxcx_scenario]
+  opex[opex$year == 2039:2043, "amount"] <- opex[opex$year == 2039:2043, "amount"] + opex[opex$year == 2039:2043, "amount"] / sum(opex[opex$year == 2039:2043, "amount"]) * opex_ps4 # ox_delta["ps38", oxcx_scenario]
   
   
   # RAB schedule ------------------------------------------------------------------------------------
@@ -310,7 +322,8 @@ f <- function(
   # Parameters 
   mons          <- rab_n_yrs * 12  # months to forecast
   open_bals_col <- "cw_23"         # column in the 'chart.csv' file representing the entities data
-  infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
+  infltn_factor <- growth_fctr(esc_rate = 0.025, len = rab_n_yrs)   
+  #infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
   month_end     <- seq(as.Date(paste(initial_fcast_yr-1,"07","31", sep = "-")) + 1, by = "month", length.out = mons) - 1
   days          <- as.numeric(format(month_end, "%d"))
   accrued_days  <- 60
@@ -356,7 +369,7 @@ f <- function(
   tot_rev_nmnl <- tot_rev_real * infltn_factor * 1e3
   incm2 <- t( apply( tot_rev_nmnl, 1, function(x) round( as.vector( sapply(X = x, FUN = add_trend_season, s=0, a=1, p=1.5) ), 3 ) ) )
   income_map <- ref[ref$ref_type == "income_map", c("lookup2","ref2")]  
-  # Map income types to GL accoutnts
+  # Map income types to GL accounts
   incm1 <- left_join(
     mutate(data.frame(incm2), income_type = rownames(incm2)), 
     income_map, 
@@ -373,6 +386,12 @@ f <- function(
   
   
   # Expenses 
+  
+  opex1 <- data.frame(
+    year = initial_fcast_yr:(initial_fcast_yr+19), 
+    amount = nmnl_series(q = ml, p = cost_ml, q_grow = q_grow_ml) / 1e3
+  )
+  
   # Percentage of opex relating to employee expenses (from published accounts)
   # This required to disaggregate baseline opex from pricing submission
   perc_opex_emp <- chart[chart$account_no == 2100, open_bals_col] / sum(chart[chart$account_no %in% c(2000,2100), open_bals_col])
@@ -381,6 +400,8 @@ f <- function(
   exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
   exp2 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * perc_opex_emp
   exp2 <- round(as.vector(sapply(X = exp2, FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  exp3 <- unlist(opex1[opex1$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * ni_cost_ml
+  exp3 <- round(as.vector(sapply(X = exp3, FUN = add_trend_season, s=0, a=0, p=0)), 3)
   
   
   # Capex 
@@ -518,6 +539,9 @@ f <- function(
     t <- "exp2"
     mat[drcr(t, txn_type), t, i] <- c(exp2[i], -exp2[i])
     
+    t <- "exp3"
+    mat[drcr(t, txn_type), t, i] <- c(exp3[i], -exp3[i])
+    
     
     # Cash payment re trade creditors ---------------------------------------------------------------
     trail <- 3
@@ -598,7 +622,7 @@ f <- function(
     tariff_rev   = tot_rev_nmnl,
     call         = list(cx_delta=cx_delta, ox_delta=ox_delta, q_grow=q_grow, 
                         cost_of_debt_nmnl=cost_of_debt_nmnl, fcast_infltn=fcast_infltn, 
-                        roe=roe, debt_sens=debt_sens, oxcx_scenario=oxcx_scenario)
+                        roe=roe, debt_sens=debt_sens) # , oxcx_scenario=oxcx_scenario
   ))
   
 }
