@@ -9,17 +9,28 @@ f <- function(
     single_price_delta = T,
     desired_fixed      = 0.40,
     debt_sens          = 0, 
-    #oxcx_scenario      = "scnr1", 
-    ml                 = 22,
+    fte                = 200,  # fte
+    cost_fte           = 100,
+    q_grow_fte         = 0.02,
+    ni_cost_fte        = 0.02,
+    kwh                = 25,   # kwh
+    cost_kwh           = 22,
+    q_grow_kwh         = 0.02,
+    ni_cost_kwh        = 0.02,
+    ml                 = 22,   # ml
     cost_ml            = 120,
     q_grow_ml          = 0.02,
     ni_cost_ml         = 0.02,
-    capex_ps2          = 500,
-    capex_ps3          = 500,
-    capex_ps4          = 500,
-    opex_ps2           = 250,
-    opex_ps3           = 250,
-    opex_ps4           = 250,
+    dl                 = 60,   # dl
+    cost_dl            = 1,
+    q_grow_dl          = 0.02,
+    ni_cost_dl         = 0.02,
+    capex_ps2          = 100,
+    capex_ps3          = 100,
+    capex_ps4          = 100,
+    opex_ps2           = 10,
+    opex_ps3           = 10,
+    opex_ps4           = 10,
     verbose            = F
     ) { 
   
@@ -73,9 +84,9 @@ f <- function(
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
   
   # Append out year capex per "cx_delta" data frame
-  capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * capex_ps2#cx_delta["ps28", oxcx_scenario]
-  capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * capex_ps3#cx_delta["ps33", oxcx_scenario]
-  capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * capex_ps4#cx_delta["ps38", oxcx_scenario]
+  capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * capex_ps2 * 5 #cx_delta["ps28", oxcx_scenario]
+  capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * capex_ps3 * 5 #cx_delta["ps33", oxcx_scenario]
+  capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * capex_ps4 * 5 #cx_delta["ps38", oxcx_scenario]
   
   c <- as.matrix(capex[, 3:(ncol(capex))])
   rab_n_yrs <- ncol(c)
@@ -121,20 +132,40 @@ f <- function(
   
   # Opex --------------------------------------------------------------------------------------------
   # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity, chemicals and other
-  opex <- dat %>%
-    filter(
-      balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
-                          "Customer Service and billing", "GSL Payments", "Corporate", "Other operating expenditure",
-                          "Environment Contribution", "Licence Fees", "Treatment"),
-      entity == ent_parm
-    ) %>% 
-    group_by(year) %>% 
-    summarise(amount = sum(amount))
+  # opex <- dat %>%
+  #   filter(
+  #     balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
+  #                         "Customer Service and billing", "GSL Payments", "Corporate", "Other operating expenditure",
+  #                         "Environment Contribution", "Licence Fees", "Treatment"),
+  #     entity == ent_parm
+  #   ) %>% 
+  #   group_by(year) %>% 
+  #   summarise(amount = sum(amount))
+  # 
+  # opex[opex$year == 2029:2033, "amount"] <- opex[opex$year == 2029:2033, "amount"] + opex[opex$year == 2029:2033, "amount"] / sum(opex[opex$year == 2029:2033, "amount"]) * opex_ps2 #ox_delta["ps28", oxcx_scenario]
+  # opex[opex$year == 2034:2038, "amount"] <- opex[opex$year == 2034:2038, "amount"] + opex[opex$year == 2034:2038, "amount"] / sum(opex[opex$year == 2034:2038, "amount"]) * opex_ps3 # ox_delta["ps33", oxcx_scenario]
+  # opex[opex$year == 2039:2043, "amount"] <- opex[opex$year == 2039:2043, "amount"] + opex[opex$year == 2039:2043, "amount"] / sum(opex[opex$year == 2039:2043, "amount"]) * opex_ps4 # ox_delta["ps38", oxcx_scenario]
   
-  opex[opex$year == 2029:2033, "amount"] <- opex[opex$year == 2029:2033, "amount"] + opex[opex$year == 2029:2033, "amount"] / sum(opex[opex$year == 2029:2033, "amount"]) * opex_ps2 #ox_delta["ps28", oxcx_scenario]
-  opex[opex$year == 2034:2038, "amount"] <- opex[opex$year == 2034:2038, "amount"] + opex[opex$year == 2034:2038, "amount"] / sum(opex[opex$year == 2034:2038, "amount"]) * opex_ps3 # ox_delta["ps33", oxcx_scenario]
-  opex[opex$year == 2039:2043, "amount"] <- opex[opex$year == 2039:2043, "amount"] + opex[opex$year == 2039:2043, "amount"] / sum(opex[opex$year == 2039:2043, "amount"]) * opex_ps4 # ox_delta["ps38", oxcx_scenario]
   
+  # NEW OPEX FROM UI (retuned in thousands)
+  opx_labr <- real_series(q = fte    , p = cost_fte    , q_grow = q_grow_fte)
+  opx_elec <- real_series(q = kwh*1e6, p = cost_kwh/1e3, q_grow = q_grow_kwh) / 1e3
+  opx_chem <- real_series(q = ml *1e3, p = cost_ml     , q_grow = q_grow_ml) / 1e3
+  opx_othr <- real_series(q = dl *1e6, p = cost_dl     , q_grow = q_grow_dl) / 1e3
+  
+  # Extend opex series with subsequent PS periods from UI input
+  opx_outy <- c(rep(0, 5), rep(opex_ps2*1e3, 5), rep(opex_ps3*1e3, 5), rep(opex_ps4*1e3, 5))
+  opx_tot5 <- opx_labr[5] + opx_elec[5] + opx_chem[5] + opx_othr[5]
+  
+  # Apportion subsequent PS periods across opex types
+  opx_labr <- opx_labr + opx_outy * opx_labr[5] / opx_tot5
+  opx_elec <- opx_elec + opx_outy * opx_elec[5] / opx_tot5
+  opx_chem <- opx_chem + opx_outy * opx_chem[5] / opx_tot5
+  opx_othr <- opx_othr + opx_outy * opx_othr[5] / opx_tot5
+  
+  # Total opex (convert to millions)
+  opex <- (opx_labr + opx_elec + opx_chem + opx_othr) / 1000
+
   
   # RAB schedule ------------------------------------------------------------------------------------
   # Capex
@@ -206,11 +237,11 @@ f <- function(
   
   
   
-  # Revenue requirement -----------------------------------------------------------------------------
-  rev_req <- roa[1:rab_n_yrs] + opex$amount[1:rab_n_yrs] + dpn[1:rab_n_yrs]
+  # Revenue requirement (millions) -------------------------------------------------------------------
+  rev_req <- roa[1:rab_n_yrs] + opex[1:rab_n_yrs] + dpn[1:rab_n_yrs]
   rev_req_df <- data.frame(
     roa = roa[1:rab_n_yrs], 
-    opx = opex$amount[1:rab_n_yrs],
+    opx = opex[1:rab_n_yrs],
     dpn = dpn[1:rab_n_yrs],
     row.names = seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
   )
@@ -316,7 +347,7 @@ f <- function(
   
   
   # -------------------------------------------------------------------------------------------------
-  # Matrix accounting set up
+  # Matrix accounting set up (balances are in thousands)
   # -------------------------------------------------------------------------------------------------
   
   # Parameters 
@@ -387,21 +418,22 @@ f <- function(
   
   # Expenses 
   
-  opex1 <- data.frame(
-    year = initial_fcast_yr:(initial_fcast_yr+19), 
-    amount = nmnl_series(q = ml, p = cost_ml, q_grow = q_grow_ml) / 1e3
-  )
-  
   # Percentage of opex relating to employee expenses (from published accounts)
   # This required to disaggregate baseline opex from pricing submission
-  perc_opex_emp <- chart[chart$account_no == 2100, open_bals_col] / sum(chart[chart$account_no %in% c(2000,2100), open_bals_col])
+  # perc_opex_emp <- chart[chart$account_no == 2100, open_bals_col] / sum(chart[chart$account_no %in% c(2000,2100), open_bals_col])
+  # 
+  # exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * (1-perc_opex_emp)
+  # exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  # exp2 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * perc_opex_emp
+  # exp2 <- round(as.vector(sapply(X = exp2, FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  # exp3 <- unlist(opex1[opex1$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * ni_cost_ml
+  # exp3 <- round(as.vector(sapply(X = exp3, FUN = add_trend_season, s=0, a=0, p=0)), 3)
   
-  exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * (1-perc_opex_emp)
-  exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
-  exp2 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * perc_opex_emp
-  exp2 <- round(as.vector(sapply(X = exp2, FUN = add_trend_season, s=0, a=0, p=0)), 3)
-  exp3 <- unlist(opex1[opex1$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * ni_cost_ml
-  exp3 <- round(as.vector(sapply(X = exp3, FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  opx_labr_m <- round(as.vector(sapply(X = opx_labr * growth_fctr(ni_cost_fte, rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  opx_elec_m <- round(as.vector(sapply(X = opx_elec * growth_fctr(ni_cost_kwh, rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  opx_chem_m <- round(as.vector(sapply(X = opx_chem * growth_fctr(ni_cost_ml , rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  opx_othr_m <- round(as.vector(sapply(X = opx_othr * growth_fctr(ni_cost_dl , rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
+  
   
   
   # Capex 
@@ -533,19 +565,21 @@ f <- function(
     
     
     # Expenses --------------------------------------------------------------------------------------
-    t <- "exp1"
-    mat[drcr(t, txn_type), t, i] <- c(exp1[i], -exp1[i])
+    t <- "exp1" # other expenses
+    mat[drcr(t, txn_type), t, i] <- c(opx_othr_m[i], -opx_othr_m[i])
     
-    t <- "exp2"
-    mat[drcr(t, txn_type), t, i] <- c(exp2[i], -exp2[i])
+    t <- "exp2" # employee expenses
+    mat[drcr(t, txn_type), t, i] <- c(opx_labr_m[i], -opx_labr_m[i])
     
-    t <- "exp3"
-    mat[drcr(t, txn_type), t, i] <- c(exp3[i], -exp3[i])
+    t <- "exp3" # chemicals
+    mat[drcr(t, txn_type), t, i] <- c(opx_chem_m[i], -opx_chem_m[i])
     
+    t <- "exp4" # electricty
+    mat[drcr(t, txn_type), t, i] <- c(opx_elec_m[i], -opx_elec_m[i])   
     
     # Cash payment re trade creditors ---------------------------------------------------------------
     trail <- 3
-    rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
+    rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn=c("exp1","exp3","exp4"))
     t <- "crd1"
     mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
     

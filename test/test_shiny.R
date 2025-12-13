@@ -29,13 +29,12 @@ args <- expand.grid(
   single_price_delta = T, 
   desired_fixed      = 99,
   debt_sens          = 0, 
-  #oxcx_scenario      = "scnr1",
-  capex_ps2          = 500,
-  capex_ps3          = 500,
-  capex_ps4          = 500,
-  opex_ps2           = 250,
-  opex_ps3           = 250,
-  opex_ps4           = 250
+  capex_ps2          = 100,
+  capex_ps3          = 100,
+  capex_ps4          = 100,
+  opex_ps2           = 10,
+  opex_ps3           = 10,
+  opex_ps4           = 10
   )
 
 sim <- mapply(
@@ -51,7 +50,6 @@ sim <- mapply(
   single_price_delta= args$single_price_delta,
   desired_fixed     = args$desired_fixed,
   debt_sens         = args$debt_sens,             # list(-0.01,0,0.01), 
-  #oxcx_scenario     = args$oxcx_scenario,         # list("scnr1","scnr4"),
   capex_ps2         = args$capex_ps2,
   capex_ps3         = args$capex_ps3,
   capex_ps4         = args$capex_ps4,
@@ -61,18 +59,20 @@ sim <- mapply(
   SIMPLIFY          = FALSE
 )
 
-tb         <- tb(sim, chart_df, ref_df)
-txns       <- sim[[1]]$txns
-prices     <- sim[[1]]$prices
-tariff_rev <- sim[[1]]$tariff_rev
-rab        <- sim[[1]]$rab
-rev_req    <- sim[[1]]$rev_req
+m          <- sim[[1]]
+tb         <- tb(sim, chart_df)
+txns       <- m$txns
+prices     <- m$prices
+tariff_rev <- m$tariff_rev
+rab        <- m$rab
+rev_req    <- m$rev_req
 
 plot_tariffs(sim)
 plot_kpi(sim, initial_fcast_yr = 2024)
 plot_fins(sim, chart=chart_df, ref=ref_df, sel=c("FY2024","FY2025","FY2028","FY2033","FY2038","FY2043"))
 plot_opex_capex(sim)
 trial_balance <- round( tb(sim, chart_df, ref_df) / 1, 3 )
+cf(sim, ref_df, 2024)
 
 
 # --------------------------------------------------------------------------------------------------------------------------

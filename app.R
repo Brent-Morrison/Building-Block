@@ -73,17 +73,24 @@ renderInputs <- function(prefix) {
       #br(),
       row_with_label4(
         "Electricity",
-        numericInput(inputId = paste0(prefix, "_", "kwh"), label = "Kilowatt-hour (kWh)", value = 99, min = 30, max = 99),
-        numericInput(inputId = paste0(prefix, "_", "cost_kwh"), label = "Price per kilowatt-hour", value = 10, min = 5, max = 20),
+        numericInput(inputId = paste0(prefix, "_", "kwh"), label = "GWh (million kWh)", value = 25, min = 20, max = 50),
+        numericInput(inputId = paste0(prefix, "_", "cost_kwh"), label = "Price per kWh (cents)", value = 22, min = 5, max = 20),
         numericInput(inputId = paste0(prefix, "_", "q_grow_kwh"), label = "Percentage growth in kWh", value = 2, min = -5, max = 10),
         numericInput(inputId = paste0(prefix, "_", "ni_cost_kwh"), label = "Relative price change", value = 2, min = -5, max = 10)
       ),
       row_with_label4(
         "Chemicals",
-        numericInput(inputId = paste0(prefix, "_", "ml"), label = "Water volume (ML)", value = 22, min = 10, max = 30),
+        numericInput(inputId = paste0(prefix, "_", "ml"), label = "Water volume (GL)", value = 22, min = 10, max = 30),
         numericInput(inputId = paste0(prefix, "_", "cost_ml"), label = "Chemical costs per ML", value = 120, min = 80, max = 200),
         numericInput(inputId = paste0(prefix, "_", "q_grow_ml"), label = "Percentage growth in ML", value = 2, min = -5, max = 10),
         numericInput(inputId = paste0(prefix, "_", "ni_cost_ml"), label = "Relative price change", value = 2, min = -5, max = 10)
+      ),
+      row_with_label4(
+        "Other",
+        numericInput(inputId = paste0(prefix, "_", "dl"), label = "Dollars (mn)", value = 60, min = 40, max = 100),
+        numericInput(inputId = paste0(prefix, "_", "cost_dl"), label = "Dummy", value = 1, min = 1, max = 1),
+        numericInput(inputId = paste0(prefix, "_", "q_grow_dl"), label = "Percentage growth", value = 2, min = -5, max = 10),
+        numericInput(inputId = paste0(prefix, "_", "ni_cost_dl"), label = "Relative price change", value = 2, min = -5, max = 10)
       )
       
     ),
@@ -99,17 +106,17 @@ renderInputs <- function(prefix) {
     br(),
     fluidPage(
       row_with_label3(
-        "Opex",
-        sliderInput(inputId = paste0(prefix, "_", "opex_ps2"), label = NULL, min = 100, max = 750, step = 50, value = 250),
-        sliderInput(inputId = paste0(prefix, "_", "opex_ps3"), label = NULL, min = 100, max = 750, step = 50, value = 250),
-        sliderInput(inputId = paste0(prefix, "_", "opex_ps4"), label = NULL, min = 100, max = 750, step = 50, value = 250)
+        "Incremental Opex (million p.a.)",
+        sliderInput(inputId = paste0(prefix, "_", "opex_ps2"), label = NULL, min = -20, max = 50, step = 5, value = 10),
+        sliderInput(inputId = paste0(prefix, "_", "opex_ps3"), label = NULL, min = -20, max = 50, step = 5, value = 10),
+        sliderInput(inputId = paste0(prefix, "_", "opex_ps4"), label = NULL, min = -20, max = 50, step = 5, value = 10)
       ),
       br(),
       row_with_label3(
-        "Capex",
-        sliderInput(inputId = paste0(prefix, "_", "capex_ps2"), label = NULL, min = 250, max = 1250, step = 250, value = 500),
-        sliderInput(inputId = paste0(prefix, "_", "capex_ps3"), label = NULL, min = 250, max = 1250, step = 250, value = 500),
-        sliderInput(inputId = paste0(prefix, "_", "capex_ps4"), label = NULL, min = 250, max = 1250, step = 250, value = 500)
+        "Capex (million p.a.)",
+        sliderInput(inputId = paste0(prefix, "_", "capex_ps2"), label = NULL, min = 50, max = 250, step = 25, value = 100),
+        sliderInput(inputId = paste0(prefix, "_", "capex_ps3"), label = NULL, min = 50, max = 250, step = 25, value = 100),
+        sliderInput(inputId = paste0(prefix, "_", "capex_ps4"), label = NULL, min = 50, max = 250, step = 25, value = 100)
         
       ),
       br(),
@@ -237,8 +244,9 @@ ui <- navbarPage(
   tabPanel(
     title="Downloads", 
     fluidRow(
-      column(3, downloadButton("tb_dload" , "Download simulation TB .csv")),
-      column(3, downloadButton("rab_dload", "Download RAB .csv"))
+      column(2, downloadButton("tb_dload" , "Download simulation TB .csv")),
+      column(2, downloadButton("rab_dload", "Download RAB .csv")),
+      column(2, downloadButton("revreq_dload", "Download Rev Req .csv"))
     )
   )
 )
@@ -257,11 +265,22 @@ server <- function(input, output, session) {
        single_price_delta= input$a_single_price_delta,
        desired_fixed     = input$a_desired_fixed,
        debt_sens         = NULL, 
-       #oxcx_scenario     = input$a_oxcx_scenario,
+       fte               = input$a_fte,
+       cost_fte          = input$a_cost_fte,
+       q_grow_fte        = input$a_q_grow_fte/100,
+       ni_cost_fte       = input$a_ni_cost_fte/100,
+       kwh               = input$a_kwh,
+       cost_kwh          = input$a_cost_kwh,
+       q_grow_kwh        = input$a_q_grow_kwh/100,
+       ni_cost_kwh       = input$a_ni_cost_kwh/100,
        ml                = input$a_ml,
        cost_ml           = input$a_cost_ml,
-       q_grow_ml         = input$a_q_grow_ml / 100,
-       ni_cost_ml        = input$a_ni_cost_ml / 100,
+       q_grow_ml         = input$a_q_grow_ml/100,
+       ni_cost_ml        = input$a_ni_cost_ml/100,
+       dl                = input$a_dl,
+       cost_dl           = input$a_cost_dl,
+       q_grow_dl         = input$a_q_grow_dl/100,
+       ni_cost_dl        = input$a_ni_cost_dl/100,
        capex_ps2         = input$a_capex_ps2,
        capex_ps3         = input$a_capex_ps3,
        capex_ps4         = input$a_capex_ps4,
@@ -279,11 +298,22 @@ server <- function(input, output, session) {
        single_price_delta= input$b_single_price_delta,
        desired_fixed     = input$b_desired_fixed,
        debt_sens         = NULL, 
-       #oxcx_scenario     = input$b_oxcx_scenario,
+       fte               = input$b_fte,
+       cost_fte          = input$b_cost_fte,
+       q_grow_fte        = input$b_q_grow_fte/100,
+       ni_cost_fte       = input$b_ni_cost_fte/100,
+       kwh               = input$b_kwh,
+       cost_kwh          = input$b_cost_kwh,
+       q_grow_kwh        = input$b_q_grow_kwh/100,
+       ni_cost_kwh       = input$b_ni_cost_kwh/100,
        ml                = input$b_ml,
        cost_ml           = input$b_cost_ml,
-       q_grow_ml         = input$b_q_grow_ml / 100,
-       ni_cost_ml        = input$b_ni_cost_ml / 100,
+       q_grow_ml         = input$b_q_grow_ml/100,
+       ni_cost_ml        = input$b_ni_cost_ml/100,
+       dl                = input$b_dl,
+       cost_dl           = input$b_cost_dl,
+       q_grow_dl         = input$b_q_grow_dl/100,
+       ni_cost_dl        = input$b_ni_cost_dl/100,
        capex_ps2         = input$b_capex_ps2,
        capex_ps3         = input$b_capex_ps3,
        capex_ps4         = input$b_capex_ps4,
@@ -295,17 +325,21 @@ server <- function(input, output, session) {
   
   output$a_plot        <- renderPlot( {plot_kpi( simA(), initial_fcast_yr )} )
   output$b_plot        <- renderPlot( {plot_kpi( simB(), initial_fcast_yr )} )
-  output$fins_kable    <- renderText( {plot_fins(d=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
+  output$fins_kable    <- renderText( {plot_fins(sim=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
   output$a_tariff_plot <- renderPlot( {plot_tariffs( simA() )} )
   output$b_tariff_plot <- renderPlot( {plot_tariffs( simB() )} )
   output$tb_dload      <- downloadHandler(
     filename = function() {"trial_balance.csv"},
-    content = function(file) {write.csv(tb(d=simA(), chart=chart_df, ref=ref_df), file, quote = FALSE)}
+    content = function(file) {write.csv(tb(sim=simA(), chart=chart_df), file, quote = FALSE)}
     )
   output$rab_dload   <- downloadHandler(
     filename = function() {"rab_balance.csv"},
     content = function(file) {write.csv(rab(simA()), file, quote = FALSE)}
     )
+  output$revreq_dload   <- downloadHandler(
+    filename = function() {"revenue_req.csv"},
+    content = function(file) {write.csv(revreq(simA()), file, quote = FALSE)}
+  )
   
 }
 

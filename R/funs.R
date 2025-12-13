@@ -1,3 +1,27 @@
+# ---------------------------------------------------------------------------------------------------------
+# Plot theme
+# ---------------------------------------------------------------------------------------------------------
+
+cstm_theme1 <- function() {
+  
+  theme_minimal() +
+    theme(
+      legend.title = element_blank(),
+      legend.position = c(0.9,0.9),
+      legend.background = element_blank(),
+      legend.key = element_blank(),
+      plot.caption = element_text(size = 12, color = "grey55", face = 'italic'), 
+      axis.title.y = element_text(size = 12, color = "darkslategrey"),
+      axis.title.x = element_text(size = 12, color = "darkslategrey"),
+      axis.text.y = element_text(size = 10, color = "darkslategrey"),
+      axis.text.x = element_text(size = 10, color = "darkslategrey")
+    )
+  
+}
+
+
+
+
 
 # ---------------------------------------------------------------------------------------------------------
 # Function reading table
@@ -365,6 +389,7 @@ drcr <- function(txn, txn_df) {
 # --------------------------------------------------------------------------------------------------------------------------
 # Target cash payment re creditors / debtors based on debtor (creditors) days
 # --------------------------------------------------------------------------------------------------------------------------
+
 trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
   
   # Return the cash receipt / payment to arrive at balance required for designated debtors / creditors days
@@ -407,7 +432,7 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
     )
   }
   
-  if (i < trail) rcpt <- -mat[bal_acnt, txn, i] else rcpt <- rcpt0
+  if (i < trail) rcpt <- -sum(mat[bal_acnt, txn, i]) else rcpt <- rcpt0
   return(rcpt)
   
 }
@@ -557,9 +582,16 @@ int_fin_ratio_fn <- function(m) {
   mat <- m$txns
   op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1","intp")]), simplify = TRUE)   # operating cashflows
   capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                           # capex
+  
+  df <- data.frame(t(mat["3000", c("cshd","exp2","crd1","intp","wipc"), ]))
+  df$op_cf <- df$cshd + df$exp2 + df$crd1 + df$int
+  df$capex <- -df$wipc
+  df$op_cf12 <- round(slide_sum(df$op_cf, before = 11), 0)
+  df$capex12 <- round(slide_sum(df$capex, before = 11), 0)
+  
   return( slide_sum(-op_cf, before = 11) / slide_sum(capex, before = 11) )
 }
-
+ 
 
 # ***Current ratio*** - Current assets / Current liabilities (excluding long-term employee provisions and revenue in advance)
 current_ratio_fn <- function(m) {
@@ -617,22 +649,27 @@ plot_kpi <- function(d, initial_fcast_yr) {
   ggplot(aes(x = month_end, y = value, group = scenario)) +
   geom_line(aes(linetype = scenario, colour = scenario)) + 
   scale_colour_manual(values = c("grey70","grey50","grey30","black","#d9230f","#6b1107")) +
-  facet_wrap(vars(kpi), scales = "free") + 
   geom_abline(data = data.frame(
-    kpi=c("Cash interest cover","Current ratio","Gearing","Internal financing ratio","Return on asset"),
-    bench=c(1.5,1.2,0.3,0.35,0.01) 
+    kpi  =c("Cash interest cover","Current ratio","Gearing","Internal financing ratio","Return on asset"),
+    bench=c(1.5                  ,1.2            ,0.3      ,0.35                      ,0.01) 
     ), 
     aes(intercept = bench, slope = 0), color = "red", linetype = "dotdash", linewidth = 1) +
-  ggthemes::theme_base() +
-  theme(
-    legend.position = "none",
-    panel.grid.major = element_line(
-      color      = "grey70",
-      linewidth  = 0.25,
-      linetype   = 2
-      ) 
-  ) +
-  labs(x = "", y = "")
+  facet_wrap(vars(kpi), scales = "free") + # https://teunbrand.github.io/ggh4x/reference/facetted_pos_scales.html#scale-transformations
+  # ggthemes::theme_base() + 
+  # ggthemes::theme_clean() + 
+  # theme_minimal() +
+  # theme(
+  #   legend.position = "none",
+  #   panel.grid.minor = element_blank(),
+  #   panel.grid.major = element_line(
+  #     color      = "grey80",
+  #     linewidth  = 0.25,
+  #     linetype   = 2
+  #     ) 
+  # ) +
+  labs(x = "", y = "") + 
+  cstm_theme1() +
+  theme(axis.line = element_line(colour = "grey20"))
 }
 
 
@@ -641,7 +678,7 @@ plot_kpi <- function(d, initial_fcast_yr) {
 # Return trial balance function
 # --------------------------------------------------------------------------------------------------------------------------
 
-tb <- function(d, chart, ref) {
+tb <- function(sim, chart, initial_fcast_yr = 2024) {
   
   # https://shiny.posit.co/r/components/inputs/select-multiple/
   # https://stackoverflow.com/questions/39798042/r-shiny-how-to-use-multiple-inputs-from-selectinput-to-pass-onto-select-optio
@@ -654,29 +691,71 @@ tb <- function(d, chart, ref) {
   # Returns
   #   a dataframe containing the yearly trial balance
   
-  m <- d[[1]]$txns
-  #d     <- get_data()
-  #chart <- d$chart
-  #ref   <- d$ref
+  m <- sim[[1]]$txns
   tb1   <- m[ , "clos", (1:20) * 12] / 1000
-  round(colSums(tb1), 3)
   
   # Year to date P&L
   tb2 <- tb1
   for (i in 2:20) {
     tb2[as.integer(row.names(tb1)) < 3000, i] <- tb1[as.integer(row.names(tb1)) < 3000, i] - tb1[as.integer(row.names(tb1)) < 3000, i-1]
   }
-  round(colSums(tb2), 3)
   
   # Roll P&L to retained earnings
   tb2["5200", ] <- tb2["5200", ] - colSums(tb2)
   
-  round(colSums(tb2), 3)
-  
   tb2_df <- as.data.frame(tb2)
+  names(tb2_df) <- paste0("FY", initial_fcast_yr:(initial_fcast_yr+19))
   tb2_df$account_no <- as.numeric(rownames(tb2_df))
+  tb2_df <- tb2_df %>% 
+    left_join(chart, by = join_by(account_no == account_no)) %>% 
+    select(account_no, account_desc, paste0("FY", initial_fcast_yr:(initial_fcast_yr+19)))
+  
   return(tb2_df)
 }
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Return trial balance function
+# --------------------------------------------------------------------------------------------------------------------------
+
+cf <- function(sim, ref, initial_fcast_yr = 2024) {
+  
+  # Create a cashflow report
+  #
+  # Args:
+  #   sim - a list object returned from the function "f"
+  #   ref - 
+  #
+  # Returns
+  #   a dataframe containing the yearly cash flow
+  
+  txns <- sim[[1]]$txns
+  
+  cf1 <- list()
+  for (i in ((1:20) * 12)) {
+    cf1[[i]] <- rowSums(txns["3000", c("cshd","exp2","crd1","wipc","intp","borr"), (i-11):i])
+  }
+  cf2 <- do.call(rbind, cf1)
+  cf2 <- cf2 / 1000
+  cf <- data.frame(t(cf2))
+  
+  sum_data <- paste0("FY", initial_fcast_yr:(initial_fcast_yr+19))
+  
+  colnames(cf) <- sum_data
+  cf$txn_type <- rownames(cf)
+  
+  cf <- cf %>% 
+    full_join(ref[ref$ref_type == "cash_flow",], by = join_by(txn_type == lookup2)) %>% 
+    group_by(ref1, ref2) %>% 
+    summarise(across(all_of(sum_data), sum)) %>%
+    arrange(ref2)
+  
+  return(cf)
+}
+
 
 
 
@@ -704,13 +783,36 @@ rab <- function(d) {
 
 
 
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Return revenue requirement function
+# --------------------------------------------------------------------------------------------------------------------------
+
+revreq <- function(d) {
+  
+  # Return the RAB
+  #
+  # Args:
+  #   d - a list object returned from the function "f"
+  #
+  # Returns
+  #   a data frame containing the RAB for each price period
+  
+  r <- d[[1]]$rev_req
+  
+  
+  return(data.frame(r))
+}
+
+
   
   
 # --------------------------------------------------------------------------------------------------------------------------
 # Plot financials function
 # --------------------------------------------------------------------------------------------------------------------------
 
-plot_fins <- function(d, chart, ref, sel) {
+plot_fins <- function(sim, chart, ref, sel) {
   
   # https://shiny.posit.co/r/components/inputs/select-multiple/
   # https://stackoverflow.com/questions/39798042/r-shiny-how-to-use-multiple-inputs-from-selectinput-to-pass-onto-select-optio
@@ -718,36 +820,24 @@ plot_fins <- function(d, chart, ref, sel) {
   # Plot financial statements using kableextra
   #
   # Args:
-  #   d        - a list object returned from the function "f"
+  #   sim      - a list object returned from the function "f"
   #
   # Returns
-  #   a table formated P&L and B/S
+  #   a table formatted P&L and B/S
   
-  m <- d[[1]]$txns
-  tb1   <- m[ , "clos", (1:20) * 12] / 1000
-  round(colSums(tb1), 3)
+  txns <- sim[[1]]$txns
   
-  # Year to date P&L
-  tb2 <- tb1
-  for (i in 2:20) {
-    tb2[as.integer(row.names(tb1)) < 3000, i] <- tb1[as.integer(row.names(tb1)) < 3000, i] - tb1[as.integer(row.names(tb1)) < 3000, i-1]
-  }
-  round(colSums(tb2), 3)
+  # Create trial balance
+  tb2_df <- tb(sim=sim, chart=chart, initial_fcast_yr = 2024)
   
-  # Roll P&L to retained earnings
-  tb2["5200", ] <- tb2["5200", ] - colSums(tb2)
+  sum_data <- names(tb2_df)[3:ncol(tb2_df)]  # columns to sum
   
-  round(colSums(tb2), 3)
-  
-  tb2_df <- as.data.frame(tb2)
-  tb2_df$account_no <- as.numeric(rownames(tb2_df))
-  
-  # Income statement data
+  # Income statement
   inc <- tb2_df %>% 
     left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
     full_join(ref[ref$ref_type == "account_grp",], by = join_by(account_grp == lookup1)) %>% 
     group_by(ref1, ref2) %>% 
-    summarise(across(`12`:`240`, sum)) %>% 
+    summarise(across(all_of(sum_data), sum)) %>% 
     arrange(ref2) %>% 
     filter(!is.na(ref1)) 
   
@@ -756,30 +846,15 @@ plot_fins <- function(d, chart, ref, sel) {
     left_join(chart[1:6], by = join_by(account_no == account_no)) %>% 
     full_join(ref[ref$ref_type == "account_type",], by = join_by(account_type == lookup1)) %>% 
     group_by(ref1, ref2) %>% 
-    summarise(across(`12`:`240`, sum)) %>% 
+    summarise(across(all_of(sum_data), sum)) %>%
     arrange(ref2) %>% 
     filter(!is.na(ref1)) 
   
   # Cashflow
-  cf1 <- list()
-  for (i in ((1:20) * 12)) {
-    #print(c(i-11, i))
-    cf1[[i]] <- rowSums(m["3000", c("cshd","exp2","crd1","wipc","intp","borr"), (i-11):i])
-  }
-  cf2 <- do.call(rbind, cf1)
-  cf2 <- cf2 / 1000
-  cf <- data.frame(t(cf2))
-  colnames(cf) <- seq(from = 12, by = 12, length.out = 20)  # column names consistent with other tables for rbind
-  #colnames(cf) <- paste("FY", 1:20 + 2023, sep = "")
-  cf$txn_type <- rownames(cf)
-  cf <- cf %>% 
-    full_join(ref[ref$ref_type == "cash_flow",], by = join_by(txn_type == lookup2)) %>% 
-    group_by(ref1, ref2) %>% 
-    summarise(across(`12`:`240`, sum)) %>% 
-    arrange(ref2)
+  cf <- cf(sim, ref, initial_fcast_yr = 2024)
   
   
-  # Join Income statement and Balance sheet
+  # Join Income statement, balance sheet and cashflow
   rep <- as.data.frame(bind_rows(inc, bal, cf)) %>% 
     arrange(ref2) %>% 
     mutate(ref2 = as.character(ref2))
@@ -795,7 +870,7 @@ plot_fins <- function(d, chart, ref, sel) {
   rep[rep$ref2 == 50, 3:22] <- colSums(rep[rep$ref2 %in% c(48,49), 3:22], na.rm = T)    # Investing CF
   rep[rep$ref2 == 55, 3:22] <- colSums(rep[rep$ref2 %in% c(53,54), 3:22], na.rm = T)    # Operating CF
   rep[rep$ref2 == 57, 3:22] <- colSums(rep[rep$ref2 %in% c(45,50,55), 3:22], na.rm = T) # Net increase/(decrease) in cash
-  rep[rep$ref2 == 58, 3:22] <- m["3000", "open", (1+(1:20) * 12 - 12)] / 1000           # Beginning cash
+  rep[rep$ref2 == 58, 3:22] <- txns["3000", "open", (1+(1:20) * 12 - 12)] / 1000        # Beginning cash
   rep[rep$ref2 == 59, 3:22] <- colSums(rep[rep$ref2 %in% c(57,58), 3:22], na.rm = T)    # End
   
   
@@ -803,8 +878,13 @@ plot_fins <- function(d, chart, ref, sel) {
   rep[ ,3:22] <- apply(rep[ ,3:22], 2, acc_num)
   rep[is.na(rep)] <- ""
   
-  # Rename columns to financial year label
-  colnames(rep) <- c("ref1","ref2", paste("FY", as.numeric(colnames(rep[3:22])) / 12 + 2024 - 1, sep = ""))
+  # # replace NA's with zero
+  # nas <- which(is.na(cf[cf$ref2 == 49, 3:22]))
+  # cf[cf$ref2 == 49, nas + 2 ] <- 0
+  # 
+  # # replace zero with dash (perform after character conversion)
+  # zer <- which(cf[cf$ref2 == 53, 3:22] == 0)
+  # cf[cf$ref2 == 49, zer + 2 ] <- "-"
   
   b <- unique(ref[grepl("b",ref$ref3), "ref2"]) # bold
   s <- unique(ref[grepl("s",ref$ref3), "ref2"]) # extra_css = "border-bottom: 1px solid"
@@ -964,10 +1044,17 @@ get_data <- function(src = "local") {
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Create inflation factor
+# Create growth factor series
 # --------------------------------------------------------------------------------------------------------------------------
 
 growth_fctr <- function(esc_rate = c(0.025, 0.01), len = c(5,3)) {
+  
+  # Used to create growth in quantities OR an inflation factor for prices
+  # 
+  # Args:.
+  #   esc_rate    - escalation rate
+  #   len         - length of series
+  
   if (length(len) == 1) r <- rep(esc_rate, each = len) else r <- rep(esc_rate, times = len)
   cumprod(1 + r)
 }
@@ -980,9 +1067,9 @@ growth_fctr <- function(esc_rate = c(0.025, 0.01), len = c(5,3)) {
 # Create annual financial data series
 # --------------------------------------------------------------------------------------------------------------------------
 
-nmnl_series <- function(q, p, q_grow) {
+real_series <- function(q, p, q_grow) {
   
-  # Create annual financial data series (revenue, cost, capex, etc) from price, quantity and an uplift factor
+  # Create 20 year annual financial data series (revenue, cost, capex, etc) from price, quantity and a quantity growth factor
   # - price and quantity data is multiplied to construct annual amounts for years 1 through 5 (ps1)
   # - this is escalated by the growth in quantities
   #
