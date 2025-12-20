@@ -43,7 +43,7 @@ row_with_label4 <- function(label, input1, input2=NULL, input3=NULL, input4=NULL
     column(2, input1),
     if (!is.null(input2)) column(2, input2),
     if (!is.null(input3)) column(2, input3),
-    if (!is.null(input3)) column(2, input4)
+    if (!is.null(input4)) column(2, input4)
   )
 }
 
@@ -52,6 +52,7 @@ row_with_label4 <- function(label, input1, input2=NULL, input3=NULL, input4=NULL
 
 renderInputs <- function(prefix) {
   wellPanel(  # Creates a panel with a slightly inset border and grey background.
+    
     tags$h4("Current price submission : FY24-28"),
     br(),
     fluidRow(
@@ -60,7 +61,7 @@ renderInputs <- function(prefix) {
       column(2, tags$h5("Price", style = "text-align: left;")),
       column(2, tags$h5("Quantity growth", style = "text-align: left;")),
       column(2, tags$h5("NI price delta", style = "text-align: left;"))
-    ),
+      ),
     br(),
     fluidPage(
       row_with_label4(
@@ -69,7 +70,7 @@ renderInputs <- function(prefix) {
         numericInput(inputId = paste0(prefix, "_", "cost_fte"), label = "Cost per FTE ($000)", value = 100, min = 30, max = 200),
         numericInput(inputId = paste0(prefix, "_", "q_grow_fte"), label = "Percentage growth in FTE's", value = 2, min = -5, max = 10),
         numericInput(inputId = paste0(prefix, "_", "ni_cost_fte"), label = "Relative price change", value = 2, min = -5, max = 10)
-      ),
+        ),
       #br(),
       row_with_label4(
         "Electricity",
@@ -77,92 +78,95 @@ renderInputs <- function(prefix) {
         numericInput(inputId = paste0(prefix, "_", "cost_kwh"), label = "Price per kWh (cents)", value = 22, min = 5, max = 20),
         numericInput(inputId = paste0(prefix, "_", "q_grow_kwh"), label = "Percentage growth in kWh", value = 2, min = -5, max = 10),
         numericInput(inputId = paste0(prefix, "_", "ni_cost_kwh"), label = "Relative price change", value = 2, min = -5, max = 10)
-      ),
+        ),
       row_with_label4(
         "Chemicals",
         numericInput(inputId = paste0(prefix, "_", "ml"), label = "Water volume (GL)", value = 22, min = 10, max = 30),
         numericInput(inputId = paste0(prefix, "_", "cost_ml"), label = "Chemical costs per ML", value = 120, min = 80, max = 200),
         numericInput(inputId = paste0(prefix, "_", "q_grow_ml"), label = "Percentage growth in ML", value = 2, min = -5, max = 10),
         numericInput(inputId = paste0(prefix, "_", "ni_cost_ml"), label = "Relative price change", value = 2, min = -5, max = 10)
-      ),
+        ),
       row_with_label4(
         "Other",
         numericInput(inputId = paste0(prefix, "_", "dl"), label = "Dollars (mn)", value = 60, min = 40, max = 100),
         numericInput(inputId = paste0(prefix, "_", "cost_dl"), label = "Dummy", value = 1, min = 1, max = 1),
         numericInput(inputId = paste0(prefix, "_", "q_grow_dl"), label = "Percentage growth", value = 2, min = -5, max = 10),
         numericInput(inputId = paste0(prefix, "_", "ni_cost_dl"), label = "Relative price change", value = 2, min = -5, max = 10)
-      )
+        )
       
-    ),
+      ),
+    
     br(),
     hr(),
+    
     tags$h4("Subsequent price submissions"),
     fluidRow(
       column(2, tags$h5(" ", style = "text-align: center;")),
       column(3, tags$h5("FY29-33", style = "text-align: center;")),
       column(3, tags$h5("FY34-38", style = "text-align: center;")),
       column(3, tags$h5("FY39-43", style = "text-align: center;"))
-    ),
+      ),
+    
     br(),
+    
     fluidPage(
       row_with_label3(
         "Incremental Opex (million p.a.)",
         sliderInput(inputId = paste0(prefix, "_", "opex_ps2"), label = NULL, min = -20, max = 50, step = 5, value = 10),
         sliderInput(inputId = paste0(prefix, "_", "opex_ps3"), label = NULL, min = -20, max = 50, step = 5, value = 10),
         sliderInput(inputId = paste0(prefix, "_", "opex_ps4"), label = NULL, min = -20, max = 50, step = 5, value = 10)
-      ),
+        ),
       br(),
       row_with_label3(
         "Capex (million p.a.)",
         sliderInput(inputId = paste0(prefix, "_", "capex_ps2"), label = NULL, min = 50, max = 250, step = 25, value = 100),
         sliderInput(inputId = paste0(prefix, "_", "capex_ps3"), label = NULL, min = 50, max = 250, step = 25, value = 100),
         sliderInput(inputId = paste0(prefix, "_", "capex_ps4"), label = NULL, min = 50, max = 250, step = 25, value = 100)
-        
-      ),
+        ),
       br(),
       row_with_label3(
-        "FY39-43",
+        "To be updated (issue 1)",
         sliderInput(inputId = paste0(prefix, "_", "roe"), label = "Allowable return on equity :", min = 0.03, max = 0.06, step = 0.001, value = 0.041),
         sliderInput(inputId = paste0(prefix, "_", "fcast_infltn"), label = "Forecast inflation :", post = "%", min = 1, max = 7, step = 0.5, value = 2.5),
         sliderInput(inputId = paste0(prefix, "_", "cost_of_debt_nmnl"), label = "Nominal cost of debt :", min = 0.01, max = 0.10, step = 0.01, value = 0.04)
-      ),
+        ),
+      bsTooltip(id = paste0(prefix, "_", "cost_of_debt_nmnl"), title = "Cost of debt for return on assets WACC", placement = "bottom"),
+      
       hr(),
+      
       row_with_label3(
         "Other",
         numericInput(inputId = paste0(prefix, "_", "desired_fixed"), label = "Tariff composition :", value = 99, min = 30, max = 99),
-        checkboxInput(paste0(prefix, "_", "single_price_delta"), "Price adjustment to occur in first year only", FALSE)
-      ),
+        checkboxInput(inputId = paste0(prefix, "_", "single_price_delta"), label = "Price adjustment to occur in first year only", TRUE)
+        ),
       bsTooltip(id = paste0(prefix, "_", "desired_fixed"), title = "Stipulate the tariff composition with respect to fixed versus variable charges.  Default value of 99 retains existing tariff composition", placement = "bottom"),
-    )
+      
+      hr(),
 
-    
-    # fluidRow(
-    #   column( # 1st column
-    #     4,
-    #     sliderInput(inputId = paste0(prefix, "_", "cost_of_debt_nmnl"), label = "Nominal cost of debt :", min = 0.01, max = 0.10, step = 0.01, value = 0.04),
-    #     sliderInput(inputId = paste0(prefix, "_", "fcast_infltn"), label = "Forecast inflation :", post = "%", min = 1, max = 7, step = 0.5, value = 2.5),
-    #     sliderInput(inputId = paste0(prefix, "_", "roe"), label = "Allowable return on equity :", min = 0.03, max = 0.06, step = 0.001, value = 0.041),
-    #     numericInput(inputId = paste0(prefix, "_", "desired_fixed"), label = "Tariff composition :", value = 99, min = 30, max = 99),
-    #     bsTooltip(id = paste0(prefix, "_", "desired_fixed"), title = "Stipulate the tariff composition with respect to fixed versus variable charges.  Default value of 99 retains existing tariff composition", placement = "bottom")
-    #   ),
-    #   column( # 2nd column
-    #     4,
-    #     sliderInput(inputId = paste0(prefix, "_", "capex_ps2"), label = "Capex (FY29-33) :", min = 250, max = 1250, step = 250, value = 500),
-    #     sliderInput(inputId = paste0(prefix, "_", "capex_ps3"), label = "Capex (FY34-38) :", min = 250, max = 1250, step = 250, value = 500),
-    #     sliderInput(inputId = paste0(prefix, "_", "capex_ps4"), label = "Capex (FY39-43) :", min = 250, max = 1250, step = 250, value = 500),
-    #     #selectInput(inputId = paste0(prefix, "_", "oxcx_scenario"), label = "Scenario:", choices = c("scnr1","scnr2","scnr3","scnr4")),
-    #     br(),
-    #     checkboxInput(paste0(prefix, "_", "single_price_delta"), "Price adjustment to occur in first year only", FALSE)
-    #   ),
-    #   column( # 3rd column
-    #     4,
-    #     sliderInput(inputId = paste0(prefix, "_", "opex_ps2"), label = "Opex (FY29-33) :", min = 100, max = 750, step = 50, value = 250),
-    #     sliderInput(inputId = paste0(prefix, "_", "opex_ps3"), label = "Opex (FY34-38) :", min = 100, max = 750, step = 50, value = 250),
-    #     sliderInput(inputId = paste0(prefix, "_", "opex_ps4"), label = "Opex (FY39-43) :", min = 100, max = 750, step = 50, value = 250),
-    #     )
-    # ) # end fluidRow
-    #p(actionButton(inputId = "recalc", label = "Re-run simulation", icon = icon("random")))
-  )
+      tags$h4("Sensitivity analysis"),
+      fluidRow(
+        column(2, tags$h5(" ", style = "text-align: center;")),
+        column(3, tags$h5("Parameter value", style = "text-align: center;")),
+        column(3, tags$h5("Lower", style = "text-align: center;")),
+        column(3, tags$h5("Upper", style = "text-align: center;"))
+        ),
+
+      row_with_label3(
+        "", # Select desired attribute
+        selectInput(inputId = paste0(prefix, "_", "sens_param"), label = "", choices = c("None", "Labour quantity","Labour price","Labour growth"), selected = "None"),
+        numericInput(inputId = paste0(prefix, "_", "sens_lower"), label = "", value = 120, min = 80, max = 200),
+        numericInput(inputId = paste0(prefix, "_", "sens_lower"), label = "", value = 2, min = -5, max = 10)
+        ),
+      
+      hr(),
+
+      actionButton(
+        "run_simA",
+        "Run simulation",
+        class = "btn-primary"
+      )
+      )
+  ) # end WellPanel
 }
 
 
@@ -171,7 +175,7 @@ renderInputs <- function(prefix) {
 ui <- navbarPage(
   "Financial Model",
   tabPanel(
-    title="Scenario input",
+    title="Scenario input and KPI's",
     fluidPage(
       theme="simplex.min.css",
       tags$style(
@@ -200,6 +204,7 @@ ui <- navbarPage(
         ),
       
       # Renders the plots 
+      tags$h2("Key performance indicators"),
       fluidRow(
         column(6, plotOutput("a_plot", height = "600px")),
         column(6, plotOutput("b_plot", height = "600px"))
@@ -256,73 +261,123 @@ ui <- navbarPage(
 # Server function ----------------------------------------------------------------------------------------------------------
 server <- function(input, output, session) {
   
-  simA <- reactive(list(
-    f( dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
-       q_grow            = 0.019,
-       cost_of_debt_nmnl = input$a_cost_of_debt_nmnl, 
-       fcast_infltn      = input$a_fcast_infltn/100,
-       roe               = input$a_roe, 
-       single_price_delta= input$a_single_price_delta,
-       desired_fixed     = input$a_desired_fixed,
-       debt_sens         = NULL, 
-       fte               = input$a_fte,
-       cost_fte          = input$a_cost_fte,
-       q_grow_fte        = input$a_q_grow_fte/100,
-       ni_cost_fte       = input$a_ni_cost_fte/100,
-       kwh               = input$a_kwh,
-       cost_kwh          = input$a_cost_kwh,
-       q_grow_kwh        = input$a_q_grow_kwh/100,
-       ni_cost_kwh       = input$a_ni_cost_kwh/100,
-       ml                = input$a_ml,
-       cost_ml           = input$a_cost_ml,
-       q_grow_ml         = input$a_q_grow_ml/100,
-       ni_cost_ml        = input$a_ni_cost_ml/100,
-       dl                = input$a_dl,
-       cost_dl           = input$a_cost_dl,
-       q_grow_dl         = input$a_q_grow_dl/100,
-       ni_cost_dl        = input$a_ni_cost_dl/100,
-       capex_ps2         = input$a_capex_ps2,
-       capex_ps3         = input$a_capex_ps3,
-       capex_ps4         = input$a_capex_ps4,
-       opex_ps2          = input$a_opex_ps2,
-       opex_ps3          = input$a_opex_ps3,
-       opex_ps4          = input$a_opex_ps4,
-       verbose           = F))
+  args <- reactive({
+    
+    req(input$a_cost_of_debt_nmnl, input$a_fcast_infltn, input$a_roe, input$a_single_price_delta, input$a_desired_fixed, input$a_sens_param,
+        input$a_cost_fte, input$a_q_grow_fte, input$a_ni_cost_fte, input$a_kwh, input$a_cost_kwh, input$a_q_grow_kwh, input$a_ni_cost_kwh,
+        input$a_ml, input$a_cost_ml, input$a_q_grow_ml, input$a_ni_cost_ml, input$a_dl, input$a_cost_dl, input$a_q_grow_dl, input$a_ni_cost_dl,
+        input$a_capex_ps2, input$a_capex_ps3, input$a_capex_ps4, input$a_opex_ps2, input$a_opex_ps3, input$a_opex_ps4)
+    
+    expand.grid(
+      q_grow            = 0.019,
+      cost_of_debt_nmnl = input$a_cost_of_debt_nmnl, 
+      fcast_infltn      = input$a_fcast_infltn,
+      roe               = input$a_roe, 
+      single_price_delta= input$a_single_price_delta,
+      desired_fixed     = input$a_desired_fixed,
+      debt_sens         = list(NULL), 
+      fte               = if (input$a_sens_param == "Labour quantity") c(180, input$a_fte, 220) else input$a_fte,
+      cost_fte          = if (input$a_sens_param == "Labour price") c(70, input$a_cost_fte, 130) else input$a_cost_fte,
+      q_grow_fte        = input$a_q_grow_fte,
+      ni_cost_fte       = input$a_ni_cost_fte,
+      kwh               = input$a_kwh,
+      cost_kwh          = input$a_cost_kwh,
+      q_grow_kwh        = input$a_q_grow_kwh,
+      ni_cost_kwh       = input$a_ni_cost_kwh,
+      ml                = input$a_ml,
+      cost_ml           = input$a_cost_ml,
+      q_grow_ml         = input$a_q_grow_ml,
+      ni_cost_ml        = input$a_ni_cost_ml,
+      dl                = input$a_dl,
+      cost_dl           = input$a_cost_dl,
+      q_grow_dl         = input$a_q_grow_dl,
+      ni_cost_dl        = input$a_ni_cost_dl,
+      capex_ps2         = input$a_capex_ps2,
+      capex_ps3         = input$a_capex_ps3,
+      capex_ps4         = input$a_capex_ps4,
+      opex_ps2          = input$a_opex_ps2,
+      opex_ps3          = input$a_opex_ps3,
+      opex_ps4          = input$a_opex_ps4
     )
-  simB <- reactive(list(
-    f( dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
-       q_grow            = 0.019,
-       cost_of_debt_nmnl = input$b_cost_of_debt_nmnl, 
-       fcast_infltn      = input$b_fcast_infltn/100,
-       roe               = input$b_roe, 
-       single_price_delta= input$b_single_price_delta,
-       desired_fixed     = input$b_desired_fixed,
-       debt_sens         = NULL, 
-       fte               = input$b_fte,
-       cost_fte          = input$b_cost_fte,
-       q_grow_fte        = input$b_q_grow_fte/100,
-       ni_cost_fte       = input$b_ni_cost_fte/100,
-       kwh               = input$b_kwh,
-       cost_kwh          = input$b_cost_kwh,
-       q_grow_kwh        = input$b_q_grow_kwh/100,
-       ni_cost_kwh       = input$b_ni_cost_kwh/100,
-       ml                = input$b_ml,
-       cost_ml           = input$b_cost_ml,
-       q_grow_ml         = input$b_q_grow_ml/100,
-       ni_cost_ml        = input$b_ni_cost_ml/100,
-       dl                = input$b_dl,
-       cost_dl           = input$b_cost_dl,
-       q_grow_dl         = input$b_q_grow_dl/100,
-       ni_cost_dl        = input$b_ni_cost_dl/100,
-       capex_ps2         = input$b_capex_ps2,
-       capex_ps3         = input$b_capex_ps3,
-       capex_ps4         = input$b_capex_ps4,
-       opex_ps2          = input$b_opex_ps2,
-       opex_ps3          = input$b_opex_ps3,
-       opex_ps4          = input$b_opex_ps4,
-       verbose           = F))
+  })
+  
+  simA <- reactive({
+    req(args())
+    mapply(
+       FUN               = f, 
+       dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df), cx_delta=list(cx_df), ox_delta=list(ox_df),
+       q_grow            = args()$q_grow,
+       cost_of_debt_nmnl = args()$cost_of_debt_nmnl, 
+       fcast_infltn      = args()$fcast_infltn/100,
+       roe               = args()$roe, 
+       single_price_delta= args()$single_price_delta,
+       desired_fixed     = args()$desired_fixed,
+       debt_sens         = args()$debt_sens, 
+       fte               = args()$fte,
+       cost_fte          = args()$cost_fte,
+       q_grow_fte        = args()$q_grow_fte/100,
+       ni_cost_fte       = args()$ni_cost_fte/100,
+       kwh               = args()$kwh,
+       cost_kwh          = args()$cost_kwh,
+       q_grow_kwh        = args()$q_grow_kwh/100,
+       ni_cost_kwh       = args()$ni_cost_kwh/100,
+       ml                = args()$ml,
+       cost_ml           = args()$cost_ml,
+       q_grow_ml         = args()$q_grow_ml/100,
+       ni_cost_ml        = args()$ni_cost_ml/100,
+       dl                = args()$dl,
+       cost_dl           = args()$cost_dl,
+       q_grow_dl         = args()$q_grow_dl/100,
+       ni_cost_dl        = args()$ni_cost_dl/100,
+       capex_ps2         = args()$capex_ps2,
+       capex_ps3         = args()$capex_ps3,
+       capex_ps4         = args()$capex_ps4,
+       opex_ps2          = args()$opex_ps2,
+       opex_ps3          = args()$opex_ps3,
+       opex_ps4          = args()$opex_ps4,
+       verbose           = F,
+       SIMPLIFY          = FALSE
+       )
+    })
+  
+  simB <- reactive(
+    list(
+      f( dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
+         q_grow            = 0.019,
+         cost_of_debt_nmnl = input$b_cost_of_debt_nmnl, 
+         fcast_infltn      = input$b_fcast_infltn/100,
+         roe               = input$b_roe, 
+         single_price_delta= input$b_single_price_delta,
+         desired_fixed     = input$b_desired_fixed,
+         debt_sens         = NULL, 
+         fte               = input$b_fte,
+         cost_fte          = input$b_cost_fte,
+         q_grow_fte        = input$b_q_grow_fte/100,
+         ni_cost_fte       = input$b_ni_cost_fte/100,
+         kwh               = input$b_kwh,
+         cost_kwh          = input$b_cost_kwh,
+         q_grow_kwh        = input$b_q_grow_kwh/100,
+         ni_cost_kwh       = input$b_ni_cost_kwh/100,
+         ml                = input$b_ml,
+         cost_ml           = input$b_cost_ml,
+         q_grow_ml         = input$b_q_grow_ml/100,
+         ni_cost_ml        = input$b_ni_cost_ml/100,
+         dl                = input$b_dl,
+         cost_dl           = input$b_cost_dl,
+         q_grow_dl         = input$b_q_grow_dl/100,
+         ni_cost_dl        = input$b_ni_cost_dl/100,
+         capex_ps2         = input$b_capex_ps2,
+         capex_ps3         = input$b_capex_ps3,
+         capex_ps4         = input$b_capex_ps4,
+         opex_ps2          = input$b_opex_ps2,
+         opex_ps3          = input$b_opex_ps3,
+         opex_ps4          = input$b_opex_ps4,
+         verbose           = F
+         )
+      )
     )
   
+  #output$a_plot        <- renderPlot( {str( args())} )
   output$a_plot        <- renderPlot( {plot_kpi( simA(), initial_fcast_yr )} )
   output$b_plot        <- renderPlot( {plot_kpi( simB(), initial_fcast_yr )} )
   output$fins_kable    <- renderText( {plot_fins(sim=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )

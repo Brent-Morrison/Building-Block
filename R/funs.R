@@ -6,15 +6,16 @@ cstm_theme1 <- function() {
   
   theme_minimal() +
     theme(
-      legend.title = element_blank(),
-      legend.position = c(0.9,0.9),
+      legend.title      = element_blank(),
+      legend.position   = c(0.9,0.9),
       legend.background = element_blank(),
-      legend.key = element_blank(),
-      plot.caption = element_text(size = 12, color = "grey55", face = 'italic'), 
-      axis.title.y = element_text(size = 12, color = "darkslategrey"),
-      axis.title.x = element_text(size = 12, color = "darkslategrey"),
-      axis.text.y = element_text(size = 10, color = "darkslategrey"),
-      axis.text.x = element_text(size = 10, color = "darkslategrey")
+      legend.key        = element_blank(),
+      strip.text        = element_text(size = 12, color = "darkslategrey"),   # , family = "mono"
+      plot.caption      = element_text(size = 12, color = "grey55", face = 'italic'), 
+      axis.title.y      = element_text(size = 12, color = "darkslategrey"),
+      axis.title.x      = element_text(size = 12, color = "darkslategrey"),
+      axis.text.y       = element_text(size = 10, color = "darkslategrey"),
+      axis.text.x       = element_text(size = 10, color = "darkslategrey")
     )
   
 }

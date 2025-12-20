@@ -19,6 +19,7 @@ txn_df    <- d$txn_type
 cx_df     <- d$cx_delta 
 ox_df     <- d$ox_delta
 
+a_sens_param <- "xLabour quantity"
 
 #args <- expand.grid(q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens = 0, oxcx_scenario = c("scnr1","scnr4"))
 args <- expand.grid(
@@ -28,7 +29,8 @@ args <- expand.grid(
   roe                = 0.041, 
   single_price_delta = T, 
   desired_fixed      = 99,
-  debt_sens          = 0, 
+  debt_sens          = 0,
+  fte                = if (a_sens_param == "Labour quantity") c(180, 200, 220) else 200,
   capex_ps2          = 100,
   capex_ps3          = 100,
   capex_ps4          = 100,
@@ -50,6 +52,7 @@ sim <- mapply(
   single_price_delta= args$single_price_delta,
   desired_fixed     = args$desired_fixed,
   debt_sens         = args$debt_sens,             # list(-0.01,0,0.01), 
+  fte               = args$fte,
   capex_ps2         = args$capex_ps2,
   capex_ps3         = args$capex_ps3,
   capex_ps4         = args$capex_ps4,
