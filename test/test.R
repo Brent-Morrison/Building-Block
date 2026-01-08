@@ -164,7 +164,70 @@ sum(y)
 # Test days receivable logic
 # --------------------------------------------------------------------------------------------------------------------------
 
-source("funs.R")
+source("C:/Users/brent/Documents/repos/Building-Block/R/funs.R")
+
+# Create matrix and assign names 
+days = c(30,30,31)
+act <- c(1000,2000,2100,3000,3050,3100,4000)
+txn <- c("open","aidb", "incm", "cshd", "crd1","clos")
+mon <- 1:3
+mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
+dimnames(mat)[[1]] <- act
+dimnames(mat)[[2]] <- txn
+dimnames(mat)[[3]] <- mon
+mat
+#mat[,,] <- 1:(length(act) * length(txn) * length(mon))
+mat[ , "open", 1] <- c(0,0,0,2000,7717,5000,-20346)   # c(0,0,0,2000,15377,5000,-20346)
+mat[c("3050", "1000"), "aidb", ] <- rbind(c(7717,7717,7717), -c(7717,7717,7717))# rbind(c(11803,11948,11989), -c(11803,11948,11989))
+mat[c("3000", "3050"), "cshd", ] <- rbind(c(7717,7717,0), -c(7717,7717,0))
+mat
+
+d <- 50
+for (i in 1:length(mon)) {
+  if (i > 1) mat[, "open", i] <- mat[, "clos", i-1]
+  if (i == 3) {
+    rcpt <- trgt_days(mat, days, i, d=d, trail=3, bal_acnt="3050", pl_acnt="1000", txn="aidb", open=1, clos=6)
+    mat[c("3000", "3050"), "cshd", i] <- c(-rcpt, rcpt)
+  }
+  mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
+}
+mat
+
+aidb <- data.frame(
+  rows = c("days", "open", "aidb", "cshd", "clos"),
+  p1 = c(days[1], mat["3050", "open", 1], mat["3050", "aidb", 1], mat["3050", "cshd", 1], mat["3050", "clos", 1]),
+  p2 = c(days[2], mat["3050", "open", 2], mat["3050", "aidb", 2], mat["3050", "cshd", 2], mat["3050", "clos", 2]),
+  p3 = c(days[3], mat["3050", "open", 3], mat["3050", "aidb", 3],                      0, mat["3050", "clos", 3])
+)
+
+
+# Excel version
+library(openxlsx)
+wb <- createWorkbook()
+addWorksheet(wb, "debtors_days")
+writeData(wb, sheet = "debtors_days", x = aidb, startCol = 1, startRow = 2)
+writeData(wb, sheet = "debtors_days", x = "argument >>", startCol = 3, startRow = 1)
+writeData(wb, sheet = "debtors_days", x = d, startCol = 4, startRow = 1)
+writeFormula(wb, 1, x = "MIN(0, MAX(-SUM(D4:D5),ROUND(D1*SUM(B5:D5)/SUM(B3:D3)*3-SUM(C4:D4)-SUM(D4:D5),0)))", startCol = 4, startRow = 6)
+writeFormula(wb, 1, x = "SUM(D4:D6)", startCol = 4, startRow = 7)
+writeFormula(wb, 1, x = "ROUND(AVERAGE(B7:D7)/SUM(B5:D5)*SUM(B3:D3), 0)", startCol = 4, startRow = 8)
+writeData(wb, sheet = "debtors_days", x = "result >>", startCol = 3, startRow = 8)
+writeData(wb, sheet = "debtors_days", x = "trail_exp", startCol = 7, startRow = 3)
+writeFormula(wb, 1, x = "SUM(B5:D5)", startCol = 8, startRow = 3)
+writeData(wb, sheet = "debtors_days", x = "sum_days", startCol = 7, startRow = 4)
+writeFormula(wb, 1, x = "SUM(B3:D3)", startCol = 8, startRow = 4)
+writeData(wb, sheet = "debtors_days", x = "prior_bals", startCol = 7, startRow = 5)
+writeFormula(wb, 1, x = "SUM(C4:D4)", startCol = 8, startRow = 5)
+writeData(wb, sheet = "debtors_days", x = "desired_bal", startCol = 7, startRow = 6)
+writeFormula(wb, 1, x = "ROUND(D1*H3/H4*3-H5, 0)", startCol = 8, startRow = 6)
+saveWorkbook(wb, "./test/debtors_days_testx.xlsx", overwrite = TRUE)
+
+
+
+
+
+
+
 
 # 
 debtors.r1 <- "
@@ -224,6 +287,8 @@ writeFormula(wb, 1, x = "ROUND(AVERAGE(B7:D7)/SUM(B5:D5)*SUM(B3:D3), 0)", startC
 writeFormula(wb, 1, x = "ROUND(AVERAGE(B16:D16)/SUM(B14:D14)*SUM(B12:D12), 0)", startCol = 4, startRow = 17)
 saveWorkbook(wb, "./test/debtors_days_test.xlsx", overwrite = TRUE)
 
+
+trgt_days(mat=debtors1, days=debtors1["Days",], i=3, d=60, trail=3, bal_acnt="Cash", pl_acnt="Incm", txn, open=2, clos=5)
 
 lookback <- 3
 debtors_days <- 60

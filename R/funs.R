@@ -296,7 +296,7 @@ rou_func <- function(lease_pay, periods, rate) {
     mat[i,"open_liab"] <- -round(oll,2)
     mat[i,"payment"]   <- round(lease_pay,2)
     mat[i,"interest"]  <- round(mat[i,"open_liab"] * rate / 12 , 2)
-    mat[i,"clos_liab"] <- sum(mat[i,1:3])
+    mat[i,"clos_liab"] <- round(sum(mat[i,1:3]), 2)
     mat[i,"open_depn"] <- ifelse(i == 1, 0, mat[i - 1, "clos_depn"])
     mat[i,"depn_exp"]  <- round(mat[1, "open_liab"] / periods, 2)
     mat[i,"clos_depn"] <- sum(mat[i,5:6])
@@ -391,7 +391,7 @@ drcr <- function(txn, txn_df) {
 # Target cash payment re creditors / debtors based on debtor (creditors) days
 # --------------------------------------------------------------------------------------------------------------------------
 
-trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
+trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn, open, clos) {
   
   # Return the cash receipt / payment to arrive at balance required for designated debtors / creditors days
   # - assumes presence of matrix "mat" in environment
@@ -404,38 +404,35 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn) {
   #   bal_acnt - debtors / creditors account
   #   pl_acnt  - P&L account accruing to debtors / creditors account
   #   txn      - the transaction type 
+  #   open     - integer index for opening balance
+  #   clos     - integer index for closing balance
   #
   # Returns
   #   the cash payment / receipt to arrive at balance required for designated debtors / creditors days 
   
-  if (i < trail) s <- 1 else s <- i - (trail - 1)
-  trail_exp <- if ( length(pl_acnt) == 1 | i == 1) -mean(mat[pl_acnt, txn, s:i]) * trail else -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
-  sum_days <- mean(days[s:i]) * trail
-  prior_bals <- mean(mat[bal_acnt, "clos", s:(i-1)]) * (trail-1)
-  desired_bal <- d * trail_exp / sum_days * trail - prior_bals          # Desired closing balance
-  bal_pre <- mat[bal_acnt, "open", i] + abs(sum(mat[pl_acnt, txn, i]))  # Account balance pre cash transaction (opening + accrued)
-  
-  if ( sign(prior_bals) == 1 ) {
-    rcpt0 <- min( 
-      0, 
-      max(
-        -bal_pre, 
-        round( desired_bal - bal_pre , 3) 
-      ) 
-    )
+  #if (i < trail) s <- 1 else s <- i - (trail - 1)
+  s <- if (i < trail) 1L else i - (trail - 1L)
+  #trail_exp <- if ( length(pl_acnt) == 1 || i == 1) -mean(mat[pl_acnt, txn, s:i]) * trail else -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
+  if (length(pl_acnt) == 1L || i == 1L) {
+    trail_exp <- -mean(mat[pl_acnt, txn, s:i]) * trail
   } else {
-    rcpt0 <- max( 
-      0, 
-      min(
-        -bal_pre, 
-        round( desired_bal - bal_pre , 3) 
-      ) 
-    )
+    trail_exp <- -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
+  }
+  sum_days <- mean(days[s:i]) * trail
+  prior_bals <- mean(mat[bal_acnt, clos, s:(i-1L)]) * (trail-1L)
+  desired_bal <- d * trail_exp / sum_days * trail - prior_bals          # Desired closing balance
+  bal_pre <- mat[bal_acnt, open, i] + abs(sum(mat[pl_acnt, txn, i]))    # Account balance pre cash transaction (opening + accrued)
+  #if (i == 3) browser()
+  delta <- round(desired_bal - bal_pre, 3)
+    if (prior_bals > 0) {
+    rcpt0 <- min(0, max(-bal_pre, delta))
+  } else {
+    rcpt0 <- max(0, min(-bal_pre, delta))
   }
   
-  if (i < trail) rcpt <- -sum(mat[bal_acnt, txn, i]) else rcpt <- rcpt0
-  return(rcpt)
-  
+  #if (i < trail) rcpt <- -sum(mat[bal_acnt, txn, i]) else rcpt <- rcpt0
+  #return(rcpt)
+  if (i < trail) -sum(mat[bal_acnt, txn, i]) else rcpt0
 }
 
 #xxx(i=3, d=creditor_days, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
@@ -670,7 +667,7 @@ plot_kpi <- function(d, initial_fcast_yr) {
   # ) +
   labs(x = "", y = "") + 
   cstm_theme1() +
-  theme(axis.line = element_line(colour = "grey20"))
+  theme(axis.line = element_line(colour = "grey20"), legend.position = "none")
 }
 
 

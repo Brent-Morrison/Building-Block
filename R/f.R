@@ -70,16 +70,20 @@ f <- function(
   gearing            <- 0.6       # gearing assumption for WACC
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
   rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
-  cash_buffer        <- 10000     # cash buffer for loan drawdown
+  cash_buffer        <- 10000     # cash buffer for loan drawdown (thousands)
   
   
   # Data --------------------------------------------------------------------------------------------
+  
+  # Pre-split
+  dat <- dat[dat$entity == ent_parm, ]
+  
   capex <- dat %>%
     mutate(net_capex = case_when(
       balance_type %in% c("cust_cont","gov_cont") ~ -amount, 
       TRUE ~ amount)
     ) %>%
-    filter(entity == ent_parm, balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
+    filter(balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
     select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
   
@@ -104,8 +108,8 @@ f <- function(
   
   
   # Depreciation on opening RAB ---------------------------------------------------------------------
-  bv <- dat[dat$entity == ent_parm & dat$year == 2023 & dat$balance_type == "rab_book_value", "amount"]
-  rl <- dat[dat$entity == ent_parm & dat$year == 2023 & dat$balance_type == "rab_remaining_life", "amount"]
+  bv <- dat[dat$year == initial_fcast_yr-1 & dat$balance_type == "rab_book_value", "amount"]
+  rl <- dat[dat$year == initial_fcast_yr-1 & dat$balance_type == "rab_remaining_life", "amount"]
   
   # Apply depreciation function over multiple instances
   dpn_open_dtl <- mapply(FUN = depn_fun_opn, open_rab_val = bv, open_rab_rem = rl, SIMPLIFY = FALSE)
@@ -132,20 +136,6 @@ f <- function(
   
   # Opex --------------------------------------------------------------------------------------------
   # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity, chemicals and other
-  # opex <- dat %>%
-  #   filter(
-  #     balance_type %in% c("Operations & Maintenance", "External bulk charges (excl. temporary purchases)", 
-  #                         "Customer Service and billing", "GSL Payments", "Corporate", "Other operating expenditure",
-  #                         "Environment Contribution", "Licence Fees", "Treatment"),
-  #     entity == ent_parm
-  #   ) %>% 
-  #   group_by(year) %>% 
-  #   summarise(amount = sum(amount))
-  # 
-  # opex[opex$year == 2029:2033, "amount"] <- opex[opex$year == 2029:2033, "amount"] + opex[opex$year == 2029:2033, "amount"] / sum(opex[opex$year == 2029:2033, "amount"]) * opex_ps2 #ox_delta["ps28", oxcx_scenario]
-  # opex[opex$year == 2034:2038, "amount"] <- opex[opex$year == 2034:2038, "amount"] + opex[opex$year == 2034:2038, "amount"] / sum(opex[opex$year == 2034:2038, "amount"]) * opex_ps3 # ox_delta["ps33", oxcx_scenario]
-  # opex[opex$year == 2039:2043, "amount"] <- opex[opex$year == 2039:2043, "amount"] + opex[opex$year == 2039:2043, "amount"] / sum(opex[opex$year == 2039:2043, "amount"]) * opex_ps4 # ox_delta["ps38", oxcx_scenario]
-  
   
   # NEW OPEX FROM UI (retuned in thousands)
   opx_labr <- real_series(q = fte    , p = cost_fte    , q_grow = q_grow_fte)
@@ -168,46 +158,45 @@ f <- function(
 
   
   # RAB schedule ------------------------------------------------------------------------------------
-  # Capex
+    # Capex
   cx <- colSums(c)[1:rab_n_yrs]
   unlist(colSums(c)[1:rab_n_yrs], use.names = FALSE)
   
   # Customer contributions
   cc.t <- rep(0, rab_n_yrs)
   y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
-  if(sum(dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", "amount"]) != 0) {
-    ccdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "cust_cont", ], FUN = sum)
+  if(sum(dat[dat$balance_type == "cust_cont", "amount"]) != 0) {
+    ccdf <- aggregate(amount ~ year, data = dat[dat$balance_type == "cust_cont", ], FUN = sum)
     cc.t[which(ccdf$year == y)] <- ccdf$amount[1:rab_n_yrs]
     cc <- cc.t
   } else {
     cc <- cc.t
   }
-  cc
-  suppressWarnings(rm(cc.t, ccdf, y))
+  #suppressWarnings(rm(cc.t, ccdf, y))
   
   # Government contributions
   gc.t <- rep(0, rab_n_yrs)
   y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
-  if(sum(dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", "amount"]) != 0) {
-    gcdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "gov_cont", ], FUN = sum)
+  if(sum(dat[dat$balance_type == "gov_cont", "amount"]) != 0) {
+    gcdf <- aggregate(amount ~ year, data = dat[dat$balance_type == "gov_cont", ], FUN = sum)
     gc.t[which(gcdf$year == y)] <- gcdf$amount[1:rab_n_yrs]
     gc <- gc.t
   } else {
     gc <- gc.t
   }
-  suppressWarnings(rm(gc.t, gcdf, y))
+  #suppressWarnings(rm(gc.t, gcdf, y))
   
   # Disposals
   dp.t <- rep(0, rab_n_yrs)
   y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
-  if(sum(dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", "amount"]) != 0) {
-    dpdf <- aggregate(amount ~ year, data = dat[dat$entity == ent_parm & dat$balance_type == "disp_proceeds", ], FUN = sum)
+  if(sum(dat[dat$balance_type == "disp_proceeds", "amount"]) != 0) {
+    dpdf <- aggregate(amount ~ year, data = dat[dat$balance_type == "disp_proceeds", ], FUN = sum)
     dp.t[which(dpdf$year == y)] <- dpdf$amount[1:rab_n_yrs]
     dp <- dp.t
   } else {
     dp <- dp.t
   }
-  suppressWarnings(rm(dp.t, dpdf, y))
+  #suppressWarnings(rm(dp.t, dpdf, y))
   
   
   open_rab_val <- bv
@@ -248,14 +237,10 @@ f <- function(
   
   
   # Price & quantity data ---------------------------------------------------------------------------
-  pq <- dat %>%
-    filter(
-      balance_type %in% c("Price", "Quantity"),
-      entity == ent_parm
-    )
+  pq <- dat %>% filter(balance_type %in% c("Price", "Quantity"))
   
   # Quantities
-  q.t1 <- pq %>% filter(entity == ent_parm, year == initial_fcast_yr-1, balance_type == 'Quantity')  # Pivot wider here
+  q.t1 <- pq %>% filter(year == initial_fcast_yr-1, balance_type == 'Quantity')  # Pivot wider here
   q <- as.matrix(q.t1[, "amount"])
   rownames(q) <- paste(q.t1[, "service"], q.t1[, "asset_category"], q.t1[, "cost_driver"], sep = ".")
   
@@ -268,7 +253,7 @@ f <- function(
   q <- q %*% exp( cumsum( log( 1 + rep(q_grow, rab_n_yrs) ) ) ) 
   
   # Prices
-  pq.t1 <- pq %>% filter(entity == ent_parm, year == initial_fcast_yr-1, balance_type == 'Price')
+  pq.t1 <- pq %>% filter(year == initial_fcast_yr-1, balance_type == 'Price')
   p0 <- as.matrix(pq.t1[, "amount"])
   rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "cost_driver"], sep = ".")
   
@@ -375,15 +360,43 @@ f <- function(
   dimnames(mat)[[2]] <- txn
   dimnames(mat)[[3]] <- mon
   
+  # Convert indices to integers
+  acct_idx <- setNames(seq_along(dimnames(mat)[[1]]), dimnames(mat)[[1]])
+  txn_idx  <- setNames(seq_along(dimnames(mat)[[2]]), dimnames(mat)[[2]])
+  
+  idx <- list(
+    aidb = list( # "incm"
+      bal_acnt = acct_idx["3050"],
+      pl_acnt  = acct_idx[c("1000","1001","1002","1003","1101","1102","1103","1104","1105")],
+      txn      = txn_idx["aidb"]
+    ),
+    incm = list( # "cshd"
+      bal_acnt = acct_idx["3100"],
+      pl_acnt  = acct_idx["3050"],
+      txn      = txn_idx["incm"]
+    ),
+    expx = list( # "crd1"
+      bal_acnt = acct_idx["4000"],
+      pl_acnt  = acct_idx["2000"],
+      txn      = txn_idx[c("exp1","exp3","exp4")]
+    ),
+    cpx1 = list( # "wipc"
+      bal_acnt = acct_idx["4010"],
+      pl_acnt  = acct_idx["3645"],
+      txn      = txn_idx["cpx1"]
+    ),
+    open = txn_idx["open"],
+    clos = txn_idx["clos"]
+  )
   
   # Insert opening balances
   opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
-  mat[ , "open", 1]  <- opn_bal
+  mat[ , idx$open, 1]  <- opn_bal
   
   
   # Rollover and update retained earning
-  mat["5200","open",1] <- mat["5200","open",1] + sum(mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1])
-  mat[as.character(chart[chart$statement_type == 1, ]$account_no), "open" ,1] <- 0
+  mat["5200", idx$open, 1] <- mat["5200", idx$open, 1] + sum(mat[as.character(chart[chart$statement_type == 1, ]$account_no), idx$open, 1])
+  mat[as.character(chart[chart$statement_type == 1, ]$account_no), idx$open, 1] <- 0
   
   
   # Check
@@ -418,30 +431,16 @@ f <- function(
   
   # Expenses 
   
-  # Percentage of opex relating to employee expenses (from published accounts)
-  # This required to disaggregate baseline opex from pricing submission
-  # perc_opex_emp <- chart[chart$account_no == 2100, open_bals_col] / sum(chart[chart$account_no %in% c(2000,2100), open_bals_col])
-  # 
-  # exp1 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * (1-perc_opex_emp)
-  # exp1 <- round(as.vector(sapply(X = exp1, FUN = add_trend_season, s=0, a=0, p=0)), 3)
-  # exp2 <- unlist(opex[opex$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * infltn_factor * perc_opex_emp
-  # exp2 <- round(as.vector(sapply(X = exp2, FUN = add_trend_season, s=0, a=0, p=0)), 3)
-  # exp3 <- unlist(opex1[opex1$year %in% initial_fcast_yr:(initial_fcast_yr+rab_n_yrs-1), "amount"], use.names = FALSE) * 1000 * ni_cost_ml
-  # exp3 <- round(as.vector(sapply(X = exp3, FUN = add_trend_season, s=0, a=0, p=0)), 3)
-  
   opx_labr_m <- round(as.vector(sapply(X = opx_labr * growth_fctr(ni_cost_fte, rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
   opx_elec_m <- round(as.vector(sapply(X = opx_elec * growth_fctr(ni_cost_kwh, rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
   opx_chem_m <- round(as.vector(sapply(X = opx_chem * growth_fctr(ni_cost_ml , rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
   opx_othr_m <- round(as.vector(sapply(X = opx_othr * growth_fctr(ni_cost_dl , rab_n_yrs), FUN = add_trend_season, s=0, a=0, p=0)), 3)
   
-  
-  
   # Capex 
   cpx1 <- round(rep(cx / 12, each = 12), 3) * 1000
   
   
-  # Depreciation 
-  # - on opening balance
+  # Depreciation - on opening balance
   stat_depn_bld <- depn_bv(
     yrs=rab_n_yrs, 
     de=chart[chart$account_no == 2215, open_bals_col], 
@@ -486,19 +485,54 @@ f <- function(
   
   
   
-  # - on capex (balances moved from WIP)
+  # Depreciation - on capex (balances moved from WIP)
   dpn1 <- rep(50, mons)                      # TO DO - create depn schedule re opening balances and capex, assume transfer from WIP to asset register
   dpn_mtrix <- t(mapply(FUN = depn_fun, split(c, row(c)), yr_op = yr_op, life = life))
   dpn_cpx <- colSums(dpn_mtrix)
   dpn_cpx <- rep(dpn_cpx / 12, each = 12)
   
   
+  # Cost debt variance
+  cost_of_debt <- cost_of_debt_nmnl + if (is.null(debt_sens)) 0 else debt_sens  #+ if (is.null(x)) 0 else rnorm(1, 0, x)   
+  
+  
   # -------------------------------------------------------------------------------------------------
-  # Transaction loop
+  # Transaction loop posting
   # -------------------------------------------------------------------------------------------------
   
-  # Cost debt variance
-  cost_of_debt <- cost_of_debt_nmnl + if (is.null(debt_sens)) 0 else debt_sens  #+ if (is.null(x)) 0 else rnorm(1, 0, x)    
+
+  # Deterministic transactions are outside the loop
+  mat[drcr("exp1", txn_type), "exp1", ] <- rbind(opx_othr_m, -opx_othr_m)  # other expenses
+  mat[drcr("exp2", txn_type), "exp2", ] <- rbind(opx_labr_m, -opx_labr_m)  # employee expenses
+  mat[drcr("exp3", txn_type), "exp3", ] <- rbind(opx_chem_m, -opx_chem_m)  # chemicals
+  mat[drcr("exp4", txn_type), "exp4", ] <- rbind(opx_elec_m, -opx_elec_m)  # electricity
+  mat[drcr("gift", txn_type), "gift", ] <- rbind(gift, -gift)              # income re gifted assets
+  mat[drcr("cpx1", txn_type), "cpx1", ] <- rbind(cpx1, -cpx1)              # capex
+  
+  # Other income TO DO ----------------------------------------------------------------------------
+  
+  
+  # Depreciation ----------------------------------------------------------------------------------
+  #t <- "dpn1"
+  p <- rbind(
+    stat_depn_bld, -stat_depn_bld,
+    stat_depn_lhi, -stat_depn_lhi,
+    stat_depn_pae, -stat_depn_pae,
+    stat_depn_inf+dpn_cpx, -stat_depn_inf-dpn_cpx, # TO DO - assumes all capex is infrastructure
+    stat_depn_pae, -stat_depn_pae,
+    stat_depn_sca, -stat_depn_sca
+  )
+  a <- drcr("dpn1", txn_type)
+
+  mat[a, "dpn1", ] <- p
+  # if (sum(p) == 0 & length(p) == length(a)) {
+  #   mat[a, "dpn1", i] <- p
+  # } else if (sum(p) != 0) {
+  #   print("Depreciation not posted, accounting entries do not balance")
+  # } else if (length(p) != length(a)) {
+  #   print(paste0("Depreciation not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
+  # }
+  
   
   for (i in 1:length(mon)) {
     
@@ -534,7 +568,8 @@ f <- function(
     t <- "incm"
     pl_acs <- c("1000","1001","1002","1003","1101","1102","1103","1104","1105")
     
-    tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt=pl_acs, txn="aidb") 
+    #tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt=pl_acs, txn="aidb") 
+    tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt=idx$aidb$bal_acnt, pl_acnt=idx$aidb$pl_acnt, txn=idx$aidb$txn, open=idx$open, clos=idx$clos) 
     #if (i == 200) browser()
     #print(paste("Txn 'incm', tfer accrued income to debtors. Loop no.", i, round(-tfer,1)))
     mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
@@ -543,55 +578,26 @@ f <- function(
     # Cash receipt to specify desired closing balance for debtors days parameter --------------------
     trail <- 3
     t <- "cshd"
-    rcpt <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
+    #rcpt <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
+    rcpt <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt=idx$incm$bal_acnt, pl_acnt=idx$incm$pl_acnt, txn=idx$incm$txn, open=idx$open, clos=idx$clos)
     mat[drcr(t, txn_type), t, i] <- c(-rcpt, rcpt)
     
-    
-    # Bad debts WO
-    # wo <- mat[,,i]["3053", "opn"] + mat[,,i]["3053", "csh"]
-    # mat[,,i]["3053", "wof"] <- -wo
-    # mat[,,i]["270", "wof"] <- wo
-    
-    
-    # Income re gifted assets -----------------------------------------------------------------------
-    t <- "gift"
-    mat[drcr(t, txn_type), t, i] <- c(gift[i], -gift[i])
-    
-    
-    # Other income TO DO ----------------------------------------------------------------------------
-    
-    
+
     # Interest income TO DO -------------------------------------------------------------------------
     
     
-    # Expenses --------------------------------------------------------------------------------------
-    t <- "exp1" # other expenses
-    mat[drcr(t, txn_type), t, i] <- c(opx_othr_m[i], -opx_othr_m[i])
-    
-    t <- "exp2" # employee expenses
-    mat[drcr(t, txn_type), t, i] <- c(opx_labr_m[i], -opx_labr_m[i])
-    
-    t <- "exp3" # chemicals
-    mat[drcr(t, txn_type), t, i] <- c(opx_chem_m[i], -opx_chem_m[i])
-    
-    t <- "exp4" # electricty
-    mat[drcr(t, txn_type), t, i] <- c(opx_elec_m[i], -opx_elec_m[i])   
-    
     # Cash payment re trade creditors ---------------------------------------------------------------
     trail <- 3
-    rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn=c("exp1","exp3","exp4"))
+    #rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn=c("exp1","exp3","exp4"))
+    rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt=idx$expx$bal_acnt, pl_acnt=idx$expx$pl_acnt, txn=idx$expx$txn, open=idx$open, clos=idx$clos)
     t <- "crd1"
     mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
     
     
-    # Capex -----------------------------------------------------------------------------------------
-    t <- "cpx1"
-    mat[drcr(t, txn_type), t, i] <- c(cpx1[i], -cpx1[i])
-    
-    
     # Cash payment re capex -------------------------------------------------------------------------
     trail <- 3
-    rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
+    #rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
+    rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt=idx$cpx1$bal_acnt, pl_acnt=idx$cpx1$pl_acnt, txn=idx$cpx1$txn, open=idx$open, clos=idx$clos)
     t <- "wipc"
     mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
     
@@ -610,24 +616,24 @@ f <- function(
     }
     
     
-    # Depreciation ----------------------------------------------------------------------------------
-    t <- "dpn1"
-    p <- c(
-      stat_depn_bld[i], -stat_depn_bld[i],
-      stat_depn_lhi[i], -stat_depn_lhi[i],
-      stat_depn_pae[i], -stat_depn_pae[i],
-      stat_depn_inf[i]+dpn_cpx[i], -stat_depn_inf[i]-dpn_cpx[i], # TO DO - assumes all capex is infrastructure
-      stat_depn_pae[i], -stat_depn_pae[i],
-      stat_depn_sca[i], -stat_depn_sca[i]
-    )
-    a <- drcr(t, txn_type)
-    if (sum(p) == 0 & length(p) == length(a)) {
-      mat[a, t, i] <- p
-    } else if (sum(p) != 0) {
-      print("Depreciation not posted, accounting entries do not balance")
-    } else if (length(p) != length(a)) {
-      print(paste0("Depreciation not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
-    }
+    # # Depreciation ----------------------------------------------------------------------------------
+    # t <- "dpn1"
+    # p <- c(
+    #   stat_depn_bld[i], -stat_depn_bld[i],
+    #   stat_depn_lhi[i], -stat_depn_lhi[i],
+    #   stat_depn_pae[i], -stat_depn_pae[i],
+    #   stat_depn_inf[i]+dpn_cpx[i], -stat_depn_inf[i]-dpn_cpx[i], # TO DO - assumes all capex is infrastructure
+    #   stat_depn_pae[i], -stat_depn_pae[i],
+    #   stat_depn_sca[i], -stat_depn_sca[i]
+    # )
+    # a <- drcr(t, txn_type)
+    # if (sum(p) == 0 & length(p) == length(a)) {
+    #   mat[a, t, i] <- p
+    # } else if (sum(p) != 0) {
+    #   print("Depreciation not posted, accounting entries do not balance")
+    # } else if (length(p) != length(a)) {
+    #   print(paste0("Depreciation not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
+    # }
     
     
     # Determine if borrowings required --------------------------------------------------------------

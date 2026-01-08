@@ -300,3 +300,60 @@ nmnl_labour
 real_labour
 
 
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Loan portfolio
+# --------------------------------------------------------------------------------------------------------------------------
+
+rou_func(100, 50, 0.05)
+
+initial_fcast_yr <- 2024
+mons         <- 60
+initial_date <- as.Date(paste0(initial_fcast_yr,"-06-01"))
+dates        <- seq(initial_date, length.out = mons, by = "month")
+
+
+
+loans <- data.frame(
+  amnt = c(1000,2000,3000,4000),
+  start = as.Date(c("2024-01-01","2023-06-01","2025-08-01","2025-01-01")),
+  end = as.Date(c("2030-01-01","2029-02-01","2026-08-01","2029-01-01")),
+  rate = c(0.05,0.06,0.03,0.02)
+)
+
+loan_mat <- matrix(rep(0, mons * 4), nrow = mons, ncol = ncol(loans), dimnames = list(dates, 1:ncol(loans)))
+
+mask <- 
+  dates >= rep(loans$start, each = mons) &
+  dates <= rep(loans$end,   each = mons)
+
+loan_mat[,] <- matrix(mask, nrow = mons) * matrix(loans$amnt, nrow = mons, ncol = length(loans$amnt), byrow = TRUE)
+loan_mat
+cbind(loan_mat, rep(10, 60))
+
+
+
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Sparklines
+# --------------------------------------------------------------------------------------------------------------------------
+
+library(DT)
+library(sparkline)
+
+datatable(
+  data.frame(
+    Series = c("A", "B"),
+    Trend = I(list(
+      sparkline(c(1, 3, 2, 4, 6), type = "line"),
+      sparkline(c(5, 4, 3, 2, 1), type = "line")
+    ))
+  ),
+  escape = FALSE
+)
