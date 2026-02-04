@@ -1,4 +1,4 @@
-# To DO - check if the real to nominal uplift via inflation factors is being reset each price period
+# TO DO - check if the real to nominal uplift via inflation factors is being reset each price period
 # Function
 f <- function(
     dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
@@ -331,15 +331,14 @@ f <- function(
     
   
   
-  # -------------------------------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------------------------------------------------
   # Matrix accounting set up (balances are in thousands)
-  # -------------------------------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------------------------------------------------
   
   # Parameters 
   mons          <- rab_n_yrs * 12  # months to forecast
   open_bals_col <- "cw_23"         # column in the 'chart.csv' file representing the entities data
   infltn_factor <- growth_fctr(esc_rate = 0.025, len = rab_n_yrs)   
-  #infltn_factor <- exp(cumsum( log(1 + rep(fcast_infltn, 5)) ))
   month_end     <- seq(as.Date(paste(initial_fcast_yr-1,"07","31", sep = "-")) + 1, by = "month", length.out = mons) - 1
   days          <- as.numeric(format(month_end, "%d"))
   accrued_days  <- 60
@@ -403,6 +402,29 @@ f <- function(
   round(colSums(mat[,,1]), 3)
   
   
+  # Initial loan portfolio data frame
+  loans <- dat %>% 
+    filter(balance_type == "loans") %>% 
+    select(amnt = amount, end = regulatory_life, rate = tax_life) %>% 
+    mutate(end = as.Date(paste0(end, "01"), format = "%Y%m%d"), start = end - years(10))
+  
+  n_initial_loans <- nrow(loans)
+  loan_mat <- matrix(rep(0, mons * nrow(loans)), nrow = mons, ncol = nrow(loans)) 
+  mask <- month_end >= rep(loans$start, each = mons) & month_end <= rep(loans$end, each = mons)
+  loan_mat[,] <- matrix(mask, nrow = mons) * matrix(loans$amnt, nrow = mons, ncol = length(loans$amnt), byrow = TRUE)
+  
+  # Add columns for new loans.  One column for each month in forecast period
+  loan_mat <- cbind( loan_mat, matrix(rep(0, mons^2), nrow = mons) )
+  loan_start_dates <- c(loans$start , month_end)  # Index for columns
+  
+  # Add schedule of rates in identically sized matrix and combine to form an array
+  # 3rd dim : index 1 balances
+  # 3rd dim : index 2 rates
+  # 3rd dim : index 3 interest expense (update each month)
+  loan_sched <- array(c(loan_mat, loan_mat, loan_mat), dim = c(nrow(loan_mat), ncol(loan_mat), 3))  
+  loan_sched[ , 1:length(loans$rate), 2] <- rep(loans$rate/100, each = mons)                          # add rates on initial stock of debt
+  loan_sched[ , , 3] <- round(loan_sched[ , , 1] * loan_sched[ , , 2] / 365 * days , 2)               # calculate monthly interest expense
+  
   
   # -------------------------------------------------------------------------------------------------
   # Transaction balances
@@ -427,7 +449,7 @@ f <- function(
   colnames(incm) <- as.character(substr(month_end, 1, 7))
   
   gift <- round(rep(cc / 12, each = 12), 3) * 1000
-  
+
   
   # Expenses 
   
@@ -545,7 +567,7 @@ f <- function(
     }
     
     
-    # Post income (DR accrued income / CR income) ---------------------------------------------------
+    # Post income (DR accrued income / CR income) --------------------------------------------------------------------------
     t <- "aidb"
     p <- c(
       sum(incm[c("1000","1001","1002","1003","1101","1102","1103","1104","1105"),i]), 
@@ -563,7 +585,7 @@ f <- function(
     }
     #if (i == 12) browser()
     
-    # Transfer to debtors to specify desired closing balance for accrued income days parameter -------------
+    # Transfer to debtors to specify desired closing balance for accrued income days parameter -----------------------------
     trail <- 3
     t <- "incm"
     pl_acs <- c("1000","1001","1002","1003","1101","1102","1103","1104","1105")
@@ -575,7 +597,7 @@ f <- function(
     mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
     
     
-    # Cash receipt to specify desired closing balance for debtors days parameter --------------------
+    # Cash receipt to specify desired closing balance for debtors days parameter -------------------------------------------
     trail <- 3
     t <- "cshd"
     #rcpt <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
@@ -583,10 +605,10 @@ f <- function(
     mat[drcr(t, txn_type), t, i] <- c(-rcpt, rcpt)
     
 
-    # Interest income TO DO -------------------------------------------------------------------------
+    # Interest income TO DO ------------------------------------------------------------------------------------------------
     
     
-    # Cash payment re trade creditors ---------------------------------------------------------------
+    # Cash payment re trade creditors --------------------------------------------------------------------------------------
     trail <- 3
     #rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn=c("exp1","exp3","exp4"))
     rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt=idx$expx$bal_acnt, pl_acnt=idx$expx$pl_acnt, txn=idx$expx$txn, open=idx$open, clos=idx$clos)
@@ -594,7 +616,7 @@ f <- function(
     mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
     
     
-    # Cash payment re capex -------------------------------------------------------------------------
+    # Cash payment re capex ------------------------------------------------------------------------------------------------
     trail <- 3
     #rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
     rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt=idx$cpx1$bal_acnt, pl_acnt=idx$cpx1$pl_acnt, txn=idx$cpx1$txn, open=idx$open, clos=idx$clos)
@@ -602,13 +624,14 @@ f <- function(
     mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
     
     
-    # Interest (accrue) -----------------------------------------------------------------------------
-    int <- round(sum(mat[c("4100","4500"), "open", i]) * cost_of_debt / 12, 3)
+    # Interest (accrue) ----------------------------------------------------------------------------------------------------
+    #int <- round(sum(mat[c("4100","4500"), "open", i]) * cost_of_debt / 12, 3)
+    int <- sum(loan_sched[ i, , 3])
     t <- "inta"
-    mat[drcr(t, txn_type), t, i] <- c(-int, int)
+    mat[drcr(t, txn_type), t, i] <- c(int, -int)
     
     
-    # Interest (pay quarterly) ----------------------------------------------------------------------
+    # Interest (pay quarterly) ---------------------------------------------------------------------------------------------
     if (i %in% seq(0, mons, by = 3)) {
       t <- "intp"
       intp <- -mat["4020", "open", i]
@@ -616,34 +639,36 @@ f <- function(
     }
     
     
-    # # Depreciation ----------------------------------------------------------------------------------
-    # t <- "dpn1"
-    # p <- c(
-    #   stat_depn_bld[i], -stat_depn_bld[i],
-    #   stat_depn_lhi[i], -stat_depn_lhi[i],
-    #   stat_depn_pae[i], -stat_depn_pae[i],
-    #   stat_depn_inf[i]+dpn_cpx[i], -stat_depn_inf[i]-dpn_cpx[i], # TO DO - assumes all capex is infrastructure
-    #   stat_depn_pae[i], -stat_depn_pae[i],
-    #   stat_depn_sca[i], -stat_depn_sca[i]
-    # )
-    # a <- drcr(t, txn_type)
-    # if (sum(p) == 0 & length(p) == length(a)) {
-    #   mat[a, t, i] <- p
-    # } else if (sum(p) != 0) {
-    #   print("Depreciation not posted, accounting entries do not balance")
-    # } else if (length(p) != length(a)) {
-    #   print(paste0("Depreciation not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
-    # }
+    # Check loan schedule and repay borrowings if required -----------------------------------------------------------------
+    if (i > 1) {
+      
+      ls <- loan_sched[((i-1):i), ,1]
+      rp_ind <- which(ls[2, ] == 0 & ls[1, ] != 0)
+      repay <- if (length(rp_ind) != 0) sum(ls[1, rp_ind]) else 0
+      if (repay > 0) {
+        t <- "repy"
+        mat[drcr(t, txn_type), t, i] <- c(repay,-repay)
+      }
+      
+    }
+
     
-    
-    # Determine if borrowings required --------------------------------------------------------------
+    # Determine if borrowings required -------------------------------------------------------------------------------------
     # TO DO - determine amount to borrow dynamically
     cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])  # cash balance after all transactions
     borrow_amt <- round(-cash_bal + cash_buffer, -3)
     if (cash_bal < 0) {
       t <- "borr"
       mat[drcr(t, txn_type), t, i] <- c(borrow_amt,-borrow_amt)
+      
+      # Update Loan schedule
+      end_idx <- if (i + 119 < 240) i + 119 else 240
+      loan_sched[i:end_idx, n_initial_loans + i, 1] <- rep(borrow_amt, each = length(i:end_idx)) 
+      loan_sched[         , n_initial_loans + i, 2] <- rep(0.04, each = mons)                                            # add rates on new debt drawn TO DO - from parameter outside loop
+      loan_sched[         , n_initial_loans + i, 3] <- round(loan_sched[ , n_initial_loans + i, 1] * 
+                                                             loan_sched[ , n_initial_loans + i, 2] / 365 * days[i] , 2)  # monthly interest expense on new debt
     }
+
     #cat(c(i, ": Cash balance - ", cash_bal, "\n"))
     #cat(c(i, ": Borrowing requirement - ", borrow_amt, "\n"))
     
@@ -660,6 +685,7 @@ f <- function(
     prices       = prices, 
     rev_req      = rev_req_df, 
     tariff_rev   = tot_rev_nmnl,
+    loans        = loan_sched,
     call         = list(cx_delta=cx_delta, ox_delta=ox_delta, q_grow=q_grow, 
                         cost_of_debt_nmnl=cost_of_debt_nmnl, fcast_infltn=fcast_infltn, 
                         roe=roe, debt_sens=debt_sens) # , oxcx_scenario=oxcx_scenario

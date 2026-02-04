@@ -275,19 +275,19 @@ npv_optim_func <- function(theta, pdyr, single, des_f=99, rev_req, p0, q, rtn_mo
 
 rou_func <- function(lease_pay, periods, rate) {
   
-  # Create a leease schedule detailing repayment, interest component & depreciation
+  # Create a lease schedule detailing repayment, interest component & depreciation
   #
   # Args:
-  #   lease_pay - the lease payment
+  #   lease_pay - monthly lease payment
   #   periods   - number of periods in the lease contract
   #   rate      - discount rate to be used in calculating the right of use asset / lease liability
   #
   # Returns:
-  #   matrix being
+  #   matrix being schedule of payments, interest component thereof and depreciation expense
   
-  mat <- matrix(rep(0, periods * 7), nrow = periods)
+  mat <- matrix(rep(0, periods * 8), nrow = periods)
   dimnames(mat)[[1]] <- 1:periods
-  dimnames(mat)[[2]] <- c("open_liab","payment","interest","clos_liab","open_depn","depn_exp","clos_depn")
+  dimnames(mat)[[2]] <- c("open_liab","payment","interest","clos_liab","open_depn","depn_exp","clos_depn","inferred_rate")
   pays <- rep(lease_pay, periods)
   
   for (i in 1:length(pays)) {
@@ -300,10 +300,64 @@ rou_func <- function(lease_pay, periods, rate) {
     mat[i,"open_depn"] <- ifelse(i == 1, 0, mat[i - 1, "clos_depn"])
     mat[i,"depn_exp"]  <- round(mat[1, "open_liab"] / periods, 2)
     mat[i,"clos_depn"] <- sum(mat[i,5:6])
+    mat[i,"inferred_rate"] <- round(mat[i,"interest"] * 12 / mat[i,"open_liab"], 3)
   }
   
   return(mat)
 }
+
+
+sca_func <- function(lease_pay, periods, asset_fv) {
+  
+  # Create a lease schedule detailing repayment, interest component & depreciation
+  #
+  # Args:
+  #   lease_pay - the lease payment
+  #   periods   - number of periods in the lease contract
+  #   asset_fv  - the fair value of the asset
+  #
+  # Returns:
+  #   matrix being
+  
+  mat <- matrix(rep(0, periods * 8), nrow = periods)
+  dimnames(mat)[[1]] <- 1:periods
+  dimnames(mat)[[2]] <- c("open_liab","payment","interest","clos_liab","open_depn","depn_exp","clos_depn","inferred_rate")
+  pays <- rep(lease_pay, periods)
+  times <- 1:periods
+  
+  # Present value function
+  pv_function <- function(r, cashflows, times, asset_fv) {
+    sum(cashflows / (1 + r / 12)^times) - asset_fv
+  }
+  
+  # Find discount rate
+  rate <- 
+    uniroot(
+      pv_function,
+      lower = -0.9,
+      upper = 0.9,
+      cashflows = pays,
+      times = times,
+      asset_fv = asset_fv
+    )$root
+  
+  for (i in 1:length(pays)) {
+    pays_ <- pays[i:length(pays)]
+    oll <- sum(pays_ / (1 + rate / 12) ^ (1:length(pays_)))
+    mat[i,"open_liab"] <- -round(oll,2)
+    mat[i,"payment"]   <- round(lease_pay,2)
+    mat[i,"interest"]  <- round(mat[i,"open_liab"] * rate / 12 , 2)
+    mat[i,"clos_liab"] <- round(sum(mat[i,1:3]), 2)
+    mat[i,"open_depn"] <- ifelse(i == 1, 0, mat[i - 1, "clos_depn"])
+    mat[i,"depn_exp"]  <- round(mat[1, "open_liab"] / periods, 2)
+    mat[i,"clos_depn"] <- sum(mat[i,5:6])
+    mat[i,"inferred_rate"] <- round(mat[i,"interest"] * 12 / mat[i,"open_liab"], 3)
+  }
+  
+  return(mat)
+}
+
+
 
 
 
@@ -410,29 +464,33 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn, open, clos
   # Returns
   #   the cash payment / receipt to arrive at balance required for designated debtors / creditors days 
   
-  #if (i < trail) s <- 1 else s <- i - (trail - 1)
   s <- if (i < trail) 1L else i - (trail - 1L)
-  #trail_exp <- if ( length(pl_acnt) == 1 || i == 1) -mean(mat[pl_acnt, txn, s:i]) * trail else -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
+  
   if (length(pl_acnt) == 1L || i == 1L) {
     trail_exp <- -mean(mat[pl_acnt, txn, s:i]) * trail
   } else {
     trail_exp <- -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
   }
+  
   sum_days <- mean(days[s:i]) * trail
   prior_bals <- mean(mat[bal_acnt, clos, s:(i-1L)]) * (trail-1L)
   desired_bal <- d * trail_exp / sum_days * trail - prior_bals          # Desired closing balance
   bal_pre <- mat[bal_acnt, open, i] + abs(sum(mat[pl_acnt, txn, i]))    # Account balance pre cash transaction (opening + accrued)
-  #if (i == 3) browser()
+  
   delta <- round(desired_bal - bal_pre, 3)
-    if (prior_bals > 0) {
+  if (prior_bals > 0) {
     rcpt0 <- min(0, max(-bal_pre, delta))
   } else {
     rcpt0 <- max(0, min(-bal_pre, delta))
   }
   
-  #if (i < trail) rcpt <- -sum(mat[bal_acnt, txn, i]) else rcpt <- rcpt0
-  #return(rcpt)
-  if (i < trail) -sum(mat[bal_acnt, txn, i]) else rcpt0
+  if (i < trail) {
+    rcpt <- -sum(mat[bal_acnt, txn, i])
+  } else {
+    rcpt <- rcpt0
+  }
+  
+  return(rcpt)
 }
 
 #xxx(i=3, d=creditor_days, trail=3, bal_acnt="4000", pl_acnt="2000", txn="exp1")
@@ -716,7 +774,7 @@ tb <- function(sim, chart, initial_fcast_yr = 2024) {
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Return trial balance function
+# Return cash flow function
 # --------------------------------------------------------------------------------------------------------------------------
 
 cf <- function(sim, ref, initial_fcast_yr = 2024) {

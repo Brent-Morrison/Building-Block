@@ -307,31 +307,57 @@ real_labour
 # Loan portfolio
 # --------------------------------------------------------------------------------------------------------------------------
 
-rou_func(100, 50, 0.05)
+# Initial loan portfolio data frame
+loans <- dat_df %>% 
+  filter(entity == "CW", balance_type == "loans") %>% 
+  select(amnt = amount, end = regulatory_life, rate = tax_life) %>% 
+  mutate(end = as.Date(paste0(end, "01"), format = "%Y%m%d"), start = end - years(10))
 
 initial_fcast_yr <- 2024
-mons         <- 60
-initial_date <- as.Date(paste0(initial_fcast_yr,"-06-01"))
-dates        <- seq(initial_date, length.out = mons, by = "month")
-
-
-
-loans <- data.frame(
-  amnt = c(1000,2000,3000,4000),
-  start = as.Date(c("2024-01-01","2023-06-01","2025-08-01","2025-01-01")),
-  end = as.Date(c("2030-01-01","2029-02-01","2026-08-01","2029-01-01")),
-  rate = c(0.05,0.06,0.03,0.02)
-)
-
-loan_mat <- matrix(rep(0, mons * 4), nrow = mons, ncol = ncol(loans), dimnames = list(dates, 1:ncol(loans)))
-
-mask <- 
-  dates >= rep(loans$start, each = mons) &
-  dates <= rep(loans$end,   each = mons)
-
+mons <- 5*12*4
+initial_date <- as.Date(paste0(initial_fcast_yr-1,"-07-01"))
+month_end <- seq(initial_date, length.out = mons, by = "month")  # This is the row index
+days <- as.numeric(format(seq(initial_date, length.out = mons + 1, by = "month") - 1, "%d"))[-1]
+loan_mat <- matrix(rep(0, mons * nrow(loans)), nrow = mons, ncol = nrow(loans)) #, dimnames = list(month_end, 1:ncol(loans))) 
+mask <- month_end >= rep(loans$start, each = mons) & month_end <= rep(loans$end, each = mons)
 loan_mat[,] <- matrix(mask, nrow = mons) * matrix(loans$amnt, nrow = mons, ncol = length(loans$amnt), byrow = TRUE)
 loan_mat
-cbind(loan_mat, rep(10, 60))
+
+# Add columns for new loans.  One column for each month in forecast period
+loan_mat <- cbind( loan_mat, matrix(rep(0, mons^2), nrow = mons) )
+loan_start_dates <- c(loans$start , month_end)  # Index for columns
+loan_mat[,1:12]
+
+# Add schedule of rates in identically sized matrix and combine to form an array
+# 3rd dim : index 1 balances
+# 3rd dim : index 2 rates
+# 3rd dim : index 3 interest expense (update each month)
+loan_sched <- array(c(loan_mat, loan_mat, loan_mat), dim = c(nrow(loan_mat), ncol(loan_mat), 3))  
+loan_sched[ , 1:length(loans$rate), 2] <- rep(loans$rate/100, each = mons)                          # add rates on initial stock of debt
+loan_sched[ , , 3] <- round(loan_sched[ , , 1] * loan_sched[ , , 2] / 365 * days , 2)               # calculate monthly interest expense
+loan_sched[,1:10,3]
+
+rowSums(loan_sched[ , , 3])
+sum(loan_sched[ i, , 3])*12
+
+# Weighted average remaining maturity
+i <- 12
+yrs_remaining <- apply(X = loan_mat, MARGIN = 2, FUN = function(x) sum( x[dates >= dates[i]] > 0 ) / 12 )
+loan_bal_weights <- loan_mat[i,] / sum(loan_mat[i,])
+weighted_ave_yrs_rem <- round(sum(yrs_remaining * loan_bal_weights), 2)
+weighted_ave_yrs_rem
+
+
+# scratch
+loan_mat[which(dates == as.Date("2024-07-01")), ]
+loan_mat[which(dates >= as.Date("2024-12-01") & dates <= as.Date("2025-09-01")), ]
+
+rou_func(lease_pay=100, periods=36, rate=0.05)
+sca_func(lease_pay=100, periods=36, asset_fv=5000)
+
+
+
+
 
 
 

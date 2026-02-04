@@ -720,6 +720,16 @@ CW,2030,gross_capex,Rural water,Pipelines/network,Renewals,Ongoing,,100,40,2.751
 CW,2031,gross_capex,Rural water,Pipelines/network,Renewals,Ongoing,,100,40,3.511822905
 CW,2032,gross_capex,Rural water,Pipelines/network,Renewals,Ongoing,,100,40,3.508999401
 CW,2033,gross_capex,Rural water,Pipelines/network,Renewals,Ongoing,,100,40,3.507944601
+CW,2023,loans,loan1,na,na,na,,202703,3.53,50000
+CW,2023,loans,loan2,na,na,na,,202709,3.53,50000
+CW,2023,loans,loan3,na,na,na,,202803,3.53,50000
+CW,2023,loans,loan4,na,na,na,,202809,3.53,50000
+CW,2023,loans,loan5,na,na,na,,202903,3.53,50000
+CW,2023,loans,loan6,na,na,na,,202909,3.53,50000
+CW,2023,loans,loan7,na,na,na,,203003,3.53,50000
+CW,2023,loans,loan8,na,na,na,,203009,3.53,50000
+CW,2023,loans,loan9,na,na,na,,203103,3.53,50000
+CW,2023,loans,loan10,na,na,na,,203109,3.53,47323
 SEW,2024,gross_capex,Sewerage,Corporate,Growth,Ongoing,,5,5,0.267848
 SEW,2025,gross_capex,Sewerage,Corporate,Growth,Ongoing,,5,5,0.267848
 SEW,2026,gross_capex,Sewerage,Corporate,Growth,Ongoing,,5,5,0.267848

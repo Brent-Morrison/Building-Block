@@ -69,6 +69,7 @@ prices     <- m$prices
 tariff_rev <- m$tariff_rev
 rab        <- m$rab
 rev_req    <- m$rev_req
+loans      <- m$loans
 
 plot_tariffs(sim)
 plot_kpi(sim, initial_fcast_yr = 2024)
@@ -80,6 +81,10 @@ cf(sim, ref_df, 2024)
 
 # --------------------------------------------------------------------------------------------------------------------------
 
+loan_test_df <- data.frame( gl = colSums(txns[c("4100","4500"),"clos",]), loan_sched = rowSums(loans[,,1]) )
+loan_test_df$diff <- loan_test_df$gl + loan_test_df$loan_sched
+loan_test_df
+z <- rowSums(loans[,,3])
 
 txns[,c("aidb","incm","cshd"), 12 * 1:5]
 
@@ -88,6 +93,12 @@ txns[
   c("aidb","incm","cshd"),                                # Transaction types
   1:12                                                    # Months
   ]
+
+txns[
+  "4500",                              # TB accounts 
+  c("open","repy","borr","clos"),     # Transaction types
+  1:240                                  # Months
+]
 
 txns["3050", "clos", 12 * 1:20]
 txns["3050", , 12 * 1:20]
