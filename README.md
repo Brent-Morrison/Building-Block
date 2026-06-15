@@ -108,5 +108,11 @@ The table below (hat tip to ChatGPT) summarises application of the BBM across in
 [Assessing Funding Models for Water Services Provision](https://www.nerinstitute.net/sites/default/files/events/downloads/2025/neri_seminar_assessing_funding_models_for_water_services_provision.pdf)  
 [Reforming the economic regulation of Australian electricity distribution networks](https://ieefa.org/sites/default/files/2024-05/Reforming%20the%20economic%20regulation%20of%20Australian%20electricity%20distribution%20networks_May24.pdf)  
 [2023 water price review Guidance paper](https://www.esc.vic.gov.au/water/water-prices-tariffs-and-special-drainage/water-price-reviews/water-price-review-2023#tabs-container2)  
+[Determining long run marginal cost for pricing](https://srgexpert.com/wp-content/uploads/2023/10/Measuring-long-run-marginal-cost-for-pricing-2014.pdf)  
+[Incorporating Marginal Costs in Water Supply Tariffs: Prospects for Change](https://www.nera.com/content/dam/nera/publications/2014/PUB_LRMC%20Water%20Pricing_1114.pdf)  
+[A Turvey-Shapley Value Method for Distribution Network Cost Allocation](https://arxiv.org/pdf/1909.00957)  
+[Utility pricing - to block or not to block](https://srgexpert.com/2024/03/12/ibt-utility-pricing-to-block-or-not-to-block/)  
+[Inclining Block Tariffs for Urban Water](https://press-files.anu.edu.au/downloads/press/p86761/pdf/14-1-A-6.pdf)  
+[Water is an economic good: How to use prices to promote equity, efficiency, and sustainability](https://entwicklungspolitik.uni-hohenheim.de/uploads/media/Water_is_an_economic_good-How_to_use_prices_to_promote_equit_02.pdf)  
 
 [^1]: [Wikipedia](https://en.wikipedia.org/wiki/Building_block_model#Basis)

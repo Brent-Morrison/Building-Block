@@ -21,24 +21,27 @@ names(capex2) <- t(cols_date)
 
 
 
+
+
+
+
 # --------------------------------------------------------------------------------------------------------------------------
 # Test "npv_optim_func" function
 # --------------------------------------------------------------------------------------------------------------------------
 
 source("funs.R")
-library(readxl)
 library(dplyr)
-path <- "./test/optim_eg.xlsx"
+path <- "./test/npv_optim_test.csv"
 
 # Price, quantity, revenue data
-pqr <- read_xlsx(path, range = "optim!A13:L94", col_names = TRUE)
+pqr <- read.csv(path)
 
 # Quantities
-q <- as.matrix(pqr %>% filter(PQR == 'Qty') %>% select(`2023-24`:`2027-28`)) #select(c(PQR:Unit,`2023-24`:`2027-28`))
+q <- as.matrix(pqr %>% filter(pqr == 'Qty') %>% select(FY2024))
 q[is.na(q)] <- 0
 
 # Prices
-p <- as.matrix(pqr %>% filter(PQR == 'Price') %>% select(`2023-24`:`2027-28`)) #select(c(PQR:Unit,`2023-24`:`2027-28`))
+p <- as.matrix(pqr %>% filter(pqr == 'Price') %>% select(FY2024)) 
 p[is.na(p)] <- 0
 
 # Revenue
@@ -107,6 +110,11 @@ res_list$price_delta
 res_list$prices
 
 sum(res_list$prices * q) / 1e6
+
+
+
+
+
 
 
 

@@ -20,8 +20,7 @@ dat_df    <- d$dat
 chart_df  <- d$chart 
 ref_df    <- d$ref
 txn_df    <- d$txn_type
-cx_df     <- d$cx_delta 
-ox_df     <- d$ox_delta
+
 initial_fcast_yr <- min(dat_df[dat_df$entity == "CW", ]$year)
 
 
@@ -71,7 +70,7 @@ renderInputs <- function(prefix) {
         numericInput(inputId = paste0(prefix, "_", "fte"), label = "Full time equivalent", value = 200, min = 50, max = 500),
         numericInput(inputId = paste0(prefix, "_", "cost_fte"), label = "Cost per FTE ($000)", value = 100, min = 30, max = 200),
         numericInput(inputId = paste0(prefix, "_", "q_grow_fte"), label = "Percentage growth in FTE's", value = 2, min = -5, max = 10),
-        numericInput(inputId = paste0(prefix, "_", "ni_cost_fte"), label = "Relative price change", value = 2, min = -5, max = 10)
+        numericInput(inputId = paste0(prefix, "_", "ni_cost_fte"), label = "Relative price change", value = 1, min = -5, max = 10)
         ),
       #br(),
       row_with_label4(
@@ -79,21 +78,21 @@ renderInputs <- function(prefix) {
         numericInput(inputId = paste0(prefix, "_", "kwh"), label = "GWh (million kWh)", value = 25, min = 20, max = 50),
         numericInput(inputId = paste0(prefix, "_", "cost_kwh"), label = "Price per kWh (cents)", value = 22, min = 5, max = 20),
         numericInput(inputId = paste0(prefix, "_", "q_grow_kwh"), label = "Percentage growth in kWh", value = 2, min = -5, max = 10),
-        numericInput(inputId = paste0(prefix, "_", "ni_cost_kwh"), label = "Relative price change", value = 2, min = -5, max = 10)
+        numericInput(inputId = paste0(prefix, "_", "ni_cost_kwh"), label = "Relative price change", value = 1, min = -5, max = 10)
         ),
       row_with_label4(
         "Chemicals",
         numericInput(inputId = paste0(prefix, "_", "ml"), label = "Water volume (GL)", value = 22, min = 10, max = 30),
         numericInput(inputId = paste0(prefix, "_", "cost_ml"), label = "Chemical costs per ML", value = 120, min = 80, max = 200),
         numericInput(inputId = paste0(prefix, "_", "q_grow_ml"), label = "Percentage growth in ML", value = 2, min = -5, max = 10),
-        numericInput(inputId = paste0(prefix, "_", "ni_cost_ml"), label = "Relative price change", value = 2, min = -5, max = 10)
+        numericInput(inputId = paste0(prefix, "_", "ni_cost_ml"), label = "Relative price change", value = 1, min = -5, max = 10)
         ),
       row_with_label4(
         "Other",
         numericInput(inputId = paste0(prefix, "_", "dl"), label = "Dollars (mn)", value = 60, min = 40, max = 100),
         numericInput(inputId = paste0(prefix, "_", "cost_dl"), label = "Dummy", value = 1, min = 1, max = 1),
         numericInput(inputId = paste0(prefix, "_", "q_grow_dl"), label = "Percentage growth", value = 2, min = -5, max = 10),
-        numericInput(inputId = paste0(prefix, "_", "ni_cost_dl"), label = "Relative price change", value = 2, min = -5, max = 10)
+        numericInput(inputId = paste0(prefix, "_", "ni_cost_dl"), label = "Relative price change", value = 1, min = -5, max = 10)
         ),
       br(),
       row_with_label3(
@@ -193,6 +192,8 @@ renderInputs <- function(prefix) {
 # Define UI for application that plots KPI's
 ui <- navbarPage(
   "Financial Model",
+  position = "fixed-top",
+  tags$head(tags$style(HTML("body { padding-top: 50px; }"))),
   tabPanel(
     title="Scenario input and KPI's",
     fluidPage(
@@ -401,7 +402,7 @@ server <- function(input, output, session) {
     
     mapply(
        FUN               = f, 
-       dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df), cx_delta=list(cx_df), ox_delta=list(ox_df),
+       dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
        q_grow            = args_df$q_grow,
        cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100, 
        fcast_infltn      = args_df$fcast_infltn/100,
@@ -560,7 +561,7 @@ server <- function(input, output, session) {
     
     mapply(
       FUN               = f, 
-      dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df), cx_delta=list(cx_df), ox_delta=list(ox_df),
+      dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
       q_grow            = args_df$q_grow,
       cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100, 
       fcast_infltn      = args_df$fcast_infltn/100,

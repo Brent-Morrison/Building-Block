@@ -1,10 +1,10 @@
 # TO DO - check if the real to nominal uplift via inflation factors is being reset each price period
 # Function
 f <- function(
-    dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, cx_delta=cx_df, ox_delta=ox_df,  
+    dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, #cx_delta=cx_df, ox_delta=ox_df,  
     q_grow             = 0.019, 
-    cost_of_debt_nmnl  = 0.0456, 
-    fcast_infltn       = 0.03, 
+    cost_of_debt_nmnl  = 0.04, 
+    fcast_infltn       = 0.025, 
     roe                = 0.041, 
     single_price_delta = T,
     desired_fixed      = 0.40,
@@ -12,19 +12,19 @@ f <- function(
     fte                = 200,  # fte
     cost_fte           = 100,
     q_grow_fte         = 0.02,
-    ni_cost_fte        = 0.02,
+    ni_cost_fte        = 0.01,
     kwh                = 25,   # kwh
     cost_kwh           = 22,
     q_grow_kwh         = 0.02,
-    ni_cost_kwh        = 0.02,
+    ni_cost_kwh        = 0.01,
     ml                 = 22,   # ml
     cost_ml            = 120,
     q_grow_ml          = 0.02,
-    ni_cost_ml         = 0.02,
+    ni_cost_ml         = 0.01,
     dl                 = 60,   # dl
     cost_dl            = 1,
     q_grow_dl          = 0.02,
-    ni_cost_dl         = 0.02,
+    ni_cost_dl         = 0.01,
     capex_ps2          = 100,
     capex_ps3          = 100,
     capex_ps4          = 100,
@@ -44,7 +44,6 @@ f <- function(
   #   roe               - allowed return on equity (0.041)
   #   single_price_delta- for function npv_optim_func, logical, if true the only price delta (that of the first price delta `theta[2]`) is used
   #   debt_sens         - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
-  #   oxcx_scenario     - the opex & capex scenario to be selected from ox_delta and cx_delta
   #
   # Returns:
   #   list containing the following element, 
@@ -88,9 +87,9 @@ f <- function(
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
   
   # Append out year capex per "cx_delta" data frame
-  capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * capex_ps2 * 5 #cx_delta["ps28", oxcx_scenario]
-  capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * capex_ps3 * 5 #cx_delta["ps33", oxcx_scenario]
-  capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * capex_ps4 * 5 #cx_delta["ps38", oxcx_scenario]
+  capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * capex_ps2 * 5
+  capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * capex_ps3 * 5
+  capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * capex_ps4 * 5
   
   c <- as.matrix(capex[, 3:(ncol(capex))])
   rab_n_yrs <- ncol(c)
@@ -686,9 +685,8 @@ f <- function(
     rev_req      = rev_req_df, 
     tariff_rev   = tot_rev_nmnl,
     loans        = loan_sched,
-    call         = list(cx_delta=cx_delta, ox_delta=ox_delta, q_grow=q_grow, 
-                        cost_of_debt_nmnl=cost_of_debt_nmnl, fcast_infltn=fcast_infltn, 
-                        roe=roe, debt_sens=debt_sens) # , oxcx_scenario=oxcx_scenario
+    call         = list(q_grow=q_grow, cost_of_debt_nmnl=cost_of_debt_nmnl, 
+                        fcast_infltn=fcast_infltn, roe=roe, debt_sens=debt_sens) 
   ))
   
 }

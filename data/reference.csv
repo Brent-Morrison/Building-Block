@@ -26,7 +26,7 @@ account_grp,280,xxxx,Other economic flows,21,x
 account_grp,290,xxxx,Other economic flows,21,x
 account_grp,999,xxxx,Net result from transactions,22,b
 account_grp,999,xxxx,blank,23,x
-account_grp,999,xxxx,blank,24,x
+account_grp,999,xxxx,BALANCE SHEET,24,b
 account_grp,999,xxxx,Assets,25,b
 account_grp,300,xxxx,of which Cash,29,i
 account_grp,310,xxxx,of which Receivables and contract assets,30,i
@@ -35,6 +35,7 @@ account_grp,340,xxxx,of which Infrastructure assets,31,x
 account_grp,350,xxxx,of which Infrastructure assets,31,x
 account_grp,400,xxxx,of which Payables,37,i
 account_grp,450,xxxx,of which Interest bearing,38,i
+account_grp,999,xxxx,Gearing ratio,39,i
 account_type,30,xxxx,Total current assets,26,x
 account_type,35,xxxx,Total non-current assets,27,s
 account_type,99,xxxx,Total assets,28,b
@@ -44,28 +45,31 @@ account_type,40,xxxx,Total current liabilities,34,x
 account_type,45,xxxx,Total non-current liabilities,35,s
 account_type,99,xxxx,Total liabilities,36,b
 statement_type,1,xxxx,Net Result,25,x
-cash_flow,999,xxxx,blank,39,x
 cash_flow,999,xxxx,blank,40,x
-cash_flow,999,xxxx,Cash flows from operating activities,41,b
-cash_flow,999,cshd,Receipts from customers,42,x
-cash_flow,999,crd1,Payments to suppliers and employees ,43,x
-cash_flow,999,exp2,Payments to suppliers and employees ,43,x
-cash_flow,999,intp,Interest and other cost of finance paid,44,s
-cash_flow,999,xxxx,Net cash flows from/(used in) operating activities,45,b
-cash_flow,999,xxxx,blank,46,x
-cash_flow,999,xxxx,Cash flows from investing activities,47,b
-cash_flow,999,wipc,"Payments for infrastructure, PP&E",48,x
-cash_flow,999,saca,"Proceeds from sale of infrastructure, PP&E",49,s
-cash_flow,999,xxxx,Net cash flows from/(used in) investing activities,50,b
-cash_flow,999,xxxx,blank,51,x
-cash_flow,999,xxxx,Cash flows from financing activities,52,b
-cash_flow,999,borr,Proceeds from borrowings ,53,x
-cash_flow,999,leas,Principal payments of lease liabilities,54,s
-cash_flow,999,xxxx,Net cash flows from/(used in) financing activities,55,b
-cash_flow,999,xxxx,blank,56,x
-cash_flow,999,xxxx,Net increase/(decrease) in cash,57,bs
-cash_flow,999,xxxx,Cash at the beginning of the financial year ,58,x
-cash_flow,999,xxxx,Cash at the end of the financial year ,59,b
+cash_flow,999,xxxx,blank,41,x
+cash_flow,999,xxxx,Cash flows from operating activities,42,b
+cash_flow,999,cshd,Receipts from customers,43,x
+cash_flow,999,crd1,Payments to suppliers and employees ,44,x
+cash_flow,999,exp2,Payments to suppliers and employees ,44,x
+cash_flow,999,intp,Interest and other cost of finance paid,45,s
+cash_flow,999,xxxx,Net cash flows from/(used in) operating activities,46,b
+cash_flow,999,xxxx,Cash interest cover,47,i
+cash_flow,999,xxxx,blank,48,x
+cash_flow,999,xxxx,Cash flows from investing activities,49,b
+cash_flow,999,wipc,"Payments for infrastructure, PP&E",50,x
+cash_flow,999,saca,"Proceeds from sale of infrastructure, PP&E",51,s
+cash_flow,999,xxxx,Net cash flows from/(used in) investing activities,52,b
+cash_flow,999,xxxx,Internal financing ratio,53,i
+cash_flow,999,xxxx,blank,54,x
+cash_flow,999,xxxx,Cash flows from financing activities,55,b
+cash_flow,999,borr,Proceeds from borrowings ,56,x
+cash_flow,999,repy,Repayment of borrowings ,57,x
+cash_flow,999,leas,Principal payments of lease liabilities,58,s
+cash_flow,999,xxxx,Net cash flows from/(used in) financing activities,59,b
+cash_flow,999,xxxx,blank,60,x
+cash_flow,999,xxxx,Net increase/(decrease) in cash,61,bs
+cash_flow,999,xxxx,Cash at the beginning of the financial year ,62,x
+cash_flow,999,xxxx,Cash at the end of the financial year ,63,b
 income_map,999,Recycled Water.Non-residential.Fixed,Recycled water-Service,1003,NA
 income_map,999,Recycled Water.Non-residential.Variable,Recycled water-Usage,1103,NA
 income_map,999,Recycled Water.Residential.Fixed,Recycled water-Service,1003,NA

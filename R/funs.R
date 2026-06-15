@@ -228,8 +228,8 @@ npv_optim_func <- function(theta, pdyr, single, des_f=99, rev_req, p0, q, rtn_mo
   
   # TO DO - insert a parameter so that the proportion of income from usage vs service charges can be flexed
   # see below 
-  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1   # vector cumulative of yearly price changes  
-  pnew         <- p0 %*% (1 + pdcum)                  # apply cumulative price changes to p0 tariffs 
+  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1   # vector cumulative of yearly price delta  
+  pnew         <- p0 %*% (1 + pdcum)                  # new prices, apply cumulative price deltas to p0 tariffs 
   r            <- pnew * q                            # revenue: prices * quantity by tariff
   tot_r        <- colSums(r) / 1e6                    # total revenue by year
   
@@ -386,6 +386,7 @@ depn_fun_opn <- function(open_rab_val, open_rab_rem) {
   
   return(depn)
 }
+
 
 
 
@@ -600,7 +601,7 @@ slr_fun <- function(res, chart) {
 
 
 # --------------------------------------------------------------------------------------------------------------------------
-# Key performance indicators
+# Key performance indicators (KPI's)
 # --------------------------------------------------------------------------------------------------------------------------
 
 # https://www.audit.vic.gov.au/report/auditor-generals-report-annual-financial-report-state-victoria-2017-18?section=33061&show-sections=1#33059--appendix-f-water-sector-financial-sustainability-risk-indicators
@@ -792,7 +793,7 @@ cf <- function(sim, ref, initial_fcast_yr = 2024) {
   
   cf1 <- list()
   for (i in ((1:20) * 12)) {
-    cf1[[i]] <- rowSums(txns["3000", c("cshd","exp2","crd1","wipc","intp","borr"), (i-11):i])
+    cf1[[i]] <- rowSums(txns["3000", c("cshd","exp2","crd1","wipc","intp","borr","repy","saca"), (i-11):i])
   }
   cf2 <- do.call(rbind, cf1)
   cf2 <- cf2 / 1000
@@ -915,24 +916,35 @@ plot_fins <- function(sim, chart, ref, sel) {
     arrange(ref2) %>% 
     mutate(ref2 = as.character(ref2))
   
-  # Insert totals and remove NA's
-  rep[rep$ref2 == 8, 3:22]  <- colSums(rep[rep$ref2 %in% 2:7, 3:22], na.rm = T)         # Total revenue from transactions
-  rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16, 3:22], na.rm = T)       # Total expenses from transactions
-  rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17), 3:22], na.rm = T)     # Net result from operating transactions
-  rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21), 3:22], na.rm = T)    # Net result from transactions
-  rep[rep$ref2 == 28, 3:22] <- colSums(rep[rep$ref2 %in% c(26,27), 3:22], na.rm = T)    # Total assets
-  rep[rep$ref2 == 36, 3:22] <- colSums(rep[rep$ref2 %in% c(34,35), 3:22], na.rm = T)    # Total liabilities
-  rep[rep$ref2 == 45, 3:22] <- colSums(rep[rep$ref2 %in% c(42,43,44), 3:22], na.rm = T) # Operating CF
-  rep[rep$ref2 == 50, 3:22] <- colSums(rep[rep$ref2 %in% c(48,49), 3:22], na.rm = T)    # Investing CF
-  rep[rep$ref2 == 55, 3:22] <- colSums(rep[rep$ref2 %in% c(53,54), 3:22], na.rm = T)    # Operating CF
-  rep[rep$ref2 == 57, 3:22] <- colSums(rep[rep$ref2 %in% c(45,50,55), 3:22], na.rm = T) # Net increase/(decrease) in cash
-  rep[rep$ref2 == 58, 3:22] <- txns["3000", "open", (1+(1:20) * 12 - 12)] / 1000        # Beginning cash
-  rep[rep$ref2 == 59, 3:22] <- colSums(rep[rep$ref2 %in% c(57,58), 3:22], na.rm = T)    # End
+  # Insert totals and remove NA's (refer to formula_builder.xlsx to construct code below)
+  rep[rep$ref2 == 8, 3:22]  <- colSums(rep[rep$ref2 %in% 2:7        , 3:22], na.rm = T) # Total revenue from transactions
+  rep[rep$ref2 == 17, 3:22] <- colSums(rep[rep$ref2 %in% 11:16      , 3:22], na.rm = T) # Total expenses from transactions
+  rep[rep$ref2 == 19, 3:22] <- colSums(rep[rep$ref2 %in% c(8,17)    , 3:22], na.rm = T) # Net result from operating transactions
+  rep[rep$ref2 == 22, 3:22] <- colSums(rep[rep$ref2 %in% c(19,21)   , 3:22], na.rm = T) # Net result from transactions
+  rep[rep$ref2 == 28, 3:22] <- colSums(rep[rep$ref2 %in% c(26,27)   , 3:22], na.rm = T) # Total assets
+  rep[rep$ref2 == 36, 3:22] <- colSums(rep[rep$ref2 %in% c(34,35)   , 3:22], na.rm = T) # Total liabilities
+  rep[rep$ref2 == 46, 3:22] <- colSums(rep[rep$ref2 %in% c(43,44,45), 3:22], na.rm = T) # Operating CF
+  rep[rep$ref2 == 52, 3:22] <- colSums(rep[rep$ref2 %in% c(50,51)   , 3:22], na.rm = T) # Investing CF
+  rep[rep$ref2 == 59, 3:22]  <- colSums(rep[rep$ref2 %in% 56:58, 3:22], na.rm = T) # Financing CF
+  rep[rep$ref2 == 61, 3:22] <- colSums(rep[rep$ref2 %in% c(46,52,59), 3:22], na.rm = T) # Net increase/(decrease) in cash
+  rep[rep$ref2 == 62, 3:22] <- txns["3000", "open", (1+(1:20) * 12 - 12)] / 1000 # Beginning cash
+  rep[rep$ref2 == 63, 3:22]  <- colSums(rep[rep$ref2 %in% 61:62, 3:22], na.rm = T) # End cash
   
+  
+  
+  # Calculate KPI's
+  cic <- colSums(rep[rep$ref2 %in% c(42,43), 3:22], na.rm = T) / -rep[rep$ref2 == 44, 3:22] # Cash interest cover
+  gr  <- abs(rep[rep$ref2 == 28, 3:22]) / abs(rep[rep$ref2 == 36, 3:22]) * 100              # Gearing ratio
+  ifr <- rep[rep$ref2 == 46, 3:22] / -rep[rep$ref2 == 50, 3:22]                              # Internal financing ratio
   
   # Format numbers
   rep[ ,3:22] <- apply(rep[ ,3:22], 2, acc_num)
   rep[is.na(rep)] <- ""
+  
+  # Insert KPI's post character conversion
+  rep[rep$ref2 == 39, 3:22] <- paste0(round(gr, 0), "%")
+  rep[rep$ref2 == 47, 3:22] <- paste0(round(cic, 1), "x")
+  rep[rep$ref2 == 53, 3:22] <- paste0(round(ifr, 1), "x")
   
   # # replace NA's with zero
   # nas <- which(is.na(cf[cf$ref2 == 49, 3:22]))
@@ -960,7 +972,7 @@ plot_fins <- function(sim, chart, ref, sel) {
     row_spec(b, bold = TRUE) %>% 
     row_spec(i, italic = TRUE) %>% 
     row_spec(s, extra_css = "border-bottom: 1px solid") %>% 
-    row_spec(c(22,38,59), extra_css = "border-bottom: 2px solid") %>%
+    row_spec(c(22,39,59), extra_css = "border-bottom: 2px solid") %>%
     row_spec(which(rep$ref1 == "blank"), color = "white") 
   
 }
@@ -1050,14 +1062,14 @@ get_data <- function(src = "local") {
     dat_src   <- "./data/price_subm_2023.csv"
     ref_src   <- "./data/reference.csv"
     funs_src  <- "funs.R"
-    chart_src   <- "./data/chart.csv"
-    txn_src     <- "./data/txn_type.csv"
+    chart_src <- "./data/chart.csv"
+    txn_src   <- "./data/txn_type.csv"
   } else {
     dat_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/price_subm_2023.csv"
     ref_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/reference.csv"
     funs_src  <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/funs.R"
-    chart_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
-    txn_src     <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
+    chart_src <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/chart.csv"
+    txn_src   <- "https://raw.githubusercontent.com/Brent-Morrison/Building-Block/master/data/txn_type.csv"
   }
   
   dat      <- read.csv(dat_src, fileEncoding="UTF-8-BOM")
@@ -1066,32 +1078,11 @@ get_data <- function(src = "local") {
   txn_type <- read.csv(txn_src, fileEncoding="UTF-8-BOM")
   rownames(txn_type) <- txn_type$txn_code
   
-  # Capex and opex scenarios.  These represent 
-  ps <- c("ps23","ps28","ps33","ps38","ps43")
-  
-  cx_delta <- data.frame(
-    scnr1 = c(0,1061,1205,398,429), 
-    scnr2 = c(0,688,690,831,830),
-    scnr3 = c(0,980,533,1031,473),
-    scnr4 = c(0,1159,1110,551,629),
-    row.names = ps
-  )
-  
-  ox_delta <- data.frame(
-    scnr1 = c(0,0,34,140,156), 
-    scnr2 = c(0,0,28,55,71),
-    scnr3 = c(0,0,19,100,131),
-    scnr4 = c(0,0,34,148,193),
-    row.names = ps
-  )
-  
   return(list(
     dat          = dat, 
     ref          = ref, 
     chart        = chart, 
-    txn_type     = txn_type, 
-    cx_delta     = cx_delta, 
-    ox_delta     = ox_delta
+    txn_type     = txn_type
   ))
 }
 
@@ -1105,11 +1096,16 @@ get_data <- function(src = "local") {
 
 growth_fctr <- function(esc_rate = c(0.025, 0.01), len = c(5,3)) {
   
-  # Used to create growth in quantities OR an inflation factor for prices
+  # Create growth in quantities OR an inflation factor for prices
   # 
   # Args:.
   #   esc_rate    - escalation rate
   #   len         - length of series
+  #
+  # Returns:
+  #   EXPLANATION HERE...
+  
+  stopifnot("The arguments 'esc_rate' and 'len' must be of equal length"= esc_rate == len)
   
   if (length(len) == 1) r <- rep(esc_rate, each = len) else r <- rep(esc_rate, times = len)
   cumprod(1 + r)
