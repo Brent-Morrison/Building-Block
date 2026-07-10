@@ -1,5 +1,25 @@
 # TO DO - check if the real to nominal uplift via inflation factors is being reset each price period
 # Function
+
+Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = TRUE)
+trgt_days_fast <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn, open, clos) {
+  
+  trgt_days_cpp(
+    mat = as.numeric(mat),
+    dims = dim(mat),
+    days = days,
+    i = i,
+    d = d,
+    trail = trail,
+    bal_i = bal_acnt,
+    pl_i = pl_acnt,
+    txn_i = txn,
+    open_i = open,
+    clos_i = clos
+  )
+}
+
+
 f <- function(
     dat=dat_df, chart=chart_df, txn_type=txn_df, ref=ref_df, #cx_delta=cx_df, ox_delta=ox_df,  
     q_grow             = 0.019, 
@@ -136,7 +156,7 @@ f <- function(
   # Opex --------------------------------------------------------------------------------------------
   # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity, chemicals and other
   
-  # NEW OPEX FROM UI (retuned in thousands)
+  # NEW OPEX FROM UI (returned in thousands)
   opx_labr <- real_series(q = fte    , p = cost_fte    , q_grow = q_grow_fte)
   opx_elec <- real_series(q = kwh*1e6, p = cost_kwh/1e3, q_grow = q_grow_kwh) / 1e3
   opx_chem <- real_series(q = ml *1e3, p = cost_ml     , q_grow = q_grow_ml) / 1e3
@@ -157,7 +177,7 @@ f <- function(
 
   
   # RAB schedule ------------------------------------------------------------------------------------
-    # Capex
+  # Capex
   cx <- colSums(c)[1:rab_n_yrs]
   unlist(colSums(c)[1:rab_n_yrs], use.names = FALSE)
   
@@ -291,7 +311,7 @@ f <- function(
   }
   
   
-  optim_result <- vector(mode = "list", length = 2)
+  price_delta_results <- vector(mode = "list", length = 4)
   counter <- 0
   for (i in c(1,6,11,16)) {
     counter <- counter + 1
@@ -303,13 +323,13 @@ f <- function(
       rev_req    = rev_req[i:(i+4)], 
       p0         = p0, 
       q          = q[,i:(i+4)], 
-      rtn        = "data"
+      rtn_mode   = "data"
       )
-    optim_result[[counter]] <- res
+    price_delta_results[[counter]] <- res
   }
   
-  price_delta <- unlist(lapply(optim_result, function(x) x$price_delta))
-  prices <- do.call(cbind, lapply(optim_result, function(x) x$prices))
+  price_delta <- unlist(lapply(price_delta_results, function(x) x$price_delta))
+  prices <- do.call(cbind, lapply(price_delta_results, function(x) x$prices))
   tot_rev_real <- prices * q / 1e6  # TO DO - use this to flex income, ref. line 288 (object q).  kL up or down on wet, dry basis.  Variability based on statistical model.
   # TO DO - what is "Water.Service fees.Fixed"
   
@@ -357,6 +377,7 @@ f <- function(
   dimnames(mat)[[1]] <- act
   dimnames(mat)[[2]] <- txn
   dimnames(mat)[[3]] <- mon
+  n_txn <- length(txn)
   
   # Convert indices to integers
   acct_idx <- setNames(seq_along(dimnames(mat)[[1]]), dimnames(mat)[[1]])
@@ -387,6 +408,18 @@ f <- function(
     clos = txn_idx["clos"]
   )
   
+  drcr_idx <- list(
+    aidb = acct_idx[drcr("aidb", txn_type)],
+    incm = acct_idx[drcr("incm", txn_type)],
+    cshd = acct_idx[drcr("cshd", txn_type)],
+    crd1 = acct_idx[drcr("crd1", txn_type)],
+    wipc = acct_idx[drcr("wipc", txn_type)],
+    inta = acct_idx[drcr("inta", txn_type)],
+    intp = acct_idx[drcr("intp", txn_type)],
+    repy = acct_idx[drcr("repy", txn_type)],
+    borr = acct_idx[drcr("borr", txn_type)]
+  )
+
   # Insert opening balances
   opn_bal <- unlist(chart[,open_bals_col], use.names = FALSE)
   mat[ , idx$open, 1]  <- opn_bal
@@ -569,11 +602,12 @@ f <- function(
     # Post income (DR accrued income / CR income) --------------------------------------------------------------------------
     t <- "aidb"
     p <- c(
-      sum(incm[c("1000","1001","1002","1003","1101","1102","1103","1104","1105"),i]), 
+      sum(incm[c("1000","1001","1002","1003","1101","1102","1103","1104","1105"), i]), 
       -incm["1000",i], -incm["1001",i], -incm["1002",i], -incm["1003",i], -incm["1101",i],
       -incm["1102",i], -incm["1103",i], -incm["1104",i], -incm["1105",i]
       )
-    a <- unique(drcr(t, txn_type))
+    #a <- unique(drcr(t, txn_type))
+    a <- unique(drcr_idx$aidb)
     
     if ( round(sum(p),3) == 0 & length(p) == length(a) ) {
      mat[a, t, i] <- p
@@ -582,59 +616,42 @@ f <- function(
     } else if (length(p) != length(a)) {
      print(paste0("Income not posted.  Posting data has length ", length(p), " and posting rule has length ", length(a)))
     }
-    #if (i == 12) browser()
     
-    # Transfer to debtors to specify desired closing balance for accrued income days parameter -----------------------------
-    trail <- 3
-    t <- "incm"
-    pl_acs <- c("1000","1001","1002","1003","1101","1102","1103","1104","1105")
     
-    #tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3050", pl_acnt=pl_acs, txn="aidb") 
-    tfer <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt=idx$aidb$bal_acnt, pl_acnt=idx$aidb$pl_acnt, txn=idx$aidb$txn, open=idx$open, clos=idx$clos) 
-    #if (i == 200) browser()
+    # Transfer accrued income to debtors to specify desired closing balance for accrued income days parameter --------------
+    tfer <- trgt_days_fast(mat, days, i, accrued_days, trail=3, bal_acnt=idx$aidb$bal_acnt, pl_acnt=idx$aidb$pl_acnt, txn=idx$aidb$txn, open=idx$open, clos=idx$clos) 
     #print(paste("Txn 'incm', tfer accrued income to debtors. Loop no.", i, round(-tfer,1)))
-    mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
+    mat[drcr_idx$incm, "incm", i] <- c(-tfer, tfer)
     
     
     # Cash receipt to specify desired closing balance for debtors days parameter -------------------------------------------
-    trail <- 3
     t <- "cshd"
-    #rcpt <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt="3100", pl_acnt="3050", txn="incm")
-    rcpt <- trgt_days(mat, days, i, accrued_days, trail, bal_acnt=idx$incm$bal_acnt, pl_acnt=idx$incm$pl_acnt, txn=idx$incm$txn, open=idx$open, clos=idx$clos)
-    mat[drcr(t, txn_type), t, i] <- c(-rcpt, rcpt)
+    rcpt <- trgt_days_fast(mat, days, i, accrued_days, trail=3, bal_acnt=idx$incm$bal_acnt, pl_acnt=idx$incm$pl_acnt, txn=idx$incm$txn, open=idx$open, clos=idx$clos)
+    mat[drcr_idx$cshd, "cshd", i] <- c(-rcpt, rcpt)
     
 
     # Interest income TO DO ------------------------------------------------------------------------------------------------
     
     
     # Cash payment re trade creditors --------------------------------------------------------------------------------------
-    trail <- 3
-    #rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt="4000", pl_acnt="2000", txn=c("exp1","exp3","exp4"))
-    rcpt <- trgt_days(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt=idx$expx$bal_acnt, pl_acnt=idx$expx$pl_acnt, txn=idx$expx$txn, open=idx$open, clos=idx$clos)
-    t <- "crd1"
-    mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
+    rcpt <- trgt_days_fast(mat, days, i, d=crdtr_days_ox, trail=3, bal_acnt=idx$expx$bal_acnt, pl_acnt=idx$expx$pl_acnt, txn=idx$expx$txn, open=idx$open, clos=idx$clos)
+    mat[drcr_idx$crd1, "crd1", i] <- c(rcpt, -rcpt)
     
     
     # Cash payment re capex ------------------------------------------------------------------------------------------------
-    trail <- 3
-    #rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt="4010", pl_acnt="3645", txn="cpx1")
-    rcpt <- trgt_days(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt=idx$cpx1$bal_acnt, pl_acnt=idx$cpx1$pl_acnt, txn=idx$cpx1$txn, open=idx$open, clos=idx$clos)
-    t <- "wipc"
-    mat[drcr(t, txn_type), t, i] <- c(rcpt, -rcpt)
+    rcpt <- trgt_days_fast(mat, days, i, d=crdtr_days_cx, trail=3, bal_acnt=idx$cpx1$bal_acnt, pl_acnt=idx$cpx1$pl_acnt, txn=idx$cpx1$txn, open=idx$open, clos=idx$clos)
+    mat[drcr_idx$wipc, "wipc", i] <- c(rcpt, -rcpt)
     
     
     # Interest (accrue) ----------------------------------------------------------------------------------------------------
     #int <- round(sum(mat[c("4100","4500"), "open", i]) * cost_of_debt / 12, 3)
     int <- sum(loan_sched[ i, , 3])
-    t <- "inta"
-    mat[drcr(t, txn_type), t, i] <- c(int, -int)
-    
+    mat[drcr_idx$inta, "inta", i] <- c(int, -int)
     
     # Interest (pay quarterly) ---------------------------------------------------------------------------------------------
     if (i %in% seq(0, mons, by = 3)) {
-      t <- "intp"
       intp <- -mat["4020", "open", i]
-      mat[drcr(t, txn_type), t, i] <- c(intp, -intp)
+      mat[drcr_idx$intp, "intp", i] <- c(intp, -intp)
     }
     
     
@@ -645,8 +662,7 @@ f <- function(
       rp_ind <- which(ls[2, ] == 0 & ls[1, ] != 0)
       repay <- if (length(rp_ind) != 0) sum(ls[1, rp_ind]) else 0
       if (repay > 0) {
-        t <- "repy"
-        mat[drcr(t, txn_type), t, i] <- c(repay,-repay)
+        mat[drcr_idx$repy, "repy", i] <- c(repay,-repay)
       }
       
     }
@@ -654,11 +670,10 @@ f <- function(
     
     # Determine if borrowings required -------------------------------------------------------------------------------------
     # TO DO - determine amount to borrow dynamically
-    cash_bal <- sum(mat["3000",-ncol(mat[,,i]), i])  # cash balance after all transactions
+    cash_bal <- sum(mat["3000",-n_txn, i])  # cash balance after all transactions
     borrow_amt <- round(-cash_bal + cash_buffer, -3)
     if (cash_bal < 0) {
-      t <- "borr"
-      mat[drcr(t, txn_type), t, i] <- c(borrow_amt,-borrow_amt)
+      mat[drcr_idx$borr, "borr", i] <- c(borrow_amt,-borrow_amt)
       
       # Update Loan schedule
       end_idx <- if (i + 119 < 240) i + 119 else 240
@@ -671,9 +686,12 @@ f <- function(
     #cat(c(i, ": Cash balance - ", cash_bal, "\n"))
     #cat(c(i, ": Borrowing requirement - ", borrow_amt, "\n"))
     
+    # Asset commissioning ("cmsn") TO DO -----------------------------------------------------------------------------------
     
     # Update closing balance
-    mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
+    mat[, "clos", i] <- rowSums(mat[, -n_txn, i])
+    
+    #if (i == 12) browser() 
     
   }
   

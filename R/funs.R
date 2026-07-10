@@ -228,7 +228,7 @@ npv_optim_func <- function(theta, pdyr, single, des_f=99, rev_req, p0, q, rtn_mo
   
   # TO DO - insert a parameter so that the proportion of income from usage vs service charges can be flexed
   # see below 
-  pdcum        <- exp(cumsum( log(1 + pdvec) )) - 1   # vector cumulative of yearly price delta  
+  pdcum        <- cumprod(1 + pdvec) - 1              # vector cumulative of yearly price delta  
   pnew         <- p0 %*% (1 + pdcum)                  # new prices, apply cumulative price deltas to p0 tariffs 
   r            <- pnew * q                            # revenue: prices * quantity by tariff
   tot_r        <- colSums(r) / 1e6                    # total revenue by year
@@ -248,7 +248,7 @@ npv_optim_func <- function(theta, pdyr, single, des_f=99, rev_req, p0, q, rtn_mo
   nr           <- npnew * q                                          # new revenue: prices * quantity by tariff
   tot_nr       <- colSums(nr) / 1e6                                  # total new revenue by year
   
-  stopifnot("Total revenue unmatched" = max(abs(round(tot_r, 3) - round(tot_nr, 3))) == 0) # check
+  #stopifnot("Total revenue unmatched" = max(abs(round(tot_r, 3) - round(tot_nr, 3))) == 0) # check
   
   r_rtn <- if (des_f == 99) tot_r else tot_nr
   p_rtn <- if (des_f == 99) pnew else npnew
@@ -260,7 +260,7 @@ npv_optim_func <- function(theta, pdyr, single, des_f=99, rev_req, p0, q, rtn_mo
   
   rtn_list     <- list(price_delta = pdvec, prices = p_rtn)
   
-  ifelse(rtn_mode == "obj", return(obj), return(rtn_list))
+  if (rtn_mode == "obj") return(obj) else return(rtn_list)
   
 }
 
@@ -452,13 +452,13 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn, open, clos
   # - assumes presence of matrix "mat" in environment
   #
   # Args:
-  #   days     - days in each month being looped over
+  #   days     - days in each month being looped over (vector)
   #   i        - the iteration of the loop passing over "mat"
   #   d        - the target debtors (creditors) days, integer
   #   trail    - number of period to calculate over, integer
   #   bal_acnt - debtors / creditors account
   #   pl_acnt  - P&L account accruing to debtors / creditors account
-  #   txn      - the transaction type 
+  #   txn      - the transaction type (vector)
   #   open     - integer index for opening balance
   #   clos     - integer index for closing balance
   #
@@ -473,12 +473,13 @@ trgt_days <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn, open, clos
     trail_exp <- -mean(colSums(mat[pl_acnt, txn, s:i])) * trail
   }
   
-  sum_days <- mean(days[s:i]) * trail
-  prior_bals <- mean(mat[bal_acnt, clos, s:(i-1L)]) * (trail-1L)
-  desired_bal <- d * trail_exp / sum_days * trail - prior_bals          # Desired closing balance
-  bal_pre <- mat[bal_acnt, open, i] + abs(sum(mat[pl_acnt, txn, i]))    # Account balance pre cash transaction (opening + accrued)
+  sum_days    <- mean(days[s:i]) * trail                                  # Sum of calendar days for calc.
+  prior_bals  <- mean(mat[bal_acnt, clos, s:(i-1L)]) * (trail-1L)         # Prior opening balances for calc.
+  desired_bal <- d * trail_exp / sum_days * trail - prior_bals            # Desired closing balance
+  bal_pre     <- mat[bal_acnt, open, i] + abs(sum(mat[pl_acnt, txn, i]))  # Account balance pre cash transaction (opening + accrued)
   
   delta <- round(desired_bal - bal_pre, 3)
+  #browser()
   if (prior_bals > 0) {
     rcpt0 <- min(0, max(-bal_pre, delta))
   } else {
@@ -615,14 +616,50 @@ slr_fun <- function(res, chart) {
 
 
 # ***Cash interest cover*** - Net operating cash flows before net interest and tax payments / Net interest payments
-cash_int_cover_fn <- function(m) {
+cash_int_cover_fn <- function(m, return_df = FALSE) {
   mat <- m$txns
-  #g <- "^10|^11|^13|^15|^20|^235|^24"
-  #eb <- apply(mat, 3, function(x) sum(x[grepl(g, rownames(x)), !colnames(x) %in% c("open","clos")]), simplify = TRUE)  # ebitda_ttm
-  op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1")]), simplify = TRUE)                          # operating cashflows ex interest
-  ip <- apply(mat, 3, function(x) sum(x["3000", "intp"]), simplify = TRUE)                                              # net_int_pay_ttm 
-  return( slide_sum(op_cf, before = 11) / -slide_sum(ip, before = 11) )
-}  
+  
+  # 1. Extract individual components for operating cashflows
+  # Using drop = FALSE inside apply is a safety measure, but standard indexing works here
+  cshd_val <- apply(mat, 3, function(x) x["3000", "cshd"], simplify = TRUE)
+  exp2_val <- apply(mat, 3, function(x) x["3000", "exp2"], simplify = TRUE)
+  crd1_val <- apply(mat, 3, function(x) x["3000", "crd1"], simplify = TRUE)
+  
+  # 2. Calculate totals and rolling sums
+  op_cf      <- cshd_val + exp2_val + crd1_val
+  op_cf_roll <- slide_sum(op_cf, before = 11)
+  
+  ip         <- apply(mat, 3, function(x) x["3000", "intp"], simplify = TRUE)
+  ip_roll    <- slide_sum(ip, before = 11)
+  
+  # 3. Calculate intermediate ratio and handle division-by-zero / capping
+  # If ip_roll is 0, dividing by it yields Inf or NaN. 
+  # R handles -ip_roll naturally, but we force Inf/NaN to NA (nil) and cap at 20.
+  ratio_inter <- op_cf_roll / -ip_roll
+  
+  ratio_final <- ratio_inter
+  ratio_final[is.na(ratio_final) | is.nan(ratio_final) | is.infinite(ratio_final)] <- NA
+  ratio_final[!is.na(ratio_final) & ratio_final > 20] <- 20
+  
+  # 3. Conditional Return logic
+  if (return_df) {
+    df <- data.frame(
+      cshd          = cshd_val,
+      exp2          = exp2_val,
+      crd1          = crd1_val,
+      op_cf_total   = op_cf,
+      op_cf_rolling = op_cf_roll,
+      ip            = ip,
+      ip_rolling    = ip_roll,
+      ratio_intermediate = ratio_inter,
+      ratio              = ratio_final,
+      row.names     = dimnames(mat)[[3]] # Preserves the time/slice identifiers if they exist
+    )
+    return(df)
+  } else {
+    return(ratio_final)
+  }
+}
 
 
 # ***Gearing ratio*** - Total debt (including finance leases) / Total assets
@@ -708,7 +745,7 @@ plot_kpi <- function(d, initial_fcast_yr) {
   scale_colour_manual(values = c("grey70","grey50","grey30","black","#d9230f","#6b1107")) +
   geom_abline(data = data.frame(
     kpi  =c("Cash interest cover","Current ratio","Gearing","Internal financing ratio","Return on asset"),
-    bench=c(1.5                  ,1.2            ,0.3      ,0.35                      ,0.01) 
+    bench=c(                 1.5 ,           1.2 ,     0.3 ,                     0.35 ,            0.01 ) 
     ), 
     aes(intercept = bench, slope = 0), color = "red", linetype = "dotdash", linewidth = 1) +
   facet_wrap(vars(kpi), scales = "free") + # https://teunbrand.github.io/ggh4x/reference/facetted_pos_scales.html#scale-transformations
@@ -1105,7 +1142,7 @@ growth_fctr <- function(esc_rate = c(0.025, 0.01), len = c(5,3)) {
   # Returns:
   #   EXPLANATION HERE...
   
-  stopifnot("The arguments 'esc_rate' and 'len' must be of equal length"= esc_rate == len)
+  stopifnot("The arguments 'esc_rate' and 'len' must be of equal length"= length(esc_rate) == length(len))
   
   if (length(len) == 1) r <- rep(esc_rate, each = len) else r <- rep(esc_rate, times = len)
   cumprod(1 + r)

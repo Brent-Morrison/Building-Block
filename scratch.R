@@ -1,3 +1,26 @@
+# --------------------------------------------------------------------------------------------------------------------------
+# PQR
+# --------------------------------------------------------------------------------------------------------------------------
+rrr       <- 0.04 
+q_grow    <- 0.05
+rab_n_yrs <- 5
+q0        <- matrix(c(50,55,60), ncol=1)                                        # quantities at time 0
+p0        <- matrix(c(2,3,1), ncol=1)                                           # prices at time 0
+q         <- q0 %*% exp( cumsum( log( 1 + rep(q_grow, rab_n_yrs) ) ) )          # quantities for assessment period
+pd        <- matrix(c(0.01,0.03,0.02), ncol=1)                                  # price delta (for optimisation), length is number of tariffs
+pdy       <- matrix(rep(pd, rab_n_yrs), nrow = nrow(pd))                        # price deltas by tariff - linear yearly
+pdp       <- matrix(rep(0, rab_n_yrs * length(pd)), nrow = nrow(pd))            # price deltas by tariff - one year only price delta
+pdp[,2]   <- pd                                                                 # price deltas by tariff - one year only price delta (1 = first year)
+pdvec     <- pdp                                                                # assign price delta before calculating prices 
+pdcum     <- t(apply(1 + pdvec, 1, cumprod))
+pnew      <- sweep(pdcum, 1, p0, `*`)                                           # new prices
+r         <- pnew * q                                                           # revenue: prices * quantity by tariff
+tot_r     <- colSums(r) / 1e6                                                   # total revenue by year
+npv_tot_r <- sum(tot_r   / (1 + rrr) ^ (1:length(tot_r))  ) * (1 + rrr) ^ 0.5   # NPV of total revenue
+
+
+
+
 # TB from matrix ----------------------------------------------------------------------------------
 m <- sim[[1]]$txns
 d     <- get_data()
@@ -383,3 +406,152 @@ datatable(
   ),
   escape = FALSE
 )
+
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Functions for forecast model
+# --------------------------------------------------------------------------------------------------------------------------
+
+library(dplyr)
+library(tidyr)
+library(slider)
+library(ggplot2)
+library(lubridate)
+
+training_import_data <- read.csv("./data/forecast_data.csv")
+
+# Prep training data
+build_training_data <- function(
+    df,
+    service_type,
+    device_size,
+    start_month,
+    end_month
+) {
+  
+  df %>%
+    filter(
+      product_type1 == service_type,
+      product_type2 == device_size,
+      month_end >= start_month,
+      month_end <= end_month
+    ) %>%
+    mutate(
+      month_end          = as.Date(month_end),
+      t                  = row_number(),
+      days_in_month      = days_in_month(month_end),
+      kl_per_day_per_sp  = q / n_supply_point / days_in_month,
+      month_no           = month(month_end),
+      sin_term           = sin(2 * pi * month_no / 12),
+      cos_term           = cos(2 * pi * month_no / 12),
+      log_usage          = log(kl_per_day_per_sp)
+    ) %>%
+    arrange(month_end)
+}
+
+training_data <- build_training_data(training_import_data, "HH Water Volume (Treated)", 20, as.Date("2021-06-30"), as.Date("2025-06-30"))
+
+# Models
+fit_usage_model <- function(training_df) { lm(kl_per_day_per_sp ~ sin_term + cos_term, data = training_df) }
+calc_cagr <- function(training_df) { (( tail(training_df$n_supply_point, 1) / training_df$n_supply_point[1]) ^ ( 12 / nrow(training_df) ) ) - 1 } 
+
+m <- fit_usage_model(training_data)
+cagr <- calc_cagr(training_data)
+
+# Future months
+build_forecast <- function(
+    training_df,
+    usage_model,
+    supply_growth,
+    forecast_months = 60
+) {
+  
+  last_month   <- max(training_df$month_end)
+  future_dates <- seq( from = ceiling_date(last_month + days(1), "month") - days(1), by = "1 month", length.out = forecast_months )
+  
+  last_supply_points <- last(training_df$n_supply_point)
+  
+  future_df <- tibble(
+    month_end = future_dates,
+    t         = max(training_df$t) + seq_len(forecast_months),
+    month_no  = month(future_dates)
+  ) %>%
+    mutate(
+      sin_term = sin(2 * pi * month_no / 12),
+      cos_term = cos(2 * pi * month_no / 12)
+    )
+  
+  future_df$forecast_kl_day_sp <- predict( usage_model, newdata = future_df )
+  
+  future_df <- future_df %>%
+    mutate(
+      forecast_supply_points = round(last_supply_points * (1 + supply_growth)^(row_number())),
+      days_in_month          = days_in_month(month_end),
+      forecast_quantity      = forecast_kl_day_sp * forecast_supply_points * days_in_month
+    )
+  
+  future_df
+}
+
+
+fcast <- build_forecast(training_data, usage_model = m, supply_growth = 0.05, forecast_months = 60)
+
+
+
+
+
+
+
+
+
+
+cash_int_cover_fn <- function(m, return_df = FALSE) {
+  mat <- m$txns
+  
+  # 1. Extract individual components for operating cashflows
+  # Using drop = FALSE inside apply is a safety measure, but standard indexing works here
+  cshd_val <- apply(mat, 3, function(x) x["3000", "cshd"], simplify = TRUE)
+  exp2_val <- apply(mat, 3, function(x) x["3000", "exp2"], simplify = TRUE)
+  crd1_val <- apply(mat, 3, function(x) x["3000", "crd1"], simplify = TRUE)
+  
+  # 2. Calculate totals and rolling sums
+  op_cf      <- cshd_val + exp2_val + crd1_val
+  op_cf_roll <- slide_sum(op_cf, before = 11)
+  
+  ip         <- apply(mat, 3, function(x) x["3000", "intp"], simplify = TRUE)
+  ip_roll    <- slide_sum(ip, before = 11)
+  
+  # 3. Calculate intermediate ratio and handle division-by-zero / capping
+  # If ip_roll is 0, dividing by it yields Inf or NaN. 
+  # R handles -ip_roll naturally, but we force Inf/NaN to NA (nil) and cap at 20.
+  ratio_inter <- op_cf_roll / -ip_roll
+  
+  ratio_final <- ratio_inter
+  ratio_final[is.na(ratio_final) | is.nan(ratio_final) | is.infinite(ratio_final)] <- NA
+  ratio_final[!is.na(ratio_final) & ratio_final > 20] <- 20
+  
+  # 3. Conditional Return logic
+  if (return_df) {
+    df <- data.frame(
+      cshd          = cshd_val,
+      exp2          = exp2_val,
+      crd1          = crd1_val,
+      op_cf_total   = op_cf,
+      op_cf_rolling = op_cf_roll,
+      ip            = ip,
+      ip_rolling    = ip_roll,
+      ratio_intermediate = ratio_inter,
+      ratio              = ratio_final,
+      row.names     = dimnames(mat)[[3]] # Preserves the time/slice identifiers if they exist
+    )
+    return(df)
+  } else {
+    return(ratio)
+  }
+}
+
+x <- cash_int_cover_fn1(m, return_df = TRUE)

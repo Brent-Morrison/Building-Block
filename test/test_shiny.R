@@ -24,7 +24,7 @@ a_sens_param <- "xLabour quantity"
 #args <- expand.grid(q_grow=0.019, cost_of_debt_nmnl=0.0456, fcast_infltn=0.03, roe=0.041, debt_sens = 0, oxcx_scenario = c("scnr1","scnr4"))
 args <- expand.grid(
   q_grow             = 0.019, 
-  cost_of_debt_nmnl  = 0.04,  # c(0.9,0.95,1,1.05,1.1) * 0.04, 
+  cost_of_debt_nmnl  = 0.08,  # c(0.9,0.95,1,1.05,1.1) * 0.04, 
   fcast_infltn       = 0.025, # c(0.9,0.95,1,1.05,1.1) * 0.025  || 0.025
   roe                = 0.041, 
   single_price_delta = T, 

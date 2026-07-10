@@ -173,33 +173,89 @@ sum(y)
 # --------------------------------------------------------------------------------------------------------------------------
 
 source("C:/Users/brent/Documents/repos/Building-Block/R/funs.R")
+txn_type <- get_data()$txn_type
+
+
 
 # Create matrix and assign names 
-days = c(30,30,31)
-act <- c(1000,2000,2100,3000,3050,3100,4000)
-txn <- c("open","aidb", "incm", "cshd", "crd1","clos")
-mon <- 1:3
+days = c(31,30,31,31,30,31,31)
+act <- c(1000,1001,1002,2000,2100,3000,3050,3100,3645,4000,4010)
+txn <- c("open","aidb","incm","cshd","crd1","exp1","exp3","clos")
+mon <- 1:7
 mat <- array(rep(0, length(act) * length(txn) * length(mon)), dim=c(length(act), length(txn), length(mon)))
 dimnames(mat)[[1]] <- act
 dimnames(mat)[[2]] <- txn
 dimnames(mat)[[3]] <- mon
-mat
-#mat[,,] <- 1:(length(act) * length(txn) * length(mon))
-mat[ , "open", 1] <- c(0,0,0,2000,7717,5000,-20346)   # c(0,0,0,2000,15377,5000,-20346)
-mat[c("3050", "1000"), "aidb", ] <- rbind(c(7717,7717,7717), -c(7717,7717,7717))# rbind(c(11803,11948,11989), -c(11803,11948,11989))
-mat[c("3000", "3050"), "cshd", ] <- rbind(c(7717,7717,0), -c(7717,7717,0))
+
+
+# Insert data (COPY FROM EXCEL)
+days <- c(31, 30, 31, 31, 30, 31, 31)		
+mat['3050','open', 1:5] <- c(20346, 20346, 20346, 20346, 20346)		
+mat['3050','aidb', 1:7] <- c(7717, 7717, 7717, 7717, 7717, 7717, 7717)	;	mat['1000','aidb', 1:7] <- c(-7717, -7717, -7717, -7717, -7717, -7717, -7717)
+mat['3100','incm', 1:5] <- c(7717, 7717, 7717, 7717, 7717)	;	mat['3050','incm', 1:5] <- c(-7717, -7717, -7717, -7717, -7717)
+mat['3050','clos', 1:5] <- c(20346, 20346, 20346, 20346, 20346)		
+mat['3100','open', 1:5] <- c(20346, 20346, 20346, 20346, 20346)		
+# PERFORMED ABOVE		
+mat['3000','cshd', 1:5] <- c(-7717, -7717, -7717, -7717, -7717)	;	mat['3100','cshd', 1:5] <- c(7717, 7717, 7717, 7717, 7717)
+mat['3100','clos', 1:5] <- c(20346, 20346, 20346, 20346, 20346)		
 mat
 
-d <- 50
-for (i in 1:length(mon)) {
+
+# Convert indices to integers
+acct_idx <- setNames(seq_along(dimnames(mat)[[1]]), dimnames(mat)[[1]])
+txn_idx  <- setNames(seq_along(dimnames(mat)[[2]]), dimnames(mat)[[2]])
+
+idx <- list(
+  aidb = list( # "incm"
+    bal_acnt = acct_idx["3050"],
+    pl_acnt  = acct_idx[c("1000","1001","1002")],
+    txn      = txn_idx["aidb"]
+  ),
+  incm = list( # "cshd"
+    bal_acnt = acct_idx["3100"],
+    pl_acnt  = acct_idx["3050"],
+    txn      = txn_idx["incm"]
+  ),
+  expx = list( # "crd1"
+    bal_acnt = acct_idx["4000"],
+    pl_acnt  = acct_idx["2000"],
+    txn      = txn_idx[c("exp1","exp3")]
+  ),
+  cpx1 = list( # "wipc"
+    bal_acnt = acct_idx["4010"],
+    pl_acnt  = acct_idx["3645"],
+    txn      = txn_idx["cpx1"]
+  ),
+  open = txn_idx["open"],
+  clos = txn_idx["clos"]
+)
+
+
+
+# Run test
+for (i in 6:7) {
   if (i > 1) mat[, "open", i] <- mat[, "clos", i-1]
-  if (i == 3) {
-    rcpt <- trgt_days(mat, days, i, d=d, trail=3, bal_acnt="3050", pl_acnt="1000", txn="aidb", open=1, clos=6)
-    mat[c("3000", "3050"), "cshd", i] <- c(-rcpt, rcpt)
-  }
+
+  # Test here
+  # Transfer to debtors to specify desired closing balance for accrued income days parameter -----------------------------
+  trail <- 3
+  t <- "incm"
+  tfer <- trgt_days(mat, days, i, d = 81, trail, bal_acnt=idx$aidb$bal_acnt, pl_acnt=idx$aidb$pl_acnt, txn=idx$aidb$txn, open=idx$open, clos=idx$clos) 
+  mat[drcr(t, txn_type), t, i] <- c(-tfer, tfer)
+  
+  trail <- 3
+  t <- "cshd"
+  rcpt <- trgt_days(mat, days, i, d = 75, trail, bal_acnt=idx$incm$bal_acnt, pl_acnt=idx$incm$pl_acnt, txn=idx$incm$txn, open=idx$open, clos=idx$clos)
+  mat[drcr(t, txn_type), t, i] <- c(-rcpt, rcpt)
+  
+  # Closing balances
   mat[, "clos", i] <- rowSums(mat[,-ncol(mat[,,i]), i])
 }
 mat
+
+
+
+
 
 aidb <- data.frame(
   rows = c("days", "open", "aidb", "cshd", "clos"),

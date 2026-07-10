@@ -62,7 +62,7 @@ q
 pd <- q
 pd[,] <- 0.0409954
 pd
-#pd[grep("Fixed", rownames(pd)), ] <- 0.005
+#pd[grepl("Fixed", rownames(pd)), ] <- 0.005
 
 
 
@@ -119,16 +119,16 @@ npv_optim_func1 <- function(theta, rev_req, p0, q, rtn_mode="obj") {
   
   pdpar1 <- theta[2]  # First price delta   
   pdpar2 <- theta[3]  # Second price delta
+  pdpar3 <- theta[4]  # Third price delta
   rrr    <- theta[1]  # Regulatory rate of return
   
   # Price delta matrix
   pd <- q
   pd[,] <- pdpar1 # 0.0409954
-  pd[grep("Sewerage", rownames(pd)), ] <- pdpar2
-  pd[grep("Residential", rownames(pd)), ] <- 0.035  # Fixed
+  pd[grepl("Sewerage", rownames(pd)), ] <- pdpar2
+  pd[grepl("Rural"   , rownames(pd)), ] <- pdpar3
+  pd[grepl("Variable", rownames(pd)), ] <- 0.035 # THIS SHOULD BE SETTING A PRICE, THE LRMC, AS OPPOSED TO A DELTA.  DERIVE FROM p0
   
-  # TO DO - insert a parameter so that the proportion of income from usage vs service charges can be flexed
-  # see below 
   
   # Price delta matrix (cumulative)
   pdcum        <- t(apply(pd, 1, function(x) cumprod(1 + x)))
@@ -136,16 +136,23 @@ npv_optim_func1 <- function(theta, rev_req, p0, q, rtn_mode="obj") {
   r            <- pnew * q                            # revenue: prices * quantity by tariff
   tot_r        <- colSums(r)                          # total revenue by year
   
-  prop_pre <- sum(r[grep("Sewerage", rownames(r)), ]) / sum(r)
-  prop_tgt <- 0.05
-  prop_penalty <- (prop_pre - prop_tgt) ^ 2
+  # Percent income constraint for pdpar2
+  prop_pre2     <- sum(r[grepl("Sewerage", rownames(r)), ]) / sum(r)
+  prop_tgt2     <- 0.075
+  prop_penalty2 <- ((prop_pre2 - prop_tgt2) / 0.005) ^ 2
+  
+  # Percent income constraint for pdpar3
+  prop_pre3     <- sum(r[grepl("Rural", rownames(r)), ]) / sum(r)
+  prop_tgt3     <- 0.035
+  prop_penalty3 <- ((prop_pre3 - prop_tgt3) / 0.005)  ^ 2
   
   npv_tot_r    <- sum(tot_r   / (1 + rrr) ^ (1:length(tot_r))  ) * (1 + rrr) ^ 0.5  
   npv_rev_req  <- sum(rev_req / (1 + rrr) ^ (1:length(rev_req))) * (1 + rrr) ^ 0.5
   
-  par_penalty  <- (pdpar1 - pdpar2) ^ 2
-  rev_penalty  <- ((npv_rev_req - npv_tot_r) / npv_rev_req) ^ 2
-  obj          <- rev_penalty + prop_penalty #+ par_penalty
+  par_penalty1 <- ((pdpar1 - pdpar2) / 0.05)  ^ 2
+  par_penalty2 <- ((pdpar1 - pdpar3) / 0.05) ^ 2
+  rev_penalty  <- ((npv_rev_req - npv_tot_r) / (npv_rev_req * 0.001)) ^ 2
+  obj          <- rev_penalty + prop_penalty2 + prop_penalty3 + par_penalty1 + par_penalty2
   
   rtn_list     <- list(price_delta = pd, prices = pnew)
   
@@ -158,7 +165,7 @@ npv_optim_func1 <- function(theta, rev_req, p0, q, rtn_mode="obj") {
 optim_result <- optim(
   
   # Initial values for the parameters to be optimized over
-  par = c(0.05, 0.05, 0.05),
+  par = c(0.05, 0.05, 0.05, 0.05),
   
   # Function to be minimized, first argument being vector of 
   # parameters over which minimization is applied
@@ -167,8 +174,8 @@ optim_result <- optim(
   method = "L-BFGS-B",
   
   # Upper & lower constraints for parameters
-  lower = c(rrr - .Machine$double.eps, -0.1, -0.1),
-  upper = c(rrr + .Machine$double.eps,  0.1,  0.1),
+  lower = c(rrr - .Machine$double.eps, -0.075, -0.075, -0.075),
+  upper = c(rrr + .Machine$double.eps,  0.075,  0.075,  0.075),
   
   # ... Further arguments to be passed to fn
   rev_req = rev_req, #rev_req[i:(i+4)],
@@ -197,4 +204,18 @@ sum(rev_req / (1 + rrr) ^ (1:length(rev_req)))             # NPV of revenue requ
 sum(tot_rev_real / (1 + rrr) ^ (1:length(tot_rev_real)))   # NPV of revenue
 
 
-sum(r_new[grep("Sewerage", rownames(r_new)), ]) / sum(r_new)
+# Check constrained percentages
+sum(r_new[grepl("Sewerage", rownames(r_new)), ]) / sum(r_new)
+sum(r_new[grepl("Rural"   , rownames(r_new)), ]) / sum(r_new)
+
+
+# Test grepl for constraints
+include <- c("Fixed")
+exclude <- c("Sewerage", "Trade-Waste")
+idx <- Reduce(`&`, lapply(include, grepl, x = rownames(pd))) & !Reduce(`|`, lapply(exclude, grepl, x = rownames(pd)))
+pd[idx, ]
+pd[idx, ] <- c(0.075, 0.050, 0.040)
+pd[idx, ]
+
+# Compound growth rate for target price / LRMC
+(0.35/p0["Water.Rural.Variable", ])^(1/5)-1

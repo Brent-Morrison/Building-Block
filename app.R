@@ -12,6 +12,7 @@ library(scales)
 
 source("./R/funs.R")
 source("./R/f.R")
+Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = TRUE)
 
 # Read data ----------------------------------------------------------------------------------------------------------------
 
