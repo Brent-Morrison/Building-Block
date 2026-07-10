@@ -62,7 +62,7 @@ f <- function(
   #   cost_of_debt_nmnl - nominal cost of debt (0.0456)
   #   cast_infltn       - inflation (0.03)
   #   roe               - allowed return on equity (0.041)
-  #   single_price_delta- for function npv_optim_func, logical, if true the only price delta (that of the first price delta `theta[2]`) is used
+  #   single_price_delta- logical, if TRUE the price delta is applied in year `price_delta_yr` only (and persists thereafter); if FALSE it is applied uniformly across all 5 years
   #   debt_sens         - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
   #
   # Returns:
@@ -83,9 +83,7 @@ f <- function(
   # Parameters --------------------------------------------------------------------------------------
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
   initial_fcast_yr   <- 2024      # the first forecast year (first financial year of the price submission)
-  price_delta_yr     <- 1         # for function npv_optim_func, parameter 'pdyr', an integer between 0 and 5 representing the year in which
-  # price delta 2 comes into effect, a value of zero returns an equal price delta for each year (refer to documentation for function 'npv_optim_func')
-  pd_max_per         <- 1         # price delta max period, if parameter single is F, specify which price delta should be higher
+  price_delta_yr     <- 3         # the year (1-5) in which the price delta is applied when single_price_delta = TRUE
   gearing            <- 0.6       # gearing assumption for WACC
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
   rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
@@ -279,55 +277,32 @@ f <- function(
   
   
   # Perform optimisation ----------------------------------------------------------------------------
-  optim_result_loop <- vector(mode = "list", length = 4)
-  counter <- 0
-  for (i in c(1,6,11,16)) {  
-    counter <- counter + 1
-    optim_result <- optim(
-      
-      # Initial values for the parameters to be optimized over
-      par = c(rrr, if (pd_max_per == 1) c(0.025, 0) else c(0, 0.025)),
-      
-      # Function to be minimized, first argument being vector of 
-      # parameters over which minimization is applied
-      fn  = npv_optim_func,
-      
-      method = "L-BFGS-B",
-      
-      # Upper & lower constraints for parameters
-      lower = c(rrr - .Machine$double.eps, -0.5, -0.5),
-      upper = c(rrr + .Machine$double.eps,  0.5,  0.5),
-      
-      # ... Further arguments to be passed to fn
-      pdyr    = price_delta_yr,
-      single  = single_price_delta,
-      des_f   = desired_fixed,
-      rev_req = rev_req[i:(i+4)],
-      p0      = p0,
-      q       = q[,i:(i+4)]
-      
-    )
-    optim_result_loop[[counter]] <- optim_result
+  # TO DO - desired_fixed (fixed/variable tariff-mix reallocation) is not yet supported by the
+  # price_path_engine optimiser below; rebuild it as a proper mode (see R/price_path_engine.R).
+  if (desired_fixed != 99) {
+    warning("desired_fixed is not yet supported by the price_path_engine optimiser and will be ignored.")
   }
-  
-  
+
   price_delta_results <- vector(mode = "list", length = 4)
   counter <- 0
   for (i in c(1,6,11,16)) {
     counter <- counter + 1
-    res <- npv_optim_func(
-      theta      = optim_result_loop[[counter]]$par, 
-      pdyr       = price_delta_yr, 
-      single     = single_price_delta, 
-      des_f      = desired_fixed ,
-      rev_req    = rev_req[i:(i+4)], 
-      p0         = p0, 
-      q          = q[,i:(i+4)], 
-      rtn_mode   = "data"
-      )
-    price_delta_results[[counter]] <- res
+    q_block    <- q[, i:(i+4)]
+    npv_target <- pp_npv(rev_req[i:(i+4)] * 1e6, rrr)  # rev_req is millions; p0*q is raw dollars
+
+    spec <- if (single_price_delta) {
+      pp_mode_uniform_single_year(p0, q_block, rrr, npv_target, year = price_delta_yr, lb = -0.5, ub = 0.5)
+    } else {
+      pp_mode_uniform_all_years(p0, q_block, rrr, npv_target, lb = -0.5, ub = 0.5)
+    }
+
+    res <- pp_solve_mode(spec)
+    price_delta_results[[counter]] <- list(
+      price_delta = res$delta[1, ],   # uniform across tariffs for both modes - take one row
+      prices      = res$prices
+    )
   }
-  
+
   price_delta <- unlist(lapply(price_delta_results, function(x) x$price_delta))
   prices <- do.call(cbind, lapply(price_delta_results, function(x) x$prices))
   tot_rev_real <- prices * q / 1e6  # TO DO - use this to flex income, ref. line 288 (object q).  kL up or down on wet, dry basis.  Variability based on statistical model.

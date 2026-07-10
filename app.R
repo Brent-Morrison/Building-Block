@@ -11,6 +11,7 @@ library(kableExtra)
 library(scales)
 
 source("./R/funs.R")
+source("./R/price_path_engine.R")
 source("./R/f.R")
 Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = TRUE)
 
