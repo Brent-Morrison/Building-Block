@@ -25,8 +25,11 @@ f <- function(
     q_grow             = 0.019, 
     cost_of_debt_nmnl  = 0.04, 
     fcast_infltn       = 0.025, 
-    roe                = 0.041, 
-    single_price_delta = T,
+    roe                = 0.041,
+    price_path_mode      = "uniform_single_year",  # one of "uniform_all_years", "uniform_single_year", "group_shares", "lrmc_residual"
+    price_delta_yr       = 3,     # the year (1-5) in which the price delta is applied, used only when price_path_mode == "uniform_single_year"
+    group_share_targets  = NULL,  # named numeric vector (fractions summing to 1), used only when price_path_mode == "group_shares"
+    lrmc_target          = NULL,  # named numeric vector (year-5 target price per variable tariff), used only when price_path_mode == "lrmc_residual"
     desired_fixed      = 0.40,
     debt_sens          = 0, 
     fte                = 200,  # fte
@@ -62,7 +65,13 @@ f <- function(
   #   cost_of_debt_nmnl - nominal cost of debt (0.0456)
   #   cast_infltn       - inflation (0.03)
   #   roe               - allowed return on equity (0.041)
-  #   single_price_delta- logical, if TRUE the price delta is applied in year `price_delta_yr` only (and persists thereafter); if FALSE it is applied uniformly across all 5 years
+  #   price_path_mode   - which pp_mode_* constraint (R/price_path_engine.R) is used to solve for the price path:
+  #                        "uniform_all_years"   - one price delta applied to every tariff, every year
+  #                        "uniform_single_year" - one price delta applied to every tariff in year `price_delta_yr` only (persists thereafter)
+  #                        "group_shares"        - per-service-type deltas hitting `group_share_targets` NPV revenue shares (must sum to 1)
+  #                        "lrmc_residual"       - variable tariffs pinned to `lrmc_target`, fixed tariffs solved as the residual
+  #                        "lrmc_group_shares"   - variable tariffs pinned to `lrmc_target`, fixed tariffs solved per group to hit
+  #                                                 `group_share_targets` NPV revenue shares (must sum to 1)
   #   debt_sens         - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
   #
   # Returns:
@@ -71,6 +80,8 @@ f <- function(
   #   rab            - a data frame being the opening to closing reconciliation of the movement in the regulatory asset base
   #   price_delta    - a list of each yearly real price delta
   #   prices         - a matrix of all prices for each year
+  #   price_path_check - NPV of revenue requirement vs NPV of revenue achieved, and whether the
+  #                       price-path solve was feasible, for the first price-setting period (FY24-28) only
   #   rev_req        - a data frame of the components to the revenue requirement for each year
   #   tariff_rev     - a matrix tariff revenue for each year
   #
@@ -83,7 +94,6 @@ f <- function(
   # Parameters --------------------------------------------------------------------------------------
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
   initial_fcast_yr   <- 2024      # the first forecast year (first financial year of the price submission)
-  price_delta_yr     <- 3         # the year (1-5) in which the price delta is applied when single_price_delta = TRUE
   gearing            <- 0.6       # gearing assumption for WACC
   cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
   rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
@@ -279,9 +289,27 @@ f <- function(
   # Perform optimisation ----------------------------------------------------------------------------
   # TO DO - desired_fixed (fixed/variable tariff-mix reallocation) is not yet supported by the
   # price_path_engine optimiser below; rebuild it as a proper mode (see R/price_path_engine.R).
+  # -------------------------------------------------------------------------------------------------
   if (desired_fixed != 99) {
     warning("desired_fixed is not yet supported by the price_path_engine optimiser and will be ignored.")
   }
+
+  # group_labels/variable_mask are derived from tariff naming rather than configured separately,
+  # so the "service"/"cost_driver" columns in `dat` (concatenated into rownames(p0) above as
+  # service.asset_category.cost_driver) must follow these rules for the derivation to stay correct:
+  #   - "service" values must not contain a "." - group_labels takes everything before the FIRST
+  #     "." as the group, so an embedded dot would truncate the group name early.
+  #   - Every tariff's "service" value must be spelled identically (case-sensitive, exact match)
+  #     across all its Fixed/Variable rows, and consistently across price-setting periods - the
+  #     group_shares mode (pp_mode_group_shares) and the "Price path constraints" UI tab both
+  #     derive their group list the same way, and rely on it matching.
+  #   - "cost_driver" must be exactly "Fixed" for fixed charges and must contain "Variable" for
+  #     usage-based charges, and no other segment (service/asset_category) may contain the
+  #     substring "Variable" - variable_mask matches "Variable" anywhere in the full tariff name,
+  #     and any tariff it does NOT match is treated as fixed (see pp_mode_lrmc_residual's
+  #     `!variable_mask`), so there is no third category.
+  group_labels  <- sub("\\..*", "", rownames(p0))
+  variable_mask <- grepl("Variable", rownames(p0))
 
   price_delta_results <- vector(mode = "list", length = 4)
   counter <- 0
@@ -290,17 +318,30 @@ f <- function(
     q_block    <- q[, i:(i+4)]
     npv_target <- pp_npv(rev_req[i:(i+4)] * 1e6, rrr)  # rev_req is millions; p0*q is raw dollars
 
-    spec <- if (single_price_delta) {
-      pp_mode_uniform_single_year(p0, q_block, rrr, npv_target, year = price_delta_yr, lb = -0.5, ub = 0.5)
-    } else {
-      pp_mode_uniform_all_years(p0, q_block, rrr, npv_target, lb = -0.5, ub = 0.5)
-    }
+    spec <- switch(
+      as.character(price_path_mode),  # guard against factor coercion (e.g. via expand.grid()) silently mis-selecting the branch
+      uniform_all_years   = pp_mode_uniform_all_years(p0, q_block, rrr, npv_target, lb = -0.5, ub = 0.5),
+      uniform_single_year = pp_mode_uniform_single_year(p0, q_block, rrr, npv_target, year = price_delta_yr, lb = -0.5, ub = 0.5),
+      group_shares        = pp_mode_group_shares(p0, q_block, rrr, npv_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
+      lrmc_residual        = pp_mode_lrmc_residual(p0, q_block, rrr, npv_target, variable_mask, lrmc_target, lb = -0.5, ub = 0.5),
+      lrmc_group_shares    = pp_mode_lrmc_group_shares(p0, q_block, rrr, npv_target, variable_mask, lrmc_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
+      stop("Unknown price_path_mode: ", price_path_mode)
+    )
 
     res <- pp_solve_mode(spec)
     price_delta_results[[counter]] <- list(
-      price_delta = res$delta[1, ],   # uniform across tariffs for both modes - take one row
+      price_delta = colMeans(res$delta),  # representative delta across tariffs (identical per-tariff for modes 1/2; a genuine average for 3/4)
       prices      = res$prices
     )
+
+    if (counter == 1) {
+      # Reported to the user as-is (FY24-28 only, not aggregated across all price-setting periods)
+      price_path_check <- list(
+        npv_target = res$npv_target,
+        npv_actual = res$npv_actual,
+        feasible   = res$feasible
+      )
+    }
   }
 
   price_delta <- unlist(lapply(price_delta_results, function(x) x$price_delta))
@@ -671,13 +712,14 @@ f <- function(
   }
   
   return(list(
-    txns         = mat, 
-    rab          = exist_rab_detail, 
-    price_delta  = price_delta, 
-    prices       = prices, 
-    rev_req      = rev_req_df, 
-    tariff_rev   = tot_rev_nmnl,
-    loans        = loan_sched,
+    txns             = mat,
+    rab              = exist_rab_detail,
+    price_delta      = price_delta,
+    prices           = prices,
+    price_path_check = price_path_check,
+    rev_req          = rev_req_df,
+    tariff_rev       = tot_rev_nmnl,
+    loans            = loan_sched,
     call         = list(q_grow=q_grow, cost_of_debt_nmnl=cost_of_debt_nmnl, 
                         fcast_infltn=fcast_infltn, roe=roe, debt_sens=debt_sens) 
   ))

@@ -25,6 +25,22 @@ txn_df    <- d$txn_type
 
 initial_fcast_yr <- min(dat_df[dat_df$entity == "CW", ]$year)
 
+# Tariff reference data (mirrors f()'s own p0 derivation in R/f.R) - used to build the
+# "Price path constraints" tab inputs without needing to run a simulation first.
+pq_ref            <- dat_df %>% filter(entity == "CW", year == initial_fcast_yr, balance_type == "Price")
+tariff_names      <- paste(pq_ref$service, pq_ref$asset_category, pq_ref$cost_driver, sep = ".")
+tariff_p0         <- setNames(pq_ref$amount, tariff_names)
+group_names       <- unique(sub("\\..*", "", tariff_names))
+variable_tariffs  <- tariff_names[grepl("Variable", tariff_names)]
+
+# Period-0 revenue share by group (p0 * q0), shown in the "Price path constraints" group-shares
+# input labels as a reference point for setting each group's target share.
+pq_ref_q     <- dat_df %>% filter(entity == "CW", year == initial_fcast_yr, balance_type == "Quantity")
+tariff_q0    <- setNames(pq_ref_q$amount, paste(pq_ref_q$service, pq_ref_q$asset_category, pq_ref_q$cost_driver, sep = "."))
+tariff_rev0  <- tariff_p0[tariff_names] * tariff_q0[tariff_names]
+group_rev0   <- tapply(tariff_rev0, sub("\\..*", "", tariff_names), sum)
+group_share0 <- group_rev0 / sum(group_rev0)
+
 
 # Helper functions for UI
 row_with_label3 <- function(label, input1, input2=NULL, input3=NULL) {
@@ -160,8 +176,7 @@ renderInputs <- function(prefix) {
       
       row_with_label3(
         "Other",
-        numericInput(inputId = paste0(prefix, "_", "desired_fixed"), label = "Tariff composition :", value = 99, min = 30, max = 99),
-        checkboxInput(inputId = paste0(prefix, "_", "single_price_delta"), label = "Price adjustment to occur in first year only", TRUE)
+        numericInput(inputId = paste0(prefix, "_", "desired_fixed"), label = "Tariff composition :", value = 99, min = 30, max = 99)
         ),
       bsTooltip(id = paste0(prefix, "_", "desired_fixed"), title = "Stipulate the tariff composition with respect to fixed versus variable charges.  Default value of 99 retains existing tariff composition", placement = "bottom"),
       
@@ -184,9 +199,81 @@ renderInputs <- function(prefix) {
       
       hr(),
 
-      actionButton(inputId = paste0("run_sim", "_", prefix), label = "Run simulation", class = "btn-primary")
+      fluidRow(
+        column(3, actionButton(inputId = paste0("run_sim", "_", prefix), label = "Run simulation", class = "btn-primary")),
+        column(9, textOutput(paste0(prefix, "_price_path_check")))
+        )
       )
   ) # end WellPanel
+}
+
+
+# Function to specify UI inputs for the price path constraint mode and its parameters -------------------------------------
+
+renderPricePathInputs <- function(prefix) {
+  wellPanel(
+    tags$h4("Price path constraint"),
+
+    selectInput(
+      inputId  = paste0(prefix, "_price_path_mode"),
+      label    = "Constraint mode",
+      choices  = c(
+        "Uniform delta, all years"       = "uniform_all_years",
+        "Uniform delta, single year"     = "uniform_single_year",
+        "Service-type revenue shares"    = "group_shares",
+        "LRMC-anchored variable tariffs" = "lrmc_residual",
+        "LRMC-anchored variables, group revenue shares" = "lrmc_group_shares"
+        ),
+      selected = "uniform_all_years"
+      ),
+
+    conditionalPanel(
+      condition = sprintf("input.%s_price_path_mode == 'uniform_single_year'", prefix),
+      numericInput(
+        inputId = paste0(prefix, "_price_delta_yr"),
+        label   = "Year to apply price delta (1-5)",
+        value   = 3, min = 1, max = 5, step = 1
+        )
+      ),
+
+    conditionalPanel(
+      condition = sprintf("input.%s_price_path_mode == 'group_shares' || input.%s_price_path_mode == 'lrmc_group_shares'", prefix, prefix),
+      tags$h5("Target share of revenue requirement, by service type (must sum to 100%)"),
+      lapply(group_names, function(g) {
+        numericInput(
+          inputId = paste0(prefix, "_grp_target_", make.names(g)),
+          label   = sprintf("%s (initial revenue share %s%%)", g, round(group_share0[[g]] * 100, 1)),
+          value   = round(100 / length(group_names), 1),
+          min     = 0, max = 100, step = 0.5
+          )
+        }),
+      textOutput(paste0(prefix, "_grp_target_total"))
+      ),
+
+    conditionalPanel(
+      condition = sprintf("input.%s_price_path_mode == 'lrmc_residual' || input.%s_price_path_mode == 'lrmc_group_shares'", prefix, prefix),
+      tags$h5("Target price (year 5) for each variable tariff"),
+      lapply(variable_tariffs, function(t) {
+        numericInput(
+          inputId = paste0(prefix, "_lrmc_", make.names(t)),
+          label   = sprintf("%s (current tariff %s)", t, round(tariff_p0[[t]], 4)),
+          value   = round(tariff_p0[[t]], 4),
+          min     = 0, step = 0.01
+          )
+        })
+      )
+    ) # end WellPanel
+}
+
+
+# Function to build a "Run simulation" button + NPV check text row, so it can be replicated on
+# tabs other than the one that owns the underlying inputs/output (see server() wiring) ------------
+
+renderRunSimRow <- function(prefix, suffix = "") {
+  fluidRow(
+    column(3, actionButton(inputId = paste0("run_sim_", prefix, suffix), label = "Run simulation", class = "btn-primary")),
+    column(9, textOutput(paste0(prefix, "_price_path_check", suffix)))
+    )
 }
 
 
@@ -234,7 +321,36 @@ ui <- navbarPage(
       )
     ),
   tabPanel(
-    title="Financials", 
+    title="Price path constraints",
+    fluidPage(
+      theme="simplex.min.css",
+      tags$style(
+        type="text/css",
+        "label {font-size: 12px;}",
+        ".recalculating {opacity: 1.0;}"
+        ),
+
+      tags$h2("Price path constraints"),
+      p("Select how the price path is solved for each scenario, and supply parameters for the selected constraint mode."),
+      hr(),
+
+      fluidRow(
+        column(6, renderRunSimRow("a", "_pp")),
+        column(6, renderRunSimRow("b", "_pp"))
+        ),
+
+      fluidRow(
+        column(6, tags$h3("Scenario A")),
+        column(6, tags$h3("Scenario B"))
+        ),
+      fluidRow(
+        column(6, renderPricePathInputs("a")),
+        column(6, renderPricePathInputs("b"))
+        )
+      )
+    ),
+  tabPanel(
+    title="Financials",
     fluidPage(
       theme="simplex.min.css",
       tags$style(
@@ -283,13 +399,14 @@ ui <- navbarPage(
 # Server function ----------------------------------------------------------------------------------------------------------
 server <- function(input, output, session) {
   
-  simA_inputs <- eventReactive(input$run_sim_a, {
+  simA_inputs <- eventReactive(input$run_sim_a + input$run_sim_a_pp, {
     
     req(
       length(input$a_cost_of_debt_nmnl) == 1,
       length(input$a_fcast_infltn) == 1,
       length(input$a_roe) == 1,
-      length(input$a_single_price_delta) == 1,
+      length(input$a_price_path_mode) == 1,
+      length(input$a_price_delta_yr) == 1,
       length(input$a_desired_fixed) == 1,
       length(input$a_sens_param) == 1,
       length(input$a_fte) == 1,
@@ -318,14 +435,33 @@ server <- function(input, output, session) {
       length(input$a_sens_upper) == 1
       
     )
-    
-    
+
+    price_path_mode <- isolate(input$a_price_path_mode)
+
+    group_share_targets <- setNames(
+      sapply(group_names, function(g) isolate(input[[paste0("a_grp_target_", make.names(g))]])),
+      group_names
+      ) / 100
+
+    lrmc_target <- setNames(
+      sapply(variable_tariffs, function(t) isolate(input[[paste0("a_lrmc_", make.names(t))]])),
+      variable_tariffs
+      )
+
+    validate(need(
+      !(price_path_mode %in% c("group_shares", "lrmc_group_shares")) || abs(sum(group_share_targets) - 1) < 0.001,
+      "Group share targets must sum to 100%"
+      ))
+
     list(
       q_grow               = 0.019,
       cost_of_debt_nmnl    = isolate(input$a_cost_of_debt_nmnl),
       fcast_infltn         = isolate(input$a_fcast_infltn),
       roe                  = isolate(input$a_roe),
-      single_price_delta   = isolate(input$a_single_price_delta),
+      price_path_mode      = price_path_mode,
+      price_delta_yr       = isolate(input$a_price_delta_yr),
+      group_share_targets  = group_share_targets,
+      lrmc_target          = lrmc_target,
       desired_fixed        = isolate(input$a_desired_fixed),
       sens_param           = isolate(input$a_sens_param),
       fte                  = isolate(input$a_fte),
@@ -361,15 +497,19 @@ server <- function(input, output, session) {
     
     inp <- simA_inputs()
     req(inp)
-    
+
     expand.grid(
+      stringsAsFactors     = FALSE,
       q_grow               = inp$q_grow,
       cost_of_debt_nmnl    = inp$cost_of_debt_nmnl,
       fcast_infltn         = inp$fcast_infltn,
       roe                  = inp$roe,
-      single_price_delta   = inp$single_price_delta,
+      price_path_mode      = inp$price_path_mode,
+      price_delta_yr       = inp$price_delta_yr,
+      group_share_targets  = list(inp$group_share_targets),
+      lrmc_target          = list(inp$lrmc_target),
       desired_fixed        = inp$desired_fixed,
-      debt_sens            = list(NULL), 
+      debt_sens            = list(NULL),
       fte                  = if (inp$sens_param == "Labour quantity") c(inp$sens_lower, inp$fte,        inp$sens_upper) else inp$fte,
       cost_fte             = if (inp$sens_param == "Labour price")    c(inp$sens_lower, inp$cost_fte,   inp$sens_upper) else inp$cost_fte,
       q_grow_fte           = if (inp$sens_param == "Labour growth")   c(inp$sens_lower, inp$q_grow_fte, inp$sens_upper) else inp$q_grow_fte,
@@ -392,24 +532,27 @@ server <- function(input, output, session) {
       opex_ps2             = inp$opex_ps2,
       opex_ps3             = inp$opex_ps3,
       opex_ps4             = inp$opex_ps4
-      
+
     )
   })
-  
-  
+
+
   simA <- reactive({
-    
+
     args_df <- argsA()
     req(nrow(args_df) > 0)
-    
+
     mapply(
-       FUN               = f, 
+       FUN               = f,
        dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
        q_grow            = args_df$q_grow,
-       cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100, 
+       cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100,
        fcast_infltn      = args_df$fcast_infltn/100,
-       roe               = args_df$roe/100, 
-       single_price_delta= args_df$single_price_delta,
+       roe               = args_df$roe/100,
+       price_path_mode      = args_df$price_path_mode,
+       price_delta_yr       = args_df$price_delta_yr,
+       group_share_targets  = args_df$group_share_targets,
+       lrmc_target          = args_df$lrmc_target,
        desired_fixed     = args_df$desired_fixed,
        debt_sens         = args_df$debt_sens, 
        fte               = args_df$fte,
@@ -442,13 +585,14 @@ server <- function(input, output, session) {
   
   # ----
   
-  simB_inputs <- eventReactive(input$run_sim_b, {
+  simB_inputs <- eventReactive(input$run_sim_b + input$run_sim_b_pp, {
     
     req(
       length(input$b_cost_of_debt_nmnl) == 1,
       length(input$b_fcast_infltn) == 1,
       length(input$b_roe) == 1,
-      length(input$b_single_price_delta) == 1,
+      length(input$b_price_path_mode) == 1,
+      length(input$b_price_delta_yr) == 1,
       length(input$b_desired_fixed) == 1,
       length(input$b_sens_param) == 1,
       length(input$b_fte) == 1,
@@ -475,16 +619,35 @@ server <- function(input, output, session) {
       length(input$b_opex_ps4) == 1,
       length(input$b_sens_lower) == 1,
       length(input$b_sens_upper) == 1
-      
+
     )
-    
-    
+
+    price_path_mode <- isolate(input$b_price_path_mode)
+
+    group_share_targets <- setNames(
+      sapply(group_names, function(g) isolate(input[[paste0("b_grp_target_", make.names(g))]])),
+      group_names
+      ) / 100
+
+    lrmc_target <- setNames(
+      sapply(variable_tariffs, function(t) isolate(input[[paste0("b_lrmc_", make.names(t))]])),
+      variable_tariffs
+      )
+
+    validate(need(
+      !(price_path_mode %in% c("group_shares", "lrmc_group_shares")) || abs(sum(group_share_targets) - 1) < 0.001,
+      "Group share targets must sum to 100%"
+      ))
+
     list(
       q_grow               = 0.019,
       cost_of_debt_nmnl    = isolate(input$b_cost_of_debt_nmnl),
       fcast_infltn         = isolate(input$b_fcast_infltn),
       roe                  = isolate(input$b_roe),
-      single_price_delta   = isolate(input$b_single_price_delta),
+      price_path_mode      = price_path_mode,
+      price_delta_yr       = isolate(input$b_price_delta_yr),
+      group_share_targets  = group_share_targets,
+      lrmc_target          = lrmc_target,
       desired_fixed        = isolate(input$b_desired_fixed),
       sens_param           = isolate(input$b_sens_param),
       fte                  = isolate(input$b_fte),
@@ -520,15 +683,19 @@ server <- function(input, output, session) {
     
     inp <- simB_inputs()
     req(inp)
-    
+
     expand.grid(
+      stringsAsFactors     = FALSE,
       q_grow               = inp$q_grow,
       cost_of_debt_nmnl    = inp$cost_of_debt_nmnl,
       fcast_infltn         = inp$fcast_infltn,
       roe                  = inp$roe,
-      single_price_delta   = inp$single_price_delta,
+      price_path_mode      = inp$price_path_mode,
+      price_delta_yr       = inp$price_delta_yr,
+      group_share_targets  = list(inp$group_share_targets),
+      lrmc_target          = list(inp$lrmc_target),
       desired_fixed        = inp$desired_fixed,
-      debt_sens            = list(NULL), 
+      debt_sens            = list(NULL),
       fte                  = if (inp$sens_param == "Labour quantity") c(inp$sens_lower, inp$fte,        inp$sens_upper) else inp$fte,
       cost_fte             = if (inp$sens_param == "Labour price")    c(inp$sens_lower, inp$cost_fte,   inp$sens_upper) else inp$cost_fte,
       q_grow_fte           = if (inp$sens_param == "Labour growth")   c(inp$sens_lower, inp$q_grow_fte, inp$sens_upper) else inp$q_grow_fte,
@@ -551,24 +718,27 @@ server <- function(input, output, session) {
       opex_ps2             = inp$opex_ps2,
       opex_ps3             = inp$opex_ps3,
       opex_ps4             = inp$opex_ps4
-      
+
     )
   })
-  
-  
+
+
   simB <- reactive({
-    
+
     args_df <- argsB()
     req(nrow(args_df) > 0)
-    
+
     mapply(
-      FUN               = f, 
+      FUN               = f,
       dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
       q_grow            = args_df$q_grow,
-      cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100, 
+      cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100,
       fcast_infltn      = args_df$fcast_infltn/100,
-      roe               = args_df$roe/100, 
-      single_price_delta= args_df$single_price_delta,
+      roe               = args_df$roe/100,
+      price_path_mode      = args_df$price_path_mode,
+      price_delta_yr       = args_df$price_delta_yr,
+      group_share_targets  = args_df$group_share_targets,
+      lrmc_target          = args_df$lrmc_target,
       desired_fixed     = args_df$desired_fixed,
       debt_sens         = args_df$debt_sens, 
       fte               = args_df$fte,
@@ -600,6 +770,58 @@ server <- function(input, output, session) {
   })
   
   
+  # Live running total for the group-shares target percentages, updates as the user types
+  output$a_grp_target_total <- renderText({
+    total <- sum(sapply(group_names, function(g) {
+      v <- input[[paste0("a_grp_target_", make.names(g))]]
+      if (is.null(v)) 0 else v
+      }))
+    paste0("Total: ", round(total, 1), "% (must equal 100%)")
+    })
+  output$b_grp_target_total <- renderText({
+    total <- sum(sapply(group_names, function(g) {
+      v <- input[[paste0("b_grp_target_", make.names(g))]]
+      if (is.null(v)) 0 else v
+      }))
+    paste0("Total: ", round(total, 1), "% (must equal 100%)")
+    })
+
+  # NPV of revenue requirement vs NPV of revenue implicit in the price path, for the first
+  # price-setting period (FY24-28) only - see f()'s price_path_check (R/f.R)
+  format_price_path_check <- function(chk) {
+    npv_req <- format(round(chk$npv_target / 1e6, 1), big.mark = ",", nsmall = 1)
+    npv_act <- format(round(chk$npv_actual / 1e6, 1), big.mark = ",", nsmall = 1)
+    if (chk$feasible) {
+      sprintf("NPV of revenue requirement of $%sm equals NPV of revenue implicit in price path", npv_req)
+    } else {
+      sprintf(
+        paste(
+          "The NPV of the revenue requirement is $%sm.",
+          "The NPV of the revenue implicit in the price path is $%sm.",
+          "This inequality is likely due to the selected price path constraints being infeasible together."
+          ),
+        npv_req, npv_act
+        )
+    }
+  }
+  output$a_price_path_check <- renderText({
+    req(simA())
+    format_price_path_check(simA()[[1]]$price_path_check)
+    })
+  output$b_price_path_check <- renderText({
+    req(simB())
+    format_price_path_check(simB()[[1]]$price_path_check)
+    })
+  # Replicated on the "Price path constraints" tab (see renderRunSimRow()) - same data, new output id
+  output$a_price_path_check_pp <- renderText({
+    req(simA())
+    format_price_path_check(simA()[[1]]$price_path_check)
+    })
+  output$b_price_path_check_pp <- renderText({
+    req(simB())
+    format_price_path_check(simB()[[1]]$price_path_check)
+    })
+
   #output$a_plot        <- renderPlot( {str( args())} )
   output$a_plot        <- renderPlot({
     req(simA()) 
