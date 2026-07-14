@@ -72,6 +72,8 @@ f <- function(
   #                        "lrmc_residual"       - variable tariffs pinned to `lrmc_target`, fixed tariffs solved as the residual
   #                        "lrmc_group_shares"   - variable tariffs pinned to `lrmc_target`, fixed tariffs solved per group to hit
   #                                                 `group_share_targets` NPV revenue shares (must sum to 1)
+  #                        NOTE: only applied to the first price-setting period (FY24-28); periods
+  #                        2-4 always use "uniform_all_years" regardless of this argument
   #   debt_sens         - real cost of debt sensitivity, these values adjust the real c.o.d. in order to perform sensitivity analysis
   #
   # Returns:
@@ -283,13 +285,14 @@ f <- function(
   pq.t1 <- pq %>% filter(year == initial_fcast_yr-1, balance_type == 'Price')
   p0 <- as.matrix(pq.t1[, "amount"])
   rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "cost_driver"], sep = ".")
+  tariff_names <- rownames(p0)  # p0 is reassigned each price-setting period below and loses this via pp_build_prices
   
   
-  
-  # Perform optimisation ----------------------------------------------------------------------------
+  # ------------------------------------------------------------------------------------------------------------------------
+  # PERFORM PRICE PATH OPTIMISATION 
+  # ------------------------------------------------------------------------------------------------------------------------
   # TO DO - desired_fixed (fixed/variable tariff-mix reallocation) is not yet supported by the
   # price_path_engine optimiser below; rebuild it as a proper mode (see R/price_path_engine.R).
-  # -------------------------------------------------------------------------------------------------
   if (desired_fixed != 99) {
     warning("desired_fixed is not yet supported by the price_path_engine optimiser and will be ignored.")
   }
@@ -318,14 +321,18 @@ f <- function(
     q_block    <- q[, i:(i+4)]
     npv_target <- pp_npv(rev_req[i:(i+4)] * 1e6, rrr)  # rev_req is millions; p0*q is raw dollars
 
+    # Only the first price-setting period honours the user's selected price_path_mode; periods
+    # 2-4 are hard-coded to uniform_all_years so later periods always use a simple flat escalation.
+    effective_mode <- if (counter == 1) as.character(price_path_mode) else "uniform_all_years"
+
     spec <- switch(
-      as.character(price_path_mode),  # guard against factor coercion (e.g. via expand.grid()) silently mis-selecting the branch
+      effective_mode,  # guard against factor coercion (e.g. via expand.grid()) silently mis-selecting the branch
       uniform_all_years   = pp_mode_uniform_all_years(p0, q_block, rrr, npv_target, lb = -0.5, ub = 0.5),
       uniform_single_year = pp_mode_uniform_single_year(p0, q_block, rrr, npv_target, year = price_delta_yr, lb = -0.5, ub = 0.5),
       group_shares        = pp_mode_group_shares(p0, q_block, rrr, npv_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
       lrmc_residual        = pp_mode_lrmc_residual(p0, q_block, rrr, npv_target, variable_mask, lrmc_target, lb = -0.5, ub = 0.5),
       lrmc_group_shares    = pp_mode_lrmc_group_shares(p0, q_block, rrr, npv_target, variable_mask, lrmc_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
-      stop("Unknown price_path_mode: ", price_path_mode)
+      stop("Unknown price_path_mode: ", effective_mode)
     )
 
     res <- pp_solve_mode(spec)
@@ -333,6 +340,13 @@ f <- function(
       price_delta = colMeans(res$delta),  # representative delta across tariffs (identical per-tariff for modes 1/2; a genuine average for 3/4)
       prices      = res$prices
     )
+
+    # Next period's price path must compound forward from this period's closing prices, not
+    # restart from the original base-year p0 (pp_build_prices anchors every price to p0[, 1]).
+    # rownames are re-attached explicitly since delta_builder() does not carry them through
+    # pp_build_prices, and group_labels/variable_mask name-matching depends on rownames(p0).
+    p0 <- res$prices[, ncol(res$prices), drop = FALSE]
+    rownames(p0) <- tariff_names
 
     if (counter == 1) {
       # Reported to the user as-is (FY24-28 only, not aggregated across all price-setting periods)
@@ -720,7 +734,7 @@ f <- function(
     rev_req          = rev_req_df,
     tariff_rev       = tot_rev_nmnl,
     loans            = loan_sched,
-    call         = list(q_grow=q_grow, cost_of_debt_nmnl=cost_of_debt_nmnl, 
+    call             = list(q_grow=q_grow, cost_of_debt_nmnl=cost_of_debt_nmnl, 
                         fcast_infltn=fcast_infltn, roe=roe, debt_sens=debt_sens) 
   ))
   

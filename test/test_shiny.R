@@ -7,7 +7,9 @@ library(kableExtra)
 library(scales)
 
 source("./R/funs.R")
+source("./R/price_path_engine.R")
 source("./R/f.R")
+Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = TRUE)
 
 # Read data ----------------------------------------------------------------------------------------------------------------
 
@@ -27,7 +29,6 @@ args <- expand.grid(
   cost_of_debt_nmnl  = 0.08,  # c(0.9,0.95,1,1.05,1.1) * 0.04, 
   fcast_infltn       = 0.025, # c(0.9,0.95,1,1.05,1.1) * 0.025  || 0.025
   roe                = 0.041, 
-  single_price_delta = T, 
   desired_fixed      = 99,
   debt_sens          = 0,
   fte                = if (a_sens_param == "Labour quantity") c(180, 200, 220) else 200,
@@ -49,7 +50,6 @@ sim <- mapply(
   cost_of_debt_nmnl = args$cost_of_debt_nmnl,     # list(0.0456), 
   fcast_infltn      = args$fcast_infltn,          # list(0.03), 
   roe               = args$roe,                   # list(0.041), 
-  single_price_delta= args$single_price_delta,
   desired_fixed     = args$desired_fixed,
   debt_sens         = args$debt_sens,             # list(-0.01,0,0.01), 
   fte               = args$fte,
