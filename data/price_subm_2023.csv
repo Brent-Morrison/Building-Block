@@ -1,4 +1,4 @@
-entity,year,balance_type,service,asset_category,cost_driver,year_operational,notes,regulatory_life,tax_life,amount
+entity,year,lookup_key1,lookup_key2,lookup_key3,lookup_key4,ref_value1,notes,ref_value2,ref_value3,ref_value4
 GVW,2024,gross_capex,Sewerage,Pipelines/network,Growth,2023-24,,90,90,3.38
 GVW,2024,gross_capex,Sewerage,Pipelines/network,Growth,2024-25,,90,90,1.34
 GVW,2025,gross_capex,Sewerage,Pipelines/network,Growth,2024-25,,90,90,2.86

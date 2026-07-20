@@ -13,6 +13,7 @@ library(scales)
 source("./R/funs.R")
 source("./R/price_path_engine.R")
 source("./R/f.R")
+source("./R/instructions.R")
 Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = TRUE)
 
 # Read data ----------------------------------------------------------------------------------------------------------------
@@ -27,16 +28,16 @@ initial_fcast_yr <- min(dat_df[dat_df$entity == "CW", ]$year)
 
 # Tariff reference data (mirrors f()'s own p0 derivation in R/f.R) - used to build the
 # "Price path constraints" tab inputs without needing to run a simulation first.
-pq_ref            <- dat_df %>% filter(entity == "CW", year == initial_fcast_yr, balance_type == "Price")
-tariff_names      <- paste(pq_ref$service, pq_ref$asset_category, pq_ref$cost_driver, sep = ".")
-tariff_p0         <- setNames(pq_ref$amount, tariff_names)
+pq_ref            <- dat_df %>% filter(entity == "CW", year == initial_fcast_yr, lookup_key1 == "Price")
+tariff_names      <- paste(pq_ref$lookup_key2, pq_ref$lookup_key3, pq_ref$lookup_key4, sep = ".")
+tariff_p0         <- setNames(pq_ref$ref_value4, tariff_names)
 group_names       <- unique(sub("\\..*", "", tariff_names))
 variable_tariffs  <- tariff_names[grepl("Variable", tariff_names)]
 
 # Period-0 revenue share by group (p0 * q0), shown in the "Price path constraints" group-shares
 # input labels as a reference point for setting each group's target share.
-pq_ref_q     <- dat_df %>% filter(entity == "CW", year == initial_fcast_yr, balance_type == "Quantity")
-tariff_q0    <- setNames(pq_ref_q$amount, paste(pq_ref_q$service, pq_ref_q$asset_category, pq_ref_q$cost_driver, sep = "."))
+pq_ref_q     <- dat_df %>% filter(entity == "CW", year == initial_fcast_yr, lookup_key1 == "Quantity")
+tariff_q0    <- setNames(pq_ref_q$ref_value4, paste(pq_ref_q$lookup_key2, pq_ref_q$lookup_key3, pq_ref_q$lookup_key4, sep = "."))
 tariff_rev0  <- tariff_p0[tariff_names] * tariff_q0[tariff_names]
 group_rev0   <- tapply(tariff_rev0, sub("\\..*", "", tariff_names), sum)
 group_share0 <- group_rev0 / sum(group_rev0)
@@ -283,6 +284,10 @@ ui <- navbarPage(
   "Financial Model",
   position = "fixed-top",
   tags$head(tags$style(HTML("body { padding-top: 50px; }"))),
+  tabPanel(
+    title="Instructions",
+    instructions_tab()
+  ),
   tabPanel(
     title="Scenario input and KPI's",
     fluidPage(

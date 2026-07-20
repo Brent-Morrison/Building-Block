@@ -109,14 +109,14 @@ f <- function(
   
   capex <- dat %>%
     mutate(net_capex = case_when(
-      balance_type %in% c("cust_cont","gov_cont") ~ -amount, 
-      TRUE ~ amount)
+      lookup_key1 %in% c("cust_cont","gov_cont") ~ -ref_value4,
+      TRUE ~ ref_value4)
     ) %>%
-    filter(balance_type %in% c("cust_cont","gov_cont","gross_capex")) %>%
-    select(-c(entity, balance_type, service, asset_category, cost_driver, tax_life, notes, amount)) %>%
+    filter(lookup_key1 %in% c("cust_cont","gov_cont","gross_capex")) %>%
+    select(-c(entity, lookup_key1, lookup_key2, lookup_key3, lookup_key4, ref_value3, notes, ref_value4)) %>%
     pivot_wider(names_from = year, values_from = net_capex, values_fn = sum, values_fill = 0)
   
-  # Append out year capex per "cx_delta" data frame
+  # Append out year capex per "capex_psN" parameters
   capex[ , as.character(2029:2033)] <- capex[ , as.character(2029:2033)] / sum(capex[ , as.character(2029:2033)]) * capex_ps2 * 5
   capex[ , as.character(2034:2038)] <- capex[ , as.character(2034:2038)] / sum(capex[ , as.character(2034:2038)]) * capex_ps3 * 5
   capex[ , as.character(2039:2043)] <- capex[ , as.character(2039:2043)] / sum(capex[ , as.character(2039:2043)]) * capex_ps4 * 5
@@ -126,19 +126,19 @@ f <- function(
   
   yr_int <- as.integer(colnames(capex)[-c(1:3)])
   
-  year_operational <- suppressWarnings(as.integer(sub(".*-", "", capex$year_operational))+2000)
+  year_operational <- suppressWarnings(as.integer(sub(".*-", "", capex$ref_value1))+2000)
   year_operational[is.na(year_operational)] <- yr_int[1]
-  
+
   yr_op <- match(year_operational, yr_int)
-  
-  #life <- ifelse(capex$regulatory_life == 0, 1, capex$regulatory_life)
-  life <- capex$regulatory_life
+
+  #life <- ifelse(capex$ref_value2 == 0, 1, capex$ref_value2)
+  life <- capex$ref_value2
   
   
   
   # Depreciation on opening RAB ---------------------------------------------------------------------
-  bv <- dat[dat$year == initial_fcast_yr-1 & dat$balance_type == "rab_book_value", "amount"]
-  rl <- dat[dat$year == initial_fcast_yr-1 & dat$balance_type == "rab_remaining_life", "amount"]
+  bv <- dat[dat$year == initial_fcast_yr-1 & dat$lookup_key1 == "rab_book_value", "ref_value4"]
+  rl <- dat[dat$year == initial_fcast_yr-1 & dat$lookup_key1 == "rab_remaining_life", "ref_value4"]
   
   # Apply depreciation function over multiple instances
   dpn_open_dtl <- mapply(FUN = depn_fun_opn, open_rab_val = bv, open_rab_rem = rl, SIMPLIFY = FALSE)
@@ -164,7 +164,6 @@ f <- function(
   
   
   # Opex --------------------------------------------------------------------------------------------
-  # TO DO - how are these costs ("Operations & Maintenance", "Customer Service and billing") split into wages, electricity, chemicals and other
   
   # NEW OPEX FROM UI (returned in thousands)
   opx_labr <- real_series(q = fte    , p = cost_fte    , q_grow = q_grow_fte)
@@ -194,38 +193,35 @@ f <- function(
   # Customer contributions
   cc.t <- rep(0, rab_n_yrs)
   y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
-  if(sum(dat[dat$balance_type == "cust_cont", "amount"]) != 0) {
-    ccdf <- aggregate(amount ~ year, data = dat[dat$balance_type == "cust_cont", ], FUN = sum)
-    cc.t[which(ccdf$year == y)] <- ccdf$amount[1:rab_n_yrs]
+  if(sum(dat[dat$lookup_key1 == "cust_cont", "ref_value4"]) != 0) {
+    ccdf <- aggregate(ref_value4 ~ year, data = dat[dat$lookup_key1 == "cust_cont", ], FUN = sum)
+    cc.t[which(ccdf$year == y)] <- ccdf$ref_value4[1:rab_n_yrs]
     cc <- cc.t
   } else {
     cc <- cc.t
   }
-  #suppressWarnings(rm(cc.t, ccdf, y))
   
   # Government contributions
   gc.t <- rep(0, rab_n_yrs)
   y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
-  if(sum(dat[dat$balance_type == "gov_cont", "amount"]) != 0) {
-    gcdf <- aggregate(amount ~ year, data = dat[dat$balance_type == "gov_cont", ], FUN = sum)
-    gc.t[which(gcdf$year == y)] <- gcdf$amount[1:rab_n_yrs]
+  if(sum(dat[dat$lookup_key1 == "gov_cont", "ref_value4"]) != 0) {
+    gcdf <- aggregate(ref_value4 ~ year, data = dat[dat$lookup_key1 == "gov_cont", ], FUN = sum)
+    gc.t[which(gcdf$year == y)] <- gcdf$ref_value4[1:rab_n_yrs]
     gc <- gc.t
   } else {
     gc <- gc.t
   }
-  #suppressWarnings(rm(gc.t, gcdf, y))
   
   # Disposals
   dp.t <- rep(0, rab_n_yrs)
   y <- seq(initial_fcast_yr, initial_fcast_yr+(rab_n_yrs-1), length.out = rab_n_yrs)
-  if(sum(dat[dat$balance_type == "disp_proceeds", "amount"]) != 0) {
-    dpdf <- aggregate(amount ~ year, data = dat[dat$balance_type == "disp_proceeds", ], FUN = sum)
-    dp.t[which(dpdf$year == y)] <- dpdf$amount[1:rab_n_yrs]
+  if(sum(dat[dat$lookup_key1 == "disp_proceeds", "ref_value4"]) != 0) {
+    dpdf <- aggregate(ref_value4 ~ year, data = dat[dat$lookup_key1 == "disp_proceeds", ], FUN = sum)
+    dp.t[which(dpdf$year == y)] <- dpdf$ref_value4[1:rab_n_yrs]
     dp <- dp.t
   } else {
     dp <- dp.t
   }
-  #suppressWarnings(rm(dp.t, dpdf, y))
   
   
   open_rab_val <- bv
@@ -266,12 +262,12 @@ f <- function(
   
   
   # Price & quantity data ---------------------------------------------------------------------------
-  pq <- dat %>% filter(balance_type %in% c("Price", "Quantity"))
-  
+  pq <- dat %>% filter(lookup_key1 %in% c("Price", "Quantity"))
+
   # Quantities
-  q.t1 <- pq %>% filter(year == initial_fcast_yr-1, balance_type == 'Quantity')  # Pivot wider here
-  q <- as.matrix(q.t1[, "amount"])
-  rownames(q) <- paste(q.t1[, "service"], q.t1[, "asset_category"], q.t1[, "cost_driver"], sep = ".")
+  q.t1 <- pq %>% filter(year == initial_fcast_yr-1, lookup_key1 == 'Quantity')  # Pivot wider here
+  q <- as.matrix(q.t1[, "ref_value4"])
+  rownames(q) <- paste(q.t1[, "lookup_key2"], q.t1[, "lookup_key3"], q.t1[, "lookup_key4"], sep = ".")
   
   # Avg. annual consumption (kL per household) 
   # TO DO - use this to flex income, ref. line 288.  kL up or down on wet, dry basis
@@ -282,9 +278,9 @@ f <- function(
   q <- q %*% exp( cumsum( log( 1 + rep(q_grow, rab_n_yrs) ) ) ) 
   
   # Prices
-  pq.t1 <- pq %>% filter(year == initial_fcast_yr-1, balance_type == 'Price')
-  p0 <- as.matrix(pq.t1[, "amount"])
-  rownames(p0) <- paste(pq.t1[, "service"], pq.t1[, "asset_category"], pq.t1[, "cost_driver"], sep = ".")
+  pq.t1 <- pq %>% filter(year == initial_fcast_yr-1, lookup_key1 == 'Price')
+  p0 <- as.matrix(pq.t1[, "ref_value4"])
+  rownames(p0) <- paste(pq.t1[, "lookup_key2"], pq.t1[, "lookup_key3"], pq.t1[, "lookup_key4"], sep = ".")
   tariff_names <- rownames(p0)  # p0 is reassigned each price-setting period below and loses this via pp_build_prices
   
   
@@ -298,16 +294,17 @@ f <- function(
   }
 
   # group_labels/variable_mask are derived from tariff naming rather than configured separately,
-  # so the "service"/"cost_driver" columns in `dat` (concatenated into rownames(p0) above as
-  # service.asset_category.cost_driver) must follow these rules for the derivation to stay correct:
-  #   - "service" values must not contain a "." - group_labels takes everything before the FIRST
-  #     "." as the group, so an embedded dot would truncate the group name early.
-  #   - Every tariff's "service" value must be spelled identically (case-sensitive, exact match)
-  #     across all its Fixed/Variable rows, and consistently across price-setting periods - the
-  #     group_shares mode (pp_mode_group_shares) and the "Price path constraints" UI tab both
+  # so the "lookup_key2" (service)/"lookup_key4" (cost_driver) columns in `dat` (concatenated into
+  # rownames(p0) above as lookup_key2.lookup_key3.lookup_key4) must follow these rules for the
+  # derivation to stay correct:
+  #   - "lookup_key2" values must not contain a "." - group_labels takes everything before the
+  #     FIRST "." as the group, so an embedded dot would truncate the group name early.
+  #   - Every tariff's "lookup_key2" value must be spelled identically (case-sensitive, exact
+  #     match) across all its Fixed/Variable rows, and consistently across price-setting periods -
+  #     the group_shares mode (pp_mode_group_shares) and the "Price path constraints" UI tab both
   #     derive their group list the same way, and rely on it matching.
-  #   - "cost_driver" must be exactly "Fixed" for fixed charges and must contain "Variable" for
-  #     usage-based charges, and no other segment (service/asset_category) may contain the
+  #   - "lookup_key4" must be exactly "Fixed" for fixed charges and must contain "Variable" for
+  #     usage-based charges, and no other segment (lookup_key2/lookup_key3) may contain the
   #     substring "Variable" - variable_mask matches "Variable" anywhere in the full tariff name,
   #     and any tariff it does NOT match is treated as fixed (see pp_mode_lrmc_residual's
   #     `!variable_mask`), so there is no third category.
@@ -465,10 +462,10 @@ f <- function(
   
   
   # Initial loan portfolio data frame
-  loans <- dat %>% 
-    filter(balance_type == "loans") %>% 
-    select(amnt = amount, end = regulatory_life, rate = tax_life) %>% 
-    mutate(end = as.Date(paste0(end, "01"), format = "%Y%m%d"), start = end - years(10))
+  loans <- dat %>%
+    filter(lookup_key1 == "loans") %>%
+    select(amnt = ref_value4, end = ref_value2, rate = ref_value3) %>%
+    mutate(end = as.Date(paste0(end, "01"), format = "%Y%m%d"), start = end - years(10))# TO DO - adding an explicit start/tenor column to the source data
   
   n_initial_loans <- nrow(loans)
   loan_mat <- matrix(rep(0, mons * nrow(loans)), nrow = mons, ncol = nrow(loans)) 
@@ -580,11 +577,11 @@ f <- function(
   cost_of_debt <- cost_of_debt_nmnl + if (is.null(debt_sens)) 0 else debt_sens  #+ if (is.null(x)) 0 else rnorm(1, 0, x)   
   
   
-  # -------------------------------------------------------------------------------------------------
-  # Transaction loop posting
-  # -------------------------------------------------------------------------------------------------
   
-
+  ##########################################################################################################################
+  # Transaction loop posting
+  ##########################################################################################################################
+  
   # Deterministic transactions are outside the loop
   mat[drcr("exp1", txn_type), "exp1", ] <- rbind(opx_othr_m, -opx_othr_m)  # other expenses
   mat[drcr("exp2", txn_type), "exp2", ] <- rbind(opx_labr_m, -opx_labr_m)  # employee expenses
@@ -592,6 +589,7 @@ f <- function(
   mat[drcr("exp4", txn_type), "exp4", ] <- rbind(opx_elec_m, -opx_elec_m)  # electricity
   mat[drcr("gift", txn_type), "gift", ] <- rbind(gift, -gift)              # income re gifted assets
   mat[drcr("cpx1", txn_type), "cpx1", ] <- rbind(cpx1, -cpx1)              # capex
+  
   
   # Other income TO DO ----------------------------------------------------------------------------
   
@@ -602,7 +600,7 @@ f <- function(
     stat_depn_bld, -stat_depn_bld,
     stat_depn_lhi, -stat_depn_lhi,
     stat_depn_pae, -stat_depn_pae,
-    stat_depn_inf+dpn_cpx, -stat_depn_inf-dpn_cpx, # TO DO - assumes all capex is infrastructure
+    stat_depn_inf+dpn_cpx, -stat_depn_inf-dpn_cpx, # TO DO - current assumption has all capex being infrastructure
     stat_depn_pae, -stat_depn_pae,
     stat_depn_sca, -stat_depn_sca
   )
@@ -650,7 +648,6 @@ f <- function(
     
     # Transfer accrued income to debtors to specify desired closing balance for accrued income days parameter --------------
     tfer <- trgt_days_fast(mat, days, i, accrued_days, trail=3, bal_acnt=idx$aidb$bal_acnt, pl_acnt=idx$aidb$pl_acnt, txn=idx$aidb$txn, open=idx$open, clos=idx$clos) 
-    #print(paste("Txn 'incm', tfer accrued income to debtors. Loop no.", i, round(-tfer,1)))
     mat[drcr_idx$incm, "incm", i] <- c(-tfer, tfer)
     
     
@@ -706,11 +703,11 @@ f <- function(
       mat[drcr_idx$borr, "borr", i] <- c(borrow_amt,-borrow_amt)
       
       # Update Loan schedule
-      end_idx <- if (i + 119 < 240) i + 119 else 240
-      loan_sched[i:end_idx, n_initial_loans + i, 1] <- rep(borrow_amt, each = length(i:end_idx)) 
+      end_idx <- if (i + 119 < mons) i + 119 else mons                                                                   # this assumes the new debt has a tenor of 10 years / 120 months
+      loan_sched[i:end_idx, n_initial_loans + i, 1] <- rep(borrow_amt, each = length(i:end_idx))                         # insert new loan balance drawn in current period
       loan_sched[         , n_initial_loans + i, 2] <- rep(0.04, each = mons)                                            # add rates on new debt drawn TO DO - from parameter outside loop
-      loan_sched[         , n_initial_loans + i, 3] <- round(loan_sched[ , n_initial_loans + i, 1] * 
-                                                             loan_sched[ , n_initial_loans + i, 2] / 365 * days[i] , 2)  # monthly interest expense on new debt
+      loan_sched[         , n_initial_loans + i, 3] <- round(loan_sched[ , n_initial_loans + i, 1] *
+                                                             loan_sched[ , n_initial_loans + i, 2] / 365 * days , 2)     # monthly interest expense on new debt
     }
 
     #cat(c(i, ": Cash balance - ", cash_bal, "\n"))

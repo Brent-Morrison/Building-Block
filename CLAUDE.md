@@ -30,6 +30,18 @@ the printed/plotted output against — run them individually, e.g.:
 ```r
 source("test/price_path_engine_test.R")   # exercises R/price_path_engine.R's 4 solve modes
 source("test/trgt_days_test.R")     # validates the trgt_days_cpp / trgt_days_fast Rcpp path
+source("test/f_test.R")             # manual/interactive: builds sim/tb/txns, plots, for eyeballing against reference workbooks
+```
+`test/f_test.R` and `test/f_invariants_test.R` (below) share their setup via `test/f_test_setup.R`
+(data load + a single default `f()` scenario) rather than duplicating it.
+
+`f()`'s correct *values* shift as functionality is built out, so there's no fixed set of point-value
+assertions to check it against — but `test/f_invariants_test.R` checks structural invariants that must
+hold regardless of the specific numbers (double-entry balance, RAB roll-forward arithmetic, no
+NA/NaN/Inf, non-negative prices) and exits non-zero on failure, so it's safe to run after any
+`f()`/`R/funs.R` change without needing a human to eyeball output:
+```r
+Rscript test/f_invariants_test.R
 ```
 `test/` and the repo root also contain reference Excel/PDF workbooks (AER templates, LRMC models,
 price submission models) used to hand-check outputs — these are inputs to check against, not code.
@@ -103,9 +115,11 @@ inequality constraints conflict.
 mode 4/5's LRMC pinning rely on `group_labels`/`variable_mask` being derived from tariff naming
 (`R/f.R`: `sub("\\..*", "", rownames(p0))` / `grepl("Variable", rownames(p0))`) rather than
 configured separately. For that to stay correct, every tariff name (built as
-`service.asset_category.cost_driver`) must have: no `.` inside `service` (would truncate the
-group early); `service` spelled identically, case-sensitively, across all of a group's rows; and
-`cost_driver` exactly `"Fixed"` or containing `"Variable"`, with no other segment containing the
+`lookup_key2.lookup_key3.lookup_key4` — the CSV's service, asset-category and cost-driver
+columns; see `data/price_subm_2023.csv`'s generic column naming in the app's Instructions tab)
+must have: no `.` inside `lookup_key2` (would truncate the group early);
+`lookup_key2` spelled identically, case-sensitively, across all of a group's rows; and
+`lookup_key4` exactly `"Fixed"` or containing `"Variable"`, with no other segment containing the
 substring `"Variable"` (anything not matched as variable is treated as fixed — there's no third
 category). See the comment above `group_labels`/`variable_mask` in `R/f.R` for the full detail.
 
