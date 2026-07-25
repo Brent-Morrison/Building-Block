@@ -150,7 +150,7 @@ instructions_csv_format <- function() {
     HTML(
       knitr::kable(column_reference, format = "html", row.names = FALSE,
                    table.attr = 'class="table table-striped table-bordered"') %>%
-        kableExtra::kable_styling(full_width = FALSE, font_size = 12)
+        kableExtra::kable_styling(full_width = FALSE, font_size = 12, position = "left")
     ),
 
     tags$h4("lookup_key1 (row type) values"),
@@ -163,7 +163,7 @@ instructions_csv_format <- function() {
       knitr::kable(row_type_reference, format = "html", row.names = FALSE,
                    col.names = c("lookup_key1 value", "Key columns", "\"Not applicable\" shown as", "Example row"),
                    table.attr = 'class="table table-striped table-bordered"') %>%
-        kableExtra::kable_styling(full_width = FALSE, font_size = 12)
+        kableExtra::kable_styling(full_width = FALSE, font_size = 12, position = "left")
     ),
     tags$p(
       tags$em(

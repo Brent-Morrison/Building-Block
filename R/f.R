@@ -1,11 +1,11 @@
 # TO DO - check if the real to nominal uplift via inflation factors is being reset each price period
 # Function
 
-Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = TRUE)
+Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = FALSE)
 trgt_days_fast <- function(mat, days, i, d, trail, bal_acnt, pl_acnt, txn, open, clos) {
   
   trgt_days_cpp(
-    mat = as.numeric(mat),
+    mat = mat,
     dims = dim(mat),
     days = days,
     i = i,

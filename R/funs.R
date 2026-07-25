@@ -652,7 +652,7 @@ cash_int_cover_fn <- function(m, return_df = FALSE) {
       ip            = ip,
       ip_rolling    = ip_roll,
       ratio_intermediate = ratio_inter,
-      ratio              = ratio_final,
+      ratio         = ratio_final,
       row.names     = dimnames(mat)[[3]] # Preserves the time/slice identifiers if they exist
     )
     return(df)
@@ -675,7 +675,7 @@ gearing_fn <- function(m) {
 int_fin_ratio_fn <- function(m) {
   mat <- m$txns
   op_cf <- apply(mat, 3, function(x) sum(x["3000", c("cshd","exp2","crd1","intp")]), simplify = TRUE)   # operating cashflows
-  capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                           # capex
+  capex <- apply(mat, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)                           # capex  To DO - confirm if this should be Net investing cashflows
   
   df <- data.frame(t(mat["3000", c("cshd","exp2","crd1","intp","wipc"), ]))
   df$op_cf <- df$cshd + df$exp2 + df$crd1 + df$int
@@ -1048,6 +1048,11 @@ plot_tariffs <- function(d){
   
   tariff_rev <- d[[1]]$tariff_rev
   
+  point_data <- data.frame(
+    year = 2024:2043,
+    perc_fixed = colSums(tariff_rev[grepl("Fixed", rownames(tariff_rev)),]) / colSums(tariff_rev) * max(colSums(tariff_rev)) / 1e3
+  )
+  
   # Plot tariff revenue
   ggplot() +
     geom_bar(
@@ -1059,12 +1064,16 @@ plot_tariffs <- function(d){
       aes(fill=forcats::fct_rev(income_type), y=income, x=year), position="stack", stat="identity", colour="black"
     ) +
     scale_fill_manual(values = c("grey60", "grey30")) +
+    geom_line(
+      data = point_data,
+      aes(x = year, y = perc_fixed),
+      colour = "#1f3a5f",
+      linetype = "solid",
+      linewidth = 0.6
+    ) +
     geom_point(
-      data = data.frame(
-        year = 2024:2043,
-        perc_fixed = colSums( tariff_rev[grepl("Fixed", rownames(tariff_rev)),] ) / colSums(tariff_rev) * max(colSums(tariff_rev)) / 1e3
-      ),
-      aes(x = year, y = perc_fixed), colour="black", shape = 15, size = 3
+      data = point_data,
+      aes(x = year, y = perc_fixed), colour="#1f3a5f", shape = 21, size = 4, fill = "white", stroke = 1.5
     ) +
     scale_y_continuous("", sec.axis = sec_axis(~ . / (max(colSums(tariff_rev)) / 1e3), name = "")) +
     scale_x_continuous(breaks = c(2028,2033,2038,2043)) +
@@ -1073,7 +1082,7 @@ plot_tariffs <- function(d){
       x = "",
       y = "",
       title = "Tariff revenue - fixed vs variable (left axis, $m)",
-      subtitle = "Proportion of fixed tariff revenue (right axis, square points)"
+      subtitle = "Proportion of fixed tariff revenue (right axis, round points)"
     ) + 
     theme(
       plot.subtitle = element_text(size = 11.5, face = 'italic'),
@@ -1085,6 +1094,135 @@ plot_tariffs <- function(d){
 }
 
 
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot short-term liquidity (current assets vs current liabilities, with current ratio)
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_liquidity <- function(d){
+
+  m               <- d[[1]]$txns
+  yr_end_months   <- (1:20) * 12
+  clos_annual     <- m[ , "clos", yr_end_months]        # accounts x 20 FY-end snapshots
+
+  ca_grp <- "^30|^31|^32|^33"   # current asset account codes    (current_ratio_fn convention)
+  cl_grp <- "^40|^41|^43|^44"   # current liability account codes (current_ratio_fn convention)
+
+  current_assets      <-  colSums(clos_annual[grepl(ca_grp, rownames(clos_annual)), ]) / 1000
+  current_liabilities <- -colSums(clos_annual[grepl(cl_grp, rownames(clos_annual)), ]) / 1000
+  current_ratio        <- current_assets / current_liabilities
+
+  bar_axis_max   <- max(current_assets, current_liabilities)
+  ratio_axis_max <- 2   # matches the "Current ratio" benchmark scale used in plot_kpi (bench = 1.2)
+  rescale_factor <- bar_axis_max / ratio_axis_max
+
+  ggplot() +
+    geom_bar(
+      data = data.frame(
+        category = factor(
+          rep(c("Total Current Assets", "Total Current Liabilities"), each = 20),
+          levels = c("Total Current Assets", "Total Current Liabilities")
+        ),
+        year  = rep(2024:2043, 2),
+        value = c(current_assets, current_liabilities)
+      ),
+      aes(fill = category, y = value, x = year), position = "dodge", stat = "identity", colour = "black"
+    ) +
+    scale_fill_manual(values = c("grey60", "grey30")) +
+    geom_line(
+      data = data.frame(year = 2024:2043, ratio_scaled = current_ratio * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Current ratio (times)"), linewidth = 1
+    ) +
+    geom_point(
+      data = data.frame(year = 2024:2043, ratio_scaled = current_ratio * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Current ratio (times)"), shape = 21, size = 4, fill = "white", stroke = 1.5
+    ) +
+    geom_abline(aes(intercept = 1.2 * rescale_factor, slope = 0), color = "red", linetype = "dotdash", linewidth = 0.75) +
+    scale_colour_manual(values = c("Current ratio (times)" = "#1f3a5f")) +
+    scale_y_continuous("", sec.axis = sec_axis(~ . / rescale_factor, name = "")) +
+    scale_x_continuous(breaks = c(2028, 2033, 2038, 2043)) +
+    ggthemes::theme_base() +
+    labs(
+      x = "",
+      y = "",
+      title    = "Short-term liquidity (left axis, $m)",
+      subtitle = "Current ratio - current assets / current liabilities (right axis, times)"
+    ) +
+    guides(fill = guide_legend(order = 1), colour = guide_legend(order = 2, title = NULL)) +
+    theme(
+      plot.subtitle      = element_text(size = 11.5, face = 'italic'),
+      legend.title       = element_blank(),
+      legend.position    = "bottom",
+      legend.box         = "horizontal",
+      legend.background  = element_blank(),
+      legend.key         = element_blank()
+    )
+}
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot internal financing ratio (net operating cashflow vs net investing cashflow, with the ratio)
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_int_fin_ratio <- function(d){
+
+  m             <- d[[1]]$txns
+  yr_end_months <- (1:20) * 12
+
+  op_cf_monthly <- apply(m, 3, function(x) sum(x["3000", c("cshd","exp2","crd1","intp")]), simplify = TRUE)
+  capex_monthly <- apply(m, 3, function(x) sum(x["3000", "wipc"]), simplify = TRUE)
+
+  net_operating_cf <- slide_sum(op_cf_monthly, before = 11)[yr_end_months] / 1000   # $m
+  net_investing_cf <- slide_sum( capex_monthly, before = 11)[yr_end_months] / 1000   # $m
+  int_fin_ratio    <- -net_operating_cf / net_investing_cf
+
+  bar_axis_max   <- max(abs(net_operating_cf), abs(net_investing_cf))
+  ratio_axis_max <- 1     # gives headroom above the 0.35 target minimum
+  rescale_factor <- bar_axis_max / ratio_axis_max
+
+  ggplot() +
+    geom_bar(
+      data = data.frame(
+        category = factor(
+          rep(c("Net operating cashflow", "Net investing cashflow"), each = 20),
+          levels = c("Net operating cashflow", "Net investing cashflow")
+        ),
+        year  = rep(2024:2043, 2),
+        value = c(net_operating_cf, net_investing_cf)
+      ),
+      aes(fill = category, y = value, x = year), position = "identity", stat = "identity", colour = "black"
+    ) +
+    scale_fill_manual(values = c("grey60", "grey30")) +
+    geom_line(
+      data = data.frame(year = 2024:2043, ratio_scaled = int_fin_ratio * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Internal financing ratio (times)"), linewidth = 1
+    ) +
+    geom_point(
+      data = data.frame(year = 2024:2043, ratio_scaled = int_fin_ratio * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Internal financing ratio (times)"), shape = 21, size = 4, fill = "white", stroke = 1.5
+    ) +
+    geom_abline(aes(intercept = 0.35 * rescale_factor, slope = 0), color = "red", linetype = "dotdash", linewidth = 0.75) +
+    scale_colour_manual(values = c("Internal financing ratio (times)" = "#1f3a5f")) +
+    scale_y_continuous("", sec.axis = sec_axis(~ . / rescale_factor, name = "")) +
+    scale_x_continuous(breaks = c(2028, 2033, 2038, 2043)) +
+    ggthemes::theme_base() +
+    labs(
+      x = "",
+      y = "",
+      title    = "Internal financing ratio (left axis, $m)",
+      subtitle = "Internal financing ratio - net operating cashflow / net investing cashflow (right axis, times); target minimum 0.35"
+    ) +
+    guides(fill = guide_legend(order = 1), colour = guide_legend(order = 2, title = NULL)) +
+    theme(
+      plot.subtitle      = element_text(size = 11.5, face = 'italic'),
+      legend.title       = element_blank(),
+      legend.position    = "bottom",
+      legend.box         = "horizontal",
+      legend.background  = element_blank(),
+      legend.key         = element_blank()
+    )
+}
 
 
 

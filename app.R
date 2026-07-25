@@ -14,7 +14,6 @@ source("./R/funs.R")
 source("./R/price_path_engine.R")
 source("./R/f.R")
 source("./R/instructions.R")
-Rcpp::sourceCpp("R/trgt_days_cpp.cpp", rebuild = TRUE)
 
 # Read data ----------------------------------------------------------------------------------------------------------------
 
@@ -390,7 +389,22 @@ ui <- navbarPage(
     # )
   ),
   tabPanel(
-    title="Downloads", 
+    title="Key Performance Indicators",
+    fluidRow(
+      column(6, tags$h3("Scenario A")),
+      column(6, tags$h3("Scenario B"))
+    ),
+    fluidRow(
+      column(6, plotOutput("a_liquidity_plot", height = "600px")),
+      column(6, plotOutput("b_liquidity_plot", height = "600px"))
+    ),
+    fluidRow(
+      column(6, plotOutput("a_int_fin_plot", height = "600px")),
+      column(6, plotOutput("b_int_fin_plot", height = "600px"))
+    )
+  ),
+  tabPanel(
+    title="Downloads",
     fluidRow(
       column(2, downloadButton("tb_dload" , "Download simulation TB .csv")),
       column(2, downloadButton("rab_dload", "Download RAB .csv")),
@@ -840,6 +854,10 @@ server <- function(input, output, session) {
   output$fins_kable    <- renderText( {plot_fins(sim=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
   output$a_tariff_plot <- renderPlot( {plot_tariffs( simA() )} )
   output$b_tariff_plot <- renderPlot( {plot_tariffs( simB() )} )
+  output$a_liquidity_plot <- renderPlot( {plot_liquidity( simA() )} )
+  output$b_liquidity_plot <- renderPlot( {plot_liquidity( simB() )} )
+  output$a_int_fin_plot   <- renderPlot( {plot_int_fin_ratio( simA() )} )
+  output$b_int_fin_plot   <- renderPlot( {plot_int_fin_ratio( simB() )} )
   output$tb_dload      <- downloadHandler(
     filename = function() {"trial_balance.csv"},
     content = function(file) {write.csv(tb(sim=simA(), chart=chart_df), file, quote = FALSE)}
