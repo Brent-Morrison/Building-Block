@@ -65,6 +65,9 @@ f <- function(
   #   cost_of_debt_nmnl - nominal cost of debt (0.0456)
   #   cast_infltn       - inflation (0.03)
   #   roe               - allowed return on equity (0.041)
+  #                        NOTE: cost_of_debt_nmnl, fcast_infltn and roe each accept either a single value (applied
+  #                        to every price-setting period) or a vector of 4, one per price-setting period
+  #                        (FY24-28, FY29-33, FY34-38, FY39-43).  Together they set the rate of return per period.
   #   price_path_mode   - which pp_mode_* constraint (R/price_path_engine.R) is used to solve for the price path:
   #                        "uniform_all_years"   - one price delta applied to every tariff, every year
   #                        "uniform_single_year" - one price delta applied to every tariff in year `price_delta_yr` only (persists thereafter)
@@ -97,9 +100,7 @@ f <- function(
   ent_parm           <- "CW"      # select data for specific entity from the "dat" data frame
   initial_fcast_yr   <- 2024      # the first forecast year (first financial year of the price submission)
   gearing            <- 0.6       # gearing assumption for WACC
-  cost_of_debt_real  <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
-  rrr                <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
-  cash_buffer        <- 10000     # cash buffer for loan drawdown (thousands)
+  cash_buffer       <- 10000     # cash buffer for loan drawdown (thousands)
   
   
   # Data --------------------------------------------------------------------------------------------
@@ -246,8 +247,26 @@ f <- function(
   colnames(exist_rab_detail) <- colnames(capex[,3:ncol(capex)])
   
   
+  # Rate of return by price-setting period ----------------------------------------------------------
+  # Each 5-year price-setting period can carry its own ROE, cost of debt and inflation, so the rate of
+  # return is built per period and then spread across that period's years.
+  n_price_periods <- rab_n_yrs / 5
+
+  wacc_schedule <- rrr_by_price_period(
+    roe               = expand_to_price_periods(roe,               n_price_periods, "roe"),
+    cost_of_debt_nmnl = expand_to_price_periods(cost_of_debt_nmnl, n_price_periods, "cost_of_debt_nmnl"),
+    fcast_infltn      = expand_to_price_periods(fcast_infltn,      n_price_periods, "fcast_infltn"),
+    gearing           = gearing
+  )
+  rrr_by_year <- rep(wacc_schedule$rrr, each = 5)
+
+  # Scalar first-period rate, retained only for the verbose NPV check below (which mirrors a separate
+  # Excel model).  Equals the previous single rate when roe/cost_of_debt_nmnl/fcast_infltn are scalars.
+  rrr <- wacc_schedule$rrr[1]
+
+
   # Return on assets --------------------------------------------------------------------------------
-  roa <- rrr * exist_rab_detail["average", ]
+  roa <- rrr_by_year * exist_rab_detail["average", ]
   
   
   
@@ -316,7 +335,8 @@ f <- function(
   for (i in c(1,6,11,16)) {
     counter <- counter + 1
     q_block    <- q[, i:(i+4)]
-    npv_target <- pp_npv(rev_req[i:(i+4)] * 1e6, rrr)  # rev_req is millions; p0*q is raw dollars
+    period_rrr <- wacc_schedule$rrr[counter]  # this price-setting period's rate of return (NPV discount rate)
+    npv_target <- pp_npv(rev_req[i:(i+4)] * 1e6, period_rrr)  # rev_req is millions; p0*q is raw dollars
 
     # Only the first price-setting period honours the user's selected price_path_mode; periods
     # 2-4 are hard-coded to uniform_all_years so later periods always use a simple flat escalation.
@@ -324,11 +344,11 @@ f <- function(
 
     spec <- switch(
       effective_mode,  # guard against factor coercion (e.g. via expand.grid()) silently mis-selecting the branch
-      uniform_all_years   = pp_mode_uniform_all_years(p0, q_block, rrr, npv_target, lb = -0.5, ub = 0.5),
-      uniform_single_year = pp_mode_uniform_single_year(p0, q_block, rrr, npv_target, year = price_delta_yr, lb = -0.5, ub = 0.5),
-      group_shares        = pp_mode_group_shares(p0, q_block, rrr, npv_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
-      lrmc_residual        = pp_mode_lrmc_residual(p0, q_block, rrr, npv_target, variable_mask, lrmc_target, lb = -0.5, ub = 0.5),
-      lrmc_group_shares    = pp_mode_lrmc_group_shares(p0, q_block, rrr, npv_target, variable_mask, lrmc_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
+      uniform_all_years   = pp_mode_uniform_all_years(p0, q_block, period_rrr, npv_target, lb = -0.5, ub = 0.5),
+      uniform_single_year = pp_mode_uniform_single_year(p0, q_block, period_rrr, npv_target, year = price_delta_yr, lb = -0.5, ub = 0.5),
+      group_shares        = pp_mode_group_shares(p0, q_block, period_rrr, npv_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
+      lrmc_residual        = pp_mode_lrmc_residual(p0, q_block, period_rrr, npv_target, variable_mask, lrmc_target, lb = -0.5, ub = 0.5),
+      lrmc_group_shares    = pp_mode_lrmc_group_shares(p0, q_block, period_rrr, npv_target, variable_mask, lrmc_target, group_labels, group_share_targets, lb = -0.5, ub = 0.5),
       stop("Unknown price_path_mode: ", effective_mode)
     )
 
@@ -357,6 +377,8 @@ f <- function(
 
   price_delta <- unlist(lapply(price_delta_results, function(x) x$price_delta))
   prices <- do.call(cbind, lapply(price_delta_results, function(x) x$prices))
+  rownames(prices) <- tariff_names  # pp_build_prices drops rownames; named so downstream plots can select tariffs by name
+  colnames(prices) <- seq(initial_fcast_yr, length.out = rab_n_yrs)
   tot_rev_real <- prices * q / 1e6  # TO DO - use this to flex income, ref. line 288 (object q).  kL up or down on wet, dry basis.  Variability based on statistical model.
   # TO DO - what is "Water.Service fees.Fixed"
   
@@ -574,7 +596,9 @@ f <- function(
   
   
   # Cost debt variance
-  cost_of_debt <- cost_of_debt_nmnl + if (is.null(debt_sens)) 0 else debt_sens  #+ if (is.null(x)) 0 else rnorm(1, 0, x)   
+  # NOTE - not currently used: interest expense comes from loan_sched (new debt rate hard-coded below).
+  # cost_of_debt_nmnl may be a per-price-period vector, so this is too.
+  cost_of_debt <-cost_of_debt_nmnl + if (is.null(debt_sens)) 0 else debt_sens  #+ if (is.null(x)) 0 else rnorm(1, 0, x)   
   
   
   
@@ -732,7 +756,8 @@ f <- function(
     tariff_rev       = tot_rev_nmnl,
     loans            = loan_sched,
     call             = list(q_grow=q_grow, cost_of_debt_nmnl=cost_of_debt_nmnl, 
-                        fcast_infltn=fcast_infltn, roe=roe, debt_sens=debt_sens) 
+                        fcast_infltn=fcast_infltn, roe=roe, debt_sens=debt_sens,
+                        wacc_schedule=wacc_schedule)
   ))
   
 }

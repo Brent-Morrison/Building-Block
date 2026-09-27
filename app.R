@@ -33,6 +33,7 @@ tariff_p0         <- setNames(pq_ref$ref_value4, tariff_names)
 group_names       <- unique(sub("\\..*", "", tariff_names))
 variable_tariffs  <- tariff_names[grepl("Variable", tariff_names)]
 
+
 # Period-0 revenue share by group (p0 * q0), shown in the "Price path constraints" group-shares
 # input labels as a reference point for setting each group's target share.
 pq_ref_q     <- dat_df %>% filter(entity == "CW", year == initial_fcast_yr, lookup_key1 == "Quantity")
@@ -179,7 +180,7 @@ renderInputs <- function(prefix) {
         numericInput(inputId = paste0(prefix, "_", "desired_fixed"), label = "Tariff composition :", value = 99, min = 30, max = 99)
         ),
       bsTooltip(id = paste0(prefix, "_", "desired_fixed"), title = "Stipulate the tariff composition with respect to fixed versus variable charges.  Default value of 99 retains existing tariff composition", placement = "bottom"),
-      
+
       hr(),
 
       tags$h4("Sensitivity analysis"),
@@ -383,6 +384,16 @@ ui <- navbarPage(
     fluidRow(
       column(6, plotOutput("a_tariff_plot", height = "600px")),
       column(6, plotOutput("b_tariff_plot", height = "600px"))
+    ),
+    tags$br(),
+    tags$br(),
+    fluidRow(
+      column(6, selectInput(inputId = "a_tariff_group", label = "Tariff group :", choices = group_names, selected = "Water")),
+      column(6, selectInput(inputId = "b_tariff_group", label = "Tariff group :", choices = group_names, selected = "Water"))
+    ),
+    fluidRow(
+      column(6, plotOutput("a_tariff_price_plot", height = "800px"), htmlOutput("a_tariff_price_table")),
+      column(6, plotOutput("b_tariff_price_plot", height = "800px"), htmlOutput("b_tariff_price_table"))
     )
     # mainPanel(
     #   plotOutput("tariff_plot", height = "600px")
@@ -395,9 +406,23 @@ ui <- navbarPage(
       column(6, tags$h3("Scenario B"))
     ),
     fluidRow(
-      column(6, plotOutput("a_liquidity_plot", height = "600px")),
-      column(6, plotOutput("b_liquidity_plot", height = "600px"))
+      column(6, plotOutput("a_cash_int_cover_plot", height = "600px")),
+      column(6, plotOutput("b_cash_int_cover_plot", height = "600px"))
     ),
+    tags$br(),
+    tags$br(),
+    fluidRow(
+      column(6, plotOutput("a_current_ratio_plot", height = "600px")),
+      column(6, plotOutput("b_current_ratio_plot", height = "600px"))
+    ),
+    tags$br(),
+    tags$br(),
+    fluidRow(
+      column(6, plotOutput("a_gearing_plot", height = "600px")),
+      column(6, plotOutput("b_gearing_plot", height = "600px"))
+    ),
+    tags$br(),
+    tags$br(),
     fluidRow(
       column(6, plotOutput("a_int_fin_plot", height = "600px")),
       column(6, plotOutput("b_int_fin_plot", height = "600px"))
@@ -424,6 +449,15 @@ server <- function(input, output, session) {
       length(input$a_cost_of_debt_nmnl) == 1,
       length(input$a_fcast_infltn) == 1,
       length(input$a_roe) == 1,
+      length(input$a_cost_of_debt_nmnl1) == 1,
+      length(input$a_cost_of_debt_nmnl2) == 1,
+      length(input$a_cost_of_debt_nmnl3) == 1,
+      length(input$a_fcast_infltn1) == 1,
+      length(input$a_fcast_infltn2) == 1,
+      length(input$a_fcast_infltn3) == 1,
+      length(input$a_roe1) == 1,
+      length(input$a_roe2) == 1,
+      length(input$a_roe3) == 1,
       length(input$a_price_path_mode) == 1,
       length(input$a_price_delta_yr) == 1,
       length(input$a_desired_fixed) == 1,
@@ -474,9 +508,10 @@ server <- function(input, output, session) {
 
     list(
       q_grow               = 0.019,
-      cost_of_debt_nmnl    = isolate(input$a_cost_of_debt_nmnl),
-      fcast_infltn         = isolate(input$a_fcast_infltn),
-      roe                  = isolate(input$a_roe),
+      # WACC inputs are one value per price-setting period: FY24-28 slider, then FY29-33 / FY34-38 / FY39-43
+      cost_of_debt_nmnl    = c(isolate(input$a_cost_of_debt_nmnl), isolate(input$a_cost_of_debt_nmnl1), isolate(input$a_cost_of_debt_nmnl2), isolate(input$a_cost_of_debt_nmnl3)),
+      fcast_infltn         = c(isolate(input$a_fcast_infltn), isolate(input$a_fcast_infltn1), isolate(input$a_fcast_infltn2), isolate(input$a_fcast_infltn3)),
+      roe                  = c(isolate(input$a_roe), isolate(input$a_roe1), isolate(input$a_roe2), isolate(input$a_roe3)),
       price_path_mode      = price_path_mode,
       price_delta_yr       = isolate(input$a_price_delta_yr),
       group_share_targets  = group_share_targets,
@@ -520,9 +555,10 @@ server <- function(input, output, session) {
     expand.grid(
       stringsAsFactors     = FALSE,
       q_grow               = inp$q_grow,
-      cost_of_debt_nmnl    = inp$cost_of_debt_nmnl,
-      fcast_infltn         = inp$fcast_infltn,
-      roe                  = inp$roe,
+      # list() keeps each per-period vector in one cell - a bare vector would become 4 scenario rows
+      cost_of_debt_nmnl    = list(inp$cost_of_debt_nmnl),
+      fcast_infltn         = list(inp$fcast_infltn),
+      roe                  = list(inp$roe),
       price_path_mode      = inp$price_path_mode,
       price_delta_yr       = inp$price_delta_yr,
       group_share_targets  = list(inp$group_share_targets),
@@ -565,9 +601,9 @@ server <- function(input, output, session) {
        FUN               = f,
        dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
        q_grow            = args_df$q_grow,
-       cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100,
-       fcast_infltn      = args_df$fcast_infltn/100,
-       roe               = args_df$roe/100,
+       cost_of_debt_nmnl = lapply(args_df$cost_of_debt_nmnl, function(x) x / 100),
+       fcast_infltn      = lapply(args_df$fcast_infltn, function(x) x / 100),
+       roe               = lapply(args_df$roe, function(x) x / 100),
        price_path_mode      = args_df$price_path_mode,
        price_delta_yr       = args_df$price_delta_yr,
        group_share_targets  = args_df$group_share_targets,
@@ -610,6 +646,15 @@ server <- function(input, output, session) {
       length(input$b_cost_of_debt_nmnl) == 1,
       length(input$b_fcast_infltn) == 1,
       length(input$b_roe) == 1,
+      length(input$b_cost_of_debt_nmnl1) == 1,
+      length(input$b_cost_of_debt_nmnl2) == 1,
+      length(input$b_cost_of_debt_nmnl3) == 1,
+      length(input$b_fcast_infltn1) == 1,
+      length(input$b_fcast_infltn2) == 1,
+      length(input$b_fcast_infltn3) == 1,
+      length(input$b_roe1) == 1,
+      length(input$b_roe2) == 1,
+      length(input$b_roe3) == 1,
       length(input$b_price_path_mode) == 1,
       length(input$b_price_delta_yr) == 1,
       length(input$b_desired_fixed) == 1,
@@ -660,9 +705,10 @@ server <- function(input, output, session) {
 
     list(
       q_grow               = 0.019,
-      cost_of_debt_nmnl    = isolate(input$b_cost_of_debt_nmnl),
-      fcast_infltn         = isolate(input$b_fcast_infltn),
-      roe                  = isolate(input$b_roe),
+      # WACC inputs are one value per price-setting period: FY24-28 slider, then FY29-33 / FY34-38 / FY39-43
+      cost_of_debt_nmnl    = c(isolate(input$b_cost_of_debt_nmnl), isolate(input$b_cost_of_debt_nmnl1), isolate(input$b_cost_of_debt_nmnl2), isolate(input$b_cost_of_debt_nmnl3)),
+      fcast_infltn         = c(isolate(input$b_fcast_infltn), isolate(input$b_fcast_infltn1), isolate(input$b_fcast_infltn2), isolate(input$b_fcast_infltn3)),
+      roe                  = c(isolate(input$b_roe), isolate(input$b_roe1), isolate(input$b_roe2), isolate(input$b_roe3)),
       price_path_mode      = price_path_mode,
       price_delta_yr       = isolate(input$b_price_delta_yr),
       group_share_targets  = group_share_targets,
@@ -706,9 +752,10 @@ server <- function(input, output, session) {
     expand.grid(
       stringsAsFactors     = FALSE,
       q_grow               = inp$q_grow,
-      cost_of_debt_nmnl    = inp$cost_of_debt_nmnl,
-      fcast_infltn         = inp$fcast_infltn,
-      roe                  = inp$roe,
+      # list() keeps each per-period vector in one cell - a bare vector would become 4 scenario rows
+      cost_of_debt_nmnl    = list(inp$cost_of_debt_nmnl),
+      fcast_infltn         = list(inp$fcast_infltn),
+      roe                  = list(inp$roe),
       price_path_mode      = inp$price_path_mode,
       price_delta_yr       = inp$price_delta_yr,
       group_share_targets  = list(inp$group_share_targets),
@@ -751,9 +798,9 @@ server <- function(input, output, session) {
       FUN               = f,
       dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
       q_grow            = args_df$q_grow,
-      cost_of_debt_nmnl = args_df$cost_of_debt_nmnl/100,
-      fcast_infltn      = args_df$fcast_infltn/100,
-      roe               = args_df$roe/100,
+      cost_of_debt_nmnl = lapply(args_df$cost_of_debt_nmnl, function(x) x / 100),
+      fcast_infltn      = lapply(args_df$fcast_infltn, function(x) x / 100),
+      roe               = lapply(args_df$roe, function(x) x / 100),
       price_path_mode      = args_df$price_path_mode,
       price_delta_yr       = args_df$price_delta_yr,
       group_share_targets  = args_df$group_share_targets,
@@ -841,12 +888,10 @@ server <- function(input, output, session) {
     format_price_path_check(simB()[[1]]$price_path_check)
     })
 
-  #output$a_plot        <- renderPlot( {str( args())} )
   output$a_plot        <- renderPlot({
     req(simA()) 
     plot_kpi( simA(), initial_fcast_yr )
     })
-  #output$b_plot        <- renderPlot( {plot_kpi( simB(), initial_fcast_yr )} )
   output$b_plot        <- renderPlot({
     req(simB()) 
     plot_kpi( simB(), initial_fcast_yr )
@@ -854,8 +899,24 @@ server <- function(input, output, session) {
   output$fins_kable    <- renderText( {plot_fins(sim=simA(), chart=chart_df, ref=ref_df, sel=input$fy_select)} )
   output$a_tariff_plot <- renderPlot( {plot_tariffs( simA() )} )
   output$b_tariff_plot <- renderPlot( {plot_tariffs( simB() )} )
-  output$a_liquidity_plot <- renderPlot( {plot_liquidity( simA() )} )
-  output$b_liquidity_plot <- renderPlot( {plot_liquidity( simB() )} )
+  # Each chart is built once and shared with its table, which measures the chart's panel margins so
+  # the table borders line up with the panel borders above it
+  a_tariff_price_chart <- reactive( plot_tariff_prices( simA(), input$a_tariff_group ) )
+  b_tariff_price_chart <- reactive( plot_tariff_prices( simB(), input$b_tariff_group ) )
+  output$a_tariff_price_plot  <- renderPlot( {a_tariff_price_chart()} )
+  output$b_tariff_price_plot  <- renderPlot( {b_tariff_price_chart()} )
+  output$a_tariff_price_table <- renderText( {
+    tariff_price_table( simA(), input$a_tariff_group, panel_margins_px = plot_panel_margins_px( a_tariff_price_chart() ) )
+  } )
+  output$b_tariff_price_table <- renderText( {
+    tariff_price_table( simB(), input$b_tariff_group, panel_margins_px = plot_panel_margins_px( b_tariff_price_chart() ) )
+  } )
+  output$a_cash_int_cover_plot <- renderPlot( {plot_cash_int_cover( simA() )} )
+  output$b_cash_int_cover_plot <- renderPlot( {plot_cash_int_cover( simB() )} )
+  output$a_current_ratio_plot <- renderPlot( {plot_current_ratio( simA() )} )
+  output$b_current_ratio_plot <- renderPlot( {plot_current_ratio( simB() )} )
+  output$a_gearing_plot   <- renderPlot( {plot_gearing( simA() )} )
+  output$b_gearing_plot   <- renderPlot( {plot_gearing( simB() )} )
   output$a_int_fin_plot   <- renderPlot( {plot_int_fin_ratio( simA() )} )
   output$b_int_fin_plot   <- renderPlot( {plot_int_fin_ratio( simB() )} )
   output$tb_dload      <- downloadHandler(

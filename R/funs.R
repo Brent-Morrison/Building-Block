@@ -970,9 +970,9 @@ plot_fins <- function(sim, chart, ref, sel) {
   
   
   # Calculate KPI's
-  cic <- colSums(rep[rep$ref2 %in% c(42,43), 3:22], na.rm = T) / -rep[rep$ref2 == 44, 3:22] # Cash interest cover
-  gr  <- abs(rep[rep$ref2 == 28, 3:22]) / abs(rep[rep$ref2 == 36, 3:22]) * 100              # Gearing ratio
-  ifr <- rep[rep$ref2 == 46, 3:22] / -rep[rep$ref2 == 50, 3:22]                              # Internal financing ratio
+  cic <- colSums(rep[rep$ref2 %in% c(43,44), 3:22], na.rm = T) / -rep[rep$ref2 == 45, 3:22] # Cash interest cover
+  gr  <- abs(rep[rep$ref2 == 38, 3:22]) / abs(rep[rep$ref2 == 28, 3:22]) * 100              # Gearing ratio
+  ifr <- rep[rep$ref2 == 46, 3:22] / -rep[rep$ref2 == 50, 3:22]                             # Internal financing ratio
   
   # Format numbers
   rep[ ,3:22] <- apply(rep[ ,3:22], 2, acc_num)
@@ -1096,10 +1096,416 @@ plot_tariffs <- function(d){
 
 
 # --------------------------------------------------------------------------------------------------------------------------
+# Plot tariff prices for one tariff group (variable charges above fixed charges, price and % change)
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_tariff_prices <- function(d, group) {
+
+  # Two stacked panels for a single tariff group - variable charges on top, fixed charges below.  In each panel
+  # the lines are real prices (left axis) and the grey bars the year-on-year percentage change (right axis).
+  #
+  # The panels are built as separate ggplots and stacked with patchwork (rather than facet_wrap) because
+  # sec_axis takes a single transform - each panel needs its own price-to-percentage rescale factor, since
+  # variable charges ($/kL) and fixed charges ($ p.a.) differ by orders of magnitude.
+  #
+  # Args:
+  #   d      - list of f() results (as returned by simA() / simB()), the first element is plotted
+  #   group  - tariff group, i.e. the "lookup_key2" segment of the tariff name (e.g. "Water")
+  #
+  # Returns
+  #   a patchwork object
+
+  # Preparation ------------------------------------------------------------------------------------
+  prices <- d[[1]]$prices
+
+  # Group and charge type are derived from tariff naming, per the contract documented in R/f.R
+  tariff_group    <- sub("\\..*", "", rownames(prices))
+  is_variable     <- grepl("Variable", rownames(prices))
+  group_prices    <- prices[tariff_group == group, , drop = FALSE]
+  group_variable  <- is_variable[tariff_group == group]
+
+  variable_panel <- tariff_price_panel(group_prices[group_variable,  , drop = FALSE], "Variable charges")
+  fixed_panel    <- tariff_price_panel(group_prices[!group_variable, , drop = FALSE], "Fixed charges")
+
+
+  # Output -----------------------------------------------------------------------------------------
+  # The overall title sits on an empty header plot rather than patchwork::plot_annotation(theme = ...),
+  # which the installed ggplot2 / patchwork versions don't style reliably - this keeps the KPI charts'
+  # theme_base bold title and italic subtitle.
+  header <- ggplot() +
+    ggthemes::theme_base() +
+    labs(
+      title    = paste0(group, " tariffs (left axis, real $)"),
+      subtitle = "Year-on-year price change (right axis, grey bars)"
+    ) +
+    theme(
+      plot.subtitle   = element_text(size = 11.5, face = 'italic'),
+      panel.border    = element_blank(),
+      plot.background = element_blank()
+    )
+
+  patchwork::wrap_plots(header, variable_panel, fixed_panel, ncol = 1, heights = c(0.001, 1, 1))
+}
+
+
+tariff_year_limits <- function(years) {
+
+  # x-axis limits shared by the two chart panels of plot_tariff_prices(), so their years line up.
+  # The extra space after the final year holds the line labels.
+  #
+  # Args:
+  #   years  - integer vector of the years plotted
+  #
+  # Returns
+  #   numeric vector of length 2
+
+  label_space_years <- 5 * 2 / 3
+  c(min(years) - 0.5, max(years) + label_space_years)
+}
+
+
+plot_panel_margins_px <- function(plot) {
+
+  # Distance (px) from the left and right edges of a rendered patchwork plot to its panel borders -
+  # used to inset the tariff price table so its borders line up with the chart panels above it.
+  #
+  # Every layout column outside the panel (axis text, axis titles, secondary axis, plot margins) has a
+  # fixed width in points; only the panel column ("null" unit) stretches with the output width.  So the
+  # offsets are constant for a given plot regardless of browser width.  Shiny's renderPlot draws at
+  # res = 72 (app.R doesn't override it), so 1 point = 1 CSS px.
+  #
+  # Args:
+  #   plot  - a patchwork object, e.g. from plot_tariff_prices()
+  #
+  # Returns
+  #   named numeric vector c(left, right), in px
+
+  plot_gtable  <- patchwork::patchworkGrob(plot)
+  panel_column <- plot_gtable$layout$l[plot_gtable$layout$name == "panel-1"]
+
+  column_widths_pt <- numeric(length(plot_gtable$widths))
+  for (column_index in seq_along(plot_gtable$widths)) {
+    if (column_index == panel_column) next  # the stretching "null" panel column has no fixed width
+    column_widths_pt[column_index] <- grid::convertWidth(plot_gtable$widths[column_index], "pt", valueOnly = TRUE)
+  }
+
+  c(
+    left  = sum(column_widths_pt[seq_len(panel_column - 1)]),
+    right = sum(column_widths_pt[(panel_column + 1):length(column_widths_pt)])
+  )
+}
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Table of tariff prices for one tariff group (shown beneath plot_tariff_prices on the Tariffs tab)
+# --------------------------------------------------------------------------------------------------------------------------
+
+tariff_price_table <- function(d, group, panel_margins_px = c(left = 0, right = 0)) {
+
+  # HTML table of the real price (2 decimal places for tariffs above 10, else 4) and year-on-year change (1 decimal place %) of each
+  # tariff in a group, one column per year.  Styled with kable_classic to match the Financials tab.
+  # The table fills its container and scrolls sideways when the 20 years don't fit, with the first
+  # (tariff name) column held in place so each row stays identifiable while scrolling.
+  #
+  # Args:
+  #   d      - list of f() results (as returned by simA() / simB()), the first element is tabled
+  #   group             - tariff group, i.e. the "lookup_key2" segment of the tariff name (e.g. "Water")
+  #   panel_margins_px  - left/right inset (px) of the table's border box, from plot_panel_margins_px(), so
+  #                       its borders line up with the chart panels above.  Default 0 fills the container.
+  #
+  # Returns
+  #   kableExtra HTML
+
+  # Preparation - variable tariffs first, matching the order of the chart panels -------------------
+  prices <- d[[1]]$prices
+
+  # Group and charge type are derived from tariff naming, per the contract documented in R/f.R
+  tariff_group   <- sub("\\..*", "", rownames(prices))
+  is_variable    <- grepl("Variable", rownames(prices))
+  group_prices   <- prices[tariff_group == group, , drop = FALSE]
+  group_variable <- is_variable[tariff_group == group]
+
+  tariff_order <- c(which(group_variable), which(!group_variable))
+  n_variable   <- sum(group_variable)
+  n_fixed      <- sum(!group_variable)
+
+  years      <- as.integer(colnames(group_prices))
+  year_names <- paste0("FY", substr(years, 3, 4))
+  n_years    <- length(years)
+
+
+  # Computation - a price row and a % change row per tariff ----------------------------------------
+  table_rows <- list()
+
+  for (tariff_index in tariff_order) {
+    tariff_name    <- rownames(group_prices)[tariff_index]
+    tariff_price   <- group_prices[tariff_index, ]
+    prior_price    <- c(NA, head(tariff_price, -1))
+    pct_change     <- tariff_price / prior_price - 1
+    customer_class <- strsplit(tariff_name, ".", fixed = TRUE)[[1]][2]
+
+    # Larger tariffs (e.g. fixed charges in $ p.a.) to 2 decimal places, smaller (e.g. $/kL) to 4.
+    # Decided per tariff rather than per value so a row never mixes decimal places when a price
+    # crosses 10 during the forecast.
+    price_decimals <- if (max(tariff_price) > 10) 2 else 4
+    price_text     <- formatC(tariff_price, format = "f", digits = price_decimals, big.mark = ",")
+
+    # FY2024 has no prior-year price in the simulation output, so its change is shown as a dash
+    change_text <- ifelse(is.na(pct_change), "–", scales::percent(pct_change, accuracy = 0.1))
+
+    table_rows[[length(table_rows) + 1]] <- setNames(c(customer_class, price_text),  c("Tariff", year_names))
+    table_rows[[length(table_rows) + 1]] <- setNames(c("yoy change",   change_text), c("Tariff", year_names))
+  }
+
+  table_df <- as.data.frame(do.call(rbind, table_rows), stringsAsFactors = FALSE)
+  names(table_df)[1] <- " "
+
+  n_rows             <- nrow(table_df)
+  change_row_indices <- seq(2, n_rows, by = 2)
+
+
+  # Header band - one heading per 5-year price-setting period (e.g. "FY24-28") ----------------------
+  period_starts  <- seq(1, n_years, by = 5)
+  period_headers <- c(" " = 1)
+  for (period_start in period_starts) {
+    period_end   <- min(period_start + 4, n_years)
+    period_label <- paste0(year_names[period_start], "-", substr(years[period_end], 3, 4))
+    period_headers[period_label] <- period_end - period_start + 1
+  }
+
+
+  # Output -----------------------------------------------------------------------------------------
+  # Sticky first column: the tariff names stay visible while the year columns scroll sideways
+  sticky_css <- "position: sticky; left: 0; background-color: white; z-index: 1;"
+
+  price_table <- table_df %>%
+    kbl(align = c("l", rep("r", n_years)), row.names = FALSE) %>%
+    kable_classic(full_width = TRUE, html_font = "Cambria", font_size = 12) %>%
+    add_header_above(period_headers)
+
+  if (n_variable > 0) {
+    price_table <- pack_rows(price_table, "Variable charges", 1, 2 * n_variable)
+  }
+  if (n_fixed > 0) {
+    price_table <- pack_rows(price_table, "Fixed charges", 2 * n_variable + 1, n_rows)
+  }
+
+  price_table %>%
+    row_spec(change_row_indices, italic = TRUE, color = "#555555") %>%
+    row_spec(change_row_indices[-length(change_row_indices)], extra_css = "border-bottom: 1px solid #dddddd") %>%
+    column_spec(1, width_min = "10em", extra_css = sticky_css, include_thead = TRUE) %>%
+    column_spec(2:(n_years + 1), width_min = "5.5em") %>%
+    scroll_box(
+      # "auto" fills the space between the margins ("100%" plus margins would overflow).  A black 1px
+      # border with no padding matches the chart panel borders it lines up with.
+      width   = "auto",
+      box_css = paste0(
+        "border: 1px solid #000000; padding: 0; box-sizing: border-box; ",
+        "margin-left: ",  round(panel_margins_px[["left"]]),  "px; ",
+        "margin-right: ", round(panel_margins_px[["right"]]), "px;"
+      )
+    )
+}
+
+
+tariff_price_panel <- function(panel_prices, panel_title) {
+
+  # Build one panel of plot_tariff_prices().
+  #
+  # Args:
+  #   panel_prices  - matrix of real prices, tariffs (named rows) x years (named columns)
+  #   panel_title   - title shown above the panel
+  #
+  # Returns
+  #   a ggplot object
+
+  # Validation - a group with no tariffs of this charge type gets a placeholder rather than an error
+  if (nrow(panel_prices) == 0) {
+    placeholder <- ggplot() +
+      annotate("text", x = 0, y = 0, label = "No tariffs of this type in the selected group", size = 5) +
+      theme_void() +
+      labs(title = panel_title)
+    return(placeholder)
+  }
+
+
+  # Preparation - long data, one row per tariff per year -------------------------------------------
+  years      <- as.integer(colnames(panel_prices))
+  panel_rows <- vector(mode = "list", length = nrow(panel_prices))
+
+  for (tariff_index in seq_len(nrow(panel_prices))) {
+    tariff_name  <- rownames(panel_prices)[tariff_index]
+    tariff_price <- panel_prices[tariff_index, ]
+
+    # FY2024 has no prior-year price in the simulation output, so its change is NA (no bar drawn)
+    prior_price  <- c(NA, head(tariff_price, -1))
+
+    panel_rows[[tariff_index]] <- data.frame(
+      tariff     = tariff_name,
+      label      = strsplit(tariff_name, ".", fixed = TRUE)[[1]][2],  # customer class, e.g. "Residential"
+      year       = years,
+      price      = tariff_price,
+      pct_change = tariff_price / prior_price - 1
+    )
+  }
+  panel_df <- do.call(rbind, panel_rows)
+
+
+  # Computation - dual axis scaling ----------------------------------------------------------------
+  # Same approach as the KPI charts (bar_axis_max / ratio_axis_max), with the axes swapped: the lines
+  # carry the left axis, the bars are scaled onto it.  The 5% floor stops a flat price path from
+  # stretching near-zero changes to full height.
+  price_axis_max  <- max(panel_df$price)
+  change_axis_max <- max(c(abs(panel_df$pct_change), 0.05), na.rm = TRUE)
+  rescale_factor  <- price_axis_max / change_axis_max
+
+  panel_df$pct_change_scaled <- panel_df$pct_change * rescale_factor
+
+
+  # Computation - one bar per distinct price delta path -------------------------------------------
+  # Tariffs whose year-on-year changes are identical over the whole horizon (e.g. under the uniform
+  # price path modes) share a single bar rather than repeating the same bar side by side.  Changes are
+  # rounded to 0.01 percentage points so solver floating-point noise doesn't split a group.  Grouping
+  # is on the whole path (not year by year) so the number of bars, and their width, is constant.
+  delta_path_key <- character(0)
+  for (tariff_name in unique(panel_df$tariff)) {
+    tariff_changes <- panel_df$pct_change[panel_df$tariff == tariff_name]
+    delta_path_key[tariff_name] <- paste(round(tariff_changes, 4), collapse = "|")
+  }
+
+  bar_rows <- list()
+  for (path_key in unique(delta_path_key)) {
+    member_tariffs <- names(delta_path_key)[delta_path_key == path_key]
+    member_labels  <- unique(panel_df$label[panel_df$tariff %in% member_tariffs])
+
+    # The first member's rows stand in for the whole bar group (their changes are identical)
+    first_member_rows <- panel_df[panel_df$tariff == member_tariffs[1], ]
+
+    bar_rows[[length(bar_rows) + 1]] <- data.frame(
+      bar_label         = paste(member_labels, collapse = " / "),
+      year              = first_member_rows$year,
+      pct_change        = first_member_rows$pct_change,
+      pct_change_scaled = first_member_rows$pct_change_scaled
+    )
+  }
+  bar_df <- do.call(rbind, bar_rows)
+  bar_df <- bar_df[!is.na(bar_df$pct_change), ]  # FY2024 has no prior-year price, so no bar
+
+
+  line_colours<- c("#1f3a5f", "#b5651d", "#2e7d32", "#6a1b9a", "#8b1a1a")
+  n_labels     <- length(unique(panel_df$label))
+  label_df     <- panel_df[panel_df$year == max(panel_df$year), ]
+
+
+  # Output -----------------------------------------------------------------------------------------
+  ggplot(panel_df, aes(x = year)) +
+    geom_col(
+      data = bar_df,
+      aes(y = pct_change_scaled, fill = bar_label), position = "dodge", colour = "black"
+    ) +
+    scale_fill_grey(start = 0.8, end = 0.4) +
+    geom_line(aes(y = price, colour = label), linewidth = 1) +
+    geom_point(aes(y = price, colour = label), shape = 21, size = 4, fill = "white", stroke = 1.5) +
+    ggrepel::geom_text_repel(
+      data = label_df,
+      aes(y = price, label = label, colour = label),
+      nudge_x = 0.5, direction = "y", hjust = 0, segment.colour = "grey50", size = 4
+    ) +
+    scale_colour_manual(values = line_colours[seq_len(n_labels)], guide = "none") +
+    scale_y_continuous("", sec.axis = sec_axis(~ . / rescale_factor, name = "", labels = scales::percent_format(accuracy = 1))) +
+    scale_x_continuous(breaks = c(2028, 2033, 2038, 2043), limits = tariff_year_limits(panel_df$year)) +
+    ggthemes::theme_base() +
+    labs(x = "", y = "", title = panel_title) +
+    theme(
+      plot.title         = element_text(size = 13),
+      legend.title       = element_blank(),
+      legend.position    = "bottom",
+      legend.background  = element_blank(),
+      legend.key         = element_blank()
+    )
+}
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot cash interest cover (net operating cashflow vs net interest payments, with the ratio)
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_cash_int_cover <- function(d){
+
+  m             <- d[[1]]$txns
+  yr_end_months <- (1:20) * 12
+
+  cshd_monthly <- apply(m, 3, function(x) x["3000", "cshd"], simplify = TRUE)
+  exp2_monthly <- apply(m, 3, function(x) x["3000", "exp2"], simplify = TRUE)
+  crd1_monthly <- apply(m, 3, function(x) x["3000", "crd1"], simplify = TRUE)
+  ip_monthly   <- apply(m, 3, function(x) x["3000", "intp"], simplify = TRUE)
+
+  op_cf_monthly <- cshd_monthly + exp2_monthly + crd1_monthly
+
+  net_operating_cf  <- slide_sum(op_cf_monthly, before = 11)[yr_end_months] / 1000   # $m
+  net_interest_paid <- slide_sum(ip_monthly,    before = 11)[yr_end_months] / 1000   # $m
+  cash_int_cover     <- net_operating_cf / -net_interest_paid
+
+  # Cap / nil-out as per cash_int_cover_fn's convention
+  cash_int_cover[is.na(cash_int_cover) | is.nan(cash_int_cover) | is.infinite(cash_int_cover)] <- NA
+  cash_int_cover[!is.na(cash_int_cover) & cash_int_cover > 20] <- 20
+
+  bar_axis_max   <- max(abs(net_operating_cf), abs(net_interest_paid))
+  ratio_axis_max <- 3     # gives headroom above the 1.5 target minimum
+  rescale_factor <- bar_axis_max / ratio_axis_max
+
+  ggplot() +
+    geom_bar(
+      data = data.frame(
+        category = factor(
+          rep(c("Net operating cashflow", "Net interest payments"), each = 20),
+          levels = c("Net operating cashflow", "Net interest payments")
+        ),
+        year  = rep(2024:2043, 2),
+        value = c(net_operating_cf, net_interest_paid)
+      ),
+      aes(fill = category, y = value, x = year), position = "identity", stat = "identity", colour = "black"
+    ) +
+    scale_fill_manual(values = c("grey60", "grey30")) +
+    geom_line(
+      data = data.frame(year = 2024:2043, ratio_scaled = cash_int_cover * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Cash interest cover (times)"), linewidth = 1
+    ) +
+    geom_point(
+      data = data.frame(year = 2024:2043, ratio_scaled = cash_int_cover * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Cash interest cover (times)"), shape = 21, size = 4, fill = "white", stroke = 1.5
+    ) +
+    geom_abline(aes(intercept = 1.5 * rescale_factor, slope = 0), color = "red", linetype = "dotdash", linewidth = 0.75) +
+    scale_colour_manual(values = c("Cash interest cover (times)" = "#1f3a5f")) +
+    scale_y_continuous("", sec.axis = sec_axis(~ . / rescale_factor, name = "")) +
+    scale_x_continuous(breaks = c(2028, 2033, 2038, 2043)) +
+    ggthemes::theme_base() +
+    labs(
+      x = "",
+      y = "",
+      title    = "Cash interest cover (left axis, $m)",
+      subtitle = "Net operating cashflow / net interest payments (right axis, times); target minimum 1.5"
+    ) +
+    guides(fill = guide_legend(order = 1), colour = guide_legend(order = 2, title = NULL)) +
+    theme(
+      plot.subtitle      = element_text(size = 11.5, face = 'italic'),
+      legend.title       = element_blank(),
+      legend.position    = "bottom",
+      legend.box         = "horizontal",
+      legend.background  = element_blank(),
+      legend.key         = element_blank()
+    )
+}
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
 # Plot short-term liquidity (current assets vs current liabilities, with current ratio)
 # --------------------------------------------------------------------------------------------------------------------------
 
-plot_liquidity <- function(d){
+plot_current_ratio <- function(d){
 
   m               <- d[[1]]$txns
   yr_end_months   <- (1:20) * 12
@@ -1108,11 +1514,11 @@ plot_liquidity <- function(d){
   ca_grp <- "^30|^31|^32|^33"   # current asset account codes    (current_ratio_fn convention)
   cl_grp <- "^40|^41|^43|^44"   # current liability account codes (current_ratio_fn convention)
 
-  current_assets      <-  colSums(clos_annual[grepl(ca_grp, rownames(clos_annual)), ]) / 1000
-  current_liabilities <- -colSums(clos_annual[grepl(cl_grp, rownames(clos_annual)), ]) / 1000
-  current_ratio        <- current_assets / current_liabilities
+  current_assets      <- colSums(clos_annual[grepl(ca_grp, rownames(clos_annual)), ]) / 1000
+  current_liabilities <- colSums(clos_annual[grepl(cl_grp, rownames(clos_annual)), ]) / 1000
+  current_ratio       <- current_assets / -current_liabilities
 
-  bar_axis_max   <- max(current_assets, current_liabilities)
+  bar_axis_max   <- max(current_assets, -current_liabilities)
   ratio_axis_max <- 2   # matches the "Current ratio" benchmark scale used in plot_kpi (bench = 1.2)
   rescale_factor <- bar_axis_max / ratio_axis_max
 
@@ -1126,7 +1532,8 @@ plot_liquidity <- function(d){
         year  = rep(2024:2043, 2),
         value = c(current_assets, current_liabilities)
       ),
-      aes(fill = category, y = value, x = year), position = "dodge", stat = "identity", colour = "black"
+      aes(fill = category, y = value, x = year), position = "identity", stat = "identity", colour = "black"
+      #aes(fill = category, y = value, x = year), position = "dodge", stat = "identity", colour = "black"
     ) +
     scale_fill_manual(values = c("grey60", "grey30")) +
     geom_line(
@@ -1145,8 +1552,71 @@ plot_liquidity <- function(d){
     labs(
       x = "",
       y = "",
-      title    = "Short-term liquidity (left axis, $m)",
-      subtitle = "Current ratio - current assets / current liabilities (right axis, times)"
+      title    = "Current ratio (left axis, $m)",
+      subtitle = "Current assets / current liabilities (right axis, times)"
+    ) +
+    guides(fill = guide_legend(order = 1), colour = guide_legend(order = 2, title = NULL)) +
+    theme(
+      plot.subtitle      = element_text(size = 11.5, face = 'italic'),
+      legend.title       = element_blank(),
+      legend.position    = "bottom",
+      legend.box         = "horizontal",
+      legend.background  = element_blank(),
+      legend.key         = element_blank()
+    )
+}
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Plot gearing (total debt vs total assets, with the gearing ratio)
+# --------------------------------------------------------------------------------------------------------------------------
+
+plot_gearing <- function(d){
+
+  m               <- d[[1]]$txns
+  yr_end_months   <- (1:20) * 12
+  clos_annual     <- m[ , "clos", yr_end_months]        # accounts x 20 FY-end snapshots
+
+  total_debt   <- colSums(clos_annual[c("4100","4500"), , drop = FALSE]) / 1000                # gearing_fn convention
+  total_assets <- colSums(clos_annual[grepl("^3", rownames(clos_annual)), ]) / 1000             # gearing_fn convention
+  gearing      <- -total_debt / total_assets
+
+  bar_axis_max   <- max(abs(total_debt), abs(total_assets))
+  ratio_axis_max <- 1   # gives headroom above the 0.3 target maximum
+  rescale_factor <- bar_axis_max / ratio_axis_max
+
+  ggplot() +
+    geom_bar(
+      data = data.frame(
+        category = factor(
+          rep(c("Total debt", "Total assets"), each = 20),
+          levels = c("Total debt", "Total assets")
+        ),
+        year  = rep(2024:2043, 2),
+        value = c(total_debt, total_assets)
+      ),
+      aes(fill = category, y = value, x = year), position = "identity", stat = "identity", colour = "black"
+    ) +
+    scale_fill_manual(values = c("grey60", "grey30")) +
+    geom_line(
+      data = data.frame(year = 2024:2043, ratio_scaled = gearing * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Gearing ratio (times)"), linewidth = 1
+    ) +
+    geom_point(
+      data = data.frame(year = 2024:2043, ratio_scaled = gearing * rescale_factor),
+      aes(x = year, y = ratio_scaled, colour = "Gearing ratio (times)"), shape = 21, size = 4, fill = "white", stroke = 1.5
+    ) +
+    geom_abline(aes(intercept = 0.3 * rescale_factor, slope = 0), color = "red", linetype = "dotdash", linewidth = 0.75) +
+    scale_colour_manual(values = c("Gearing ratio (times)" = "#1f3a5f")) +
+    scale_y_continuous("", sec.axis = sec_axis(~ . / rescale_factor, name = "")) +
+    scale_x_continuous(breaks = c(2028, 2033, 2038, 2043)) +
+    ggthemes::theme_base() +
+    labs(
+      x = "",
+      y = "",
+      title    = "Gearing ratio (left axis, $m)",
+      subtitle = "Total debt / total assets (right axis, times); target maximum 0.3"
     ) +
     guides(fill = guide_legend(order = 1), colour = guide_legend(order = 2, title = NULL)) +
     theme(
@@ -1211,7 +1681,7 @@ plot_int_fin_ratio <- function(d){
       x = "",
       y = "",
       title    = "Internal financing ratio (left axis, $m)",
-      subtitle = "Internal financing ratio - net operating cashflow / net investing cashflow (right axis, times); target minimum 0.35"
+      subtitle = "Net operating cashflow / net investing cashflow (right axis, times); target minimum 0.35"
     ) +
     guides(fill = guide_legend(order = 1), colour = guide_legend(order = 2, title = NULL)) +
     theme(
@@ -1313,4 +1783,84 @@ real_series <- function(q, p, q_grow) {
   ps1.3 <- tail(ps1.2, 1)
   nmnl <- c(ps1.2, rep(ps1.3, 15)) 
   nmnl
+}
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Expand a scenario parameter to one value per price-setting period
+# --------------------------------------------------------------------------------------------------------------------------
+
+expand_to_price_periods <- function(x, n_periods, arg_name) {
+  
+  # Allow a scenario parameter to be given either as a single value (applied to every price-setting period)
+  # or as one value per price-setting period.  Scalar recycling keeps existing callers that pass a single
+  # value working unchanged.
+  #
+  # Args:
+  #   x          - numeric vector of length 1 or length n_periods
+  #   n_periods  - number of price-setting periods (e.g. 4 for FY24-28, FY29-33, FY34-38, FY39-43)
+  #   arg_name   - name of the argument, used only in the error message
+  #
+  # Returns
+  #   numeric vector of length n_periods
+  
+  if (length(x) == 1) {
+    return(rep(x, n_periods))
+  }
+  
+  if (length(x) == n_periods) {
+    return(x)
+  }
+  
+  stop(
+    "'", arg_name, "' must have length 1 or ", n_periods, 
+    " (one value per price-setting period), not length ", length(x)
+  )
+}
+
+
+
+
+
+# --------------------------------------------------------------------------------------------------------------------------
+# Regulatory rate of return (real, vanilla WACC) for each price-setting period
+# --------------------------------------------------------------------------------------------------------------------------
+
+rrr_by_price_period <- function(roe, cost_of_debt_nmnl, fcast_infltn, gearing) {
+  
+  # Build the cost of capital schedule used to set the return on assets in each price-setting period.
+  # All inputs are expected to already be one value per period (see expand_to_price_periods), and the
+  # calculation is applied element-wise so each period's real cost of debt uses that period's inflation.
+  #
+  # Args:
+  #   roe                - allowed (real) return on equity, one value per period
+  #   cost_of_debt_nmnl  - nominal cost of debt, one value per period
+  #   fcast_infltn       - forecast inflation, one value per period
+  #   gearing            - gearing assumption for the WACC (scalar)
+  #
+  # Returns
+  #   data frame with one row per price-setting period
+  
+  stopifnot(
+    "'roe', 'cost_of_debt_nmnl' and 'fcast_infltn' must be of equal length" = 
+      length(roe) == length(cost_of_debt_nmnl) && length(roe) == length(fcast_infltn)
+  )
+  
+  # Fisher conversion of the nominal cost of debt to a real rate
+  cost_of_debt_real <- (1 + cost_of_debt_nmnl) / (1 + fcast_infltn) - 1
+  
+  # Vanilla WACC - rounded to 4 d.p. to match the regulator's published rate of return
+  rrr <- round((roe * (1 - gearing) + cost_of_debt_real * gearing), 4)
+  
+  data.frame(
+    period             = seq_along(roe),
+    roe                = roe,
+    cost_of_debt_nmnl  = cost_of_debt_nmnl,
+    fcast_infltn       = fcast_infltn,
+    cost_of_debt_real  = cost_of_debt_real,
+    rrr                = rrr
+  )
 }
