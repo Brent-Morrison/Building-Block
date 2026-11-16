@@ -147,11 +147,27 @@ needs the same two safeguards.
 
 ### Data flow
 `get_data()` (`R/funs.R`) loads four CSVs from `data/` (or the GitHub raw URLs as a fallback
-`src`): `price_subm_2023.csv` (per-entity capex/opex line items by year — the main scenario
-input data, entities are Victorian water utilities e.g. `"CW"` = Coliban Water), `reference.csv`
-(account group lookups/labels), `chart.csv` (chart of accounts with account-group balances),
-`txn_type.csv` (transaction-type dr/cr account mapping, described above). `f()` currently hardcodes
-`ent_parm <- "CW"` to select the entity from `dat`.
+`src`): `price_subm_2023.csv` (per-entity capex/opex line items by year, entities are Victorian
+water utilities e.g. `"CW"` = Coliban Water — still used by the `test/` scripts via
+`test/f_test_setup.R`), `reference.csv` (account group lookups/labels), `chart.csv` (chart of
+accounts with account-group balances), `txn_type.csv` (transaction-type dr/cr account mapping,
+described above). `f()` currently hardcodes `ent_parm <- "CW"` to select the entity from `dat`.
+
+**The app's scenario input data now comes from the "Data sets" tab** (`R/data_load.R`), which
+loads `data/model_data_default.csv` (or a user-chosen file in the same `row_type | measure |
+entity | year | column_1..6 | value_1..4` layout) into an editable grid. The flow is explicit:
+"Save to data frame" keeps an edited data set → "Confirm data for simulation" assembles every
+entity × data set (`assemble_model_data()`), converts it to the `lookup_key*`/`ref_value*` shape
+`f()` reads (`model_data_to_dat()` in `R/model_data_adapter.R` — a positional column mapping;
+single `rab` rows are split into `rab_book_value` + `rab_remaining_life`) and shows a summary
+modal → "Run simulation" passes the confirmed frame to `f()` via `simA_inputs()$dat` /
+`simB_inputs()$dat`. Until confirmed, Run simulation shows a message; confirming alone never runs
+a simulation (the data is read inside the `eventReactive`). `app.R`'s tariff reference values
+(`tariff_names`, `group_names`, `group_share0`, …) are derived once at startup from the converted
+default file, so they don't follow confirmed data that changes tariff names/groups.
+`test/model_data_adapter_test.R` checks the adapter against `price_subm_2023.csv` — note the two
+default files differ in CW 2023 prices (model data = price_subm × 0.9769), so only `rab`/`rev_req`
+are asserted identical.
 
 ### File structure
 When creating new functions, test files to follow this convention:

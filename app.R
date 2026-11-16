@@ -9,19 +9,29 @@ library(ggplot2)
 library(lubridate)
 library(kableExtra)
 library(scales)
+library(excelR)
 
 source("./R/funs.R")
 source("./R/price_path_engine.R")
 source("./R/f.R")
 source("./R/instructions.R")
+source("./R/data_load.R")
+source("./R/model_data_adapter.R")
 
 # Read data ----------------------------------------------------------------------------------------------------------------
 
 d <- get_data()
-dat_df    <- d$dat
-chart_df  <- d$chart 
+chart_df  <- d$chart
 ref_df    <- d$ref
 txn_df    <- d$txn_type
+
+# Scenario input data comes from the "Data sets" tab (R/data_load.R): the user loads / edits
+# data/model_data_default.csv there and confirms it, and f() runs on the confirmed data. The
+# default file, converted to the shape f() reads, provides the tariff reference values below.
+# These are fixed at startup: if confirmed data changes tariff names or groups, the group-share
+# labels and tariff dropdowns won't follow (follow-up item).
+if (is.null(default_source)) stop("data/model_data_default.csv not found - run the app from the repo root")
+dat_df <- model_data_to_dat(default_source$data[default_source$row_type == "data", ])
 
 initial_fcast_yr <- min(dat_df[dat_df$entity == "CW", ]$year)
 
@@ -283,11 +293,22 @@ renderRunSimRow <- function(prefix, suffix = "") {
 ui <- navbarPage(
   "Financial Model",
   position = "fixed-top",
-  tags$head(tags$style(HTML("body { padding-top: 50px; }"))),
+  tags$head(tags$style(HTML(
+    "body { padding-top: 50px; }",
+    # www/simplex.min.css is an old Bootstrap 3.0 theme: it puts .modal at z-index 1040, the same
+    # as the backdrop, so the backdrop (added to the DOM after the dialog) paints over the dialog
+    # and swallows every click. Restore the Bootstrap 3.4.1 values so showModal() dialogs (e.g.
+    # "Confirm data for simulation") are clickable and the backdrop covers the whole viewport.
+    # The theme's <link> comes after this <style>, so these selectors are made more specific
+    # than the theme's plain .modal / .modal-backdrop to win the cascade.
+    "#shiny-modal.modal { z-index: 1050; }",
+    "body > .modal-backdrop { z-index: 1040; position: fixed; bottom: 0; }"
+  ))),
   tabPanel(
     title="Instructions",
     instructions_tab()
   ),
+  data_load_tab(),
   tabPanel(
     title="Scenario input and KPI's",
     fluidPage(
@@ -306,11 +327,15 @@ ui <- navbarPage(
         ),
       hr(),
 
+      # Which data the simulation will run on (confirmed on the "Data sets" tab)
+      textOutput("model_data_status_scenario"),
+      hr(),
+
       fluidRow(
         column(6, tags$h3("Scenario A")),
         column(6, tags$h3("Scenario B"))
         ),
-      
+
       # Renders the data input sliders
       fluidRow(
         column(6, renderInputs("a")),
@@ -336,7 +361,7 @@ ui <- navbarPage(
         ),
 
       tags$h2("Price path constraints"),
-      p("Select how the price path is solved for each scenario, and supply parameters for the selected constraint mode."),
+      p("Select how the price path is solved for each scenario, and supply parameters for the selected constraint mode.  Applies for first price period only - Uniform delta all years is used thereafter."),
       hr(),
 
       fluidRow(
@@ -442,7 +467,11 @@ ui <- navbarPage(
 
 # Server function ----------------------------------------------------------------------------------------------------------
 server <- function(input, output, session) {
-  
+
+  # "Data sets" tab (R/data_load.R). model_data$dat() is the data the user confirmed there, in
+  # the shape f() reads, or NULL until they have confirmed
+  model_data <- data_load_server(input, output, session)
+
   simA_inputs <- eventReactive(input$run_sim_a + input$run_sim_a_pp, {
     
     req(
@@ -506,7 +535,15 @@ server <- function(input, output, session) {
       "Group share targets must sum to 100%"
       ))
 
+    # Read here (inside the eventReactive) so that confirming new data on the Data sets tab
+    # doesn't re-run the simulation by itself - only the Run buttons do
+    validate(need(
+      !is.null(isolate(model_data$dat())),
+      "Confirm data on the Data sets tab before running a simulation."
+      ))
+
     list(
+      dat                  = isolate(model_data$dat()),
       q_grow               = 0.019,
       # WACC inputs are one value per price-setting period: FY24-28 slider, then FY29-33 / FY34-38 / FY39-43
       cost_of_debt_nmnl    = c(isolate(input$a_cost_of_debt_nmnl), isolate(input$a_cost_of_debt_nmnl1), isolate(input$a_cost_of_debt_nmnl2), isolate(input$a_cost_of_debt_nmnl3)),
@@ -599,7 +636,8 @@ server <- function(input, output, session) {
 
     mapply(
        FUN               = f,
-       dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
+       # the data confirmed on the Data sets tab, captured when Run was pressed (not via expand.grid)
+       dat=list(simA_inputs()$dat), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
        q_grow            = args_df$q_grow,
        cost_of_debt_nmnl = lapply(args_df$cost_of_debt_nmnl, function(x) x / 100),
        fcast_infltn      = lapply(args_df$fcast_infltn, function(x) x / 100),
@@ -703,7 +741,15 @@ server <- function(input, output, session) {
       "Group share targets must sum to 100%"
       ))
 
+    # Read here (inside the eventReactive) so that confirming new data on the Data sets tab
+    # doesn't re-run the simulation by itself - only the Run buttons do
+    validate(need(
+      !is.null(isolate(model_data$dat())),
+      "Confirm data on the Data sets tab before running a simulation."
+      ))
+
     list(
+      dat                  = isolate(model_data$dat()),
       q_grow               = 0.019,
       # WACC inputs are one value per price-setting period: FY24-28 slider, then FY29-33 / FY34-38 / FY39-43
       cost_of_debt_nmnl    = c(isolate(input$b_cost_of_debt_nmnl), isolate(input$b_cost_of_debt_nmnl1), isolate(input$b_cost_of_debt_nmnl2), isolate(input$b_cost_of_debt_nmnl3)),
@@ -796,7 +842,8 @@ server <- function(input, output, session) {
 
     mapply(
       FUN               = f,
-      dat=list(dat_df), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
+      # the data confirmed on the Data sets tab, captured when Run was pressed (not via expand.grid)
+      dat=list(simB_inputs()$dat), chart=list(chart_df), txn_type=list(txn_df), ref=list(ref_df),
       q_grow            = args_df$q_grow,
       cost_of_debt_nmnl = lapply(args_df$cost_of_debt_nmnl, function(x) x / 100),
       fcast_infltn      = lapply(args_df$fcast_infltn, function(x) x / 100),

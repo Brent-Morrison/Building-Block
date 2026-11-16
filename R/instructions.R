@@ -137,13 +137,29 @@ instructions_csv_format <- function() {
   tagList(
 
     tags$p(
-      "The main scenario input data is ", tags$code("data/price_subm_2023.csv"), ", loaded by ",
-      tags$code("get_data()"), " into ", tags$code("dat_df"), " — this is the same object ",
-      tags$code("f()"), " receives as its ", tags$code("dat"), " parameter. It holds per-entity ",
+      "The scenario input data is loaded, edited and confirmed on the ", tags$strong("Data sets"),
+      " tab (", tags$code("data/model_data_default.csv"), " by default). When ",
+      tags$strong("Run simulation"), " is pressed, the confirmed data is passed to ",
+      tags$code("f()"), " as its ", tags$code("dat"), " parameter, converted to the column ",
+      "layout described here (", tags$code("R/model_data_adapter.R"), "). It holds per-entity ",
       "capex/opex/tariff/loan line items, one row per item per year. Its columns are named ",
       "generically (", tags$code("lookup_key1-4"), ", ", tags$code("ref_value1-4"), ") because ",
       "what each one holds depends on the row's ", tags$code("lookup_key1"), " (row type) — see ",
       "the tables below for what each column means for a given row type."
+    ),
+
+    tags$p(
+      "The Data sets file uses the same information under generic names: ",
+      tags$code("measure"), " = ", tags$code("lookup_key1"), "; ",
+      tags$code("column_1"), "/", tags$code("column_2"), "/", tags$code("column_3"), " = ",
+      tags$code("lookup_key2"), "/", tags$code("lookup_key3"), "/", tags$code("lookup_key4"), "; ",
+      tags$code("column_4"), " = ", tags$code("ref_value1"), "; ",
+      tags$code("column_5"), " = ", tags$code("notes"), "; ",
+      tags$code("value_1"), "/", tags$code("value_2"), "/", tags$code("value_3"), " = ",
+      tags$code("ref_value2"), "/", tags$code("ref_value3"), "/", tags$code("ref_value4"), ". ",
+      "A single ", tags$code("rab"), " row (", tags$code("value_2"), " = book value, ",
+      tags$code("value_3"), " = remaining life) is split into the ", tags$code("rab_book_value"),
+      " and ", tags$code("rab_remaining_life"), " rows described below."
     ),
 
     tags$h4("Columns"),
